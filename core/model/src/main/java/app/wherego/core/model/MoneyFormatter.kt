@@ -3,6 +3,7 @@ package app.wherego.core.model
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.abs
 
 object MoneyFormatter {
     fun format(money: Money): String = format(money.amountMinor, money.currency)
@@ -21,6 +22,17 @@ object MoneyFormatter {
             "IDR" -> "Rp $number"
             "USD" -> "$$number"
             else -> "$currency $number"
+        }
+    }
+
+    fun compact(amountMinor: Long, currency: String): String {
+        if (currency != "IDR") return format(amountMinor, currency)
+        val sign = if (amountMinor < 0) "-" else ""
+        val magnitude = abs(amountMinor)
+        return when {
+            magnitude >= 1_000_000L -> "${sign}Rp ${magnitude / 1_000_000}jt"
+            magnitude >= 1_000L -> "${sign}Rp ${magnitude / 1_000}rb"
+            else -> format(amountMinor, currency)
         }
     }
 }

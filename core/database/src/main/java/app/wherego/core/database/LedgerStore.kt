@@ -43,6 +43,7 @@ data class CaptureDraft(
     val note: String,
     val occurredOn: String,
     val occurredAt: Long?,
+    val recurringId: String? = null,
 )
 
 @Singleton
@@ -108,7 +109,7 @@ class LedgerStore @Inject constructor(
                 note = draft.note,
                 occurredOn = draft.occurredOn,
                 occurredAt = draft.occurredAt,
-                recurringId = null,
+                recurringId = draft.recurringId,
                 receiptId = null,
                 createdAt = now,
                 updatedAt = now,

@@ -16,7 +16,11 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): WheregoDatabase =
         Room.databaseBuilder(context, WheregoDatabase::class.java, "wherego.db")
-            .addMigrations(WheregoDatabase.MIGRATION_1_2, WheregoDatabase.MIGRATION_2_3)
+            .addMigrations(
+                WheregoDatabase.MIGRATION_1_2,
+                WheregoDatabase.MIGRATION_2_3,
+                WheregoDatabase.MIGRATION_3_4,
+            )
             .build()
 
     @Provides
@@ -30,4 +34,10 @@ object DatabaseModule {
 
     @Provides
     fun provideSyncStateDao(db: WheregoDatabase): SyncStateDao = db.syncStateDao()
+
+    @Provides
+    fun provideBudgetDao(db: WheregoDatabase): BudgetDao = db.budgetDao()
+
+    @Provides
+    fun provideRecurringDao(db: WheregoDatabase): RecurringDao = db.recurringDao()
 }

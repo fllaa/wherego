@@ -2,19 +2,27 @@ package app.wherego.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wherego.core.database.CaptureDraft
+import app.wherego.core.database.DueItem
 import app.wherego.core.database.HomeTx
 import app.wherego.core.database.LedgerStore
+import app.wherego.core.database.PlanStore
 import app.wherego.core.database.UserProfileStore
 import app.wherego.core.database.zoneOf
+import app.wherego.core.model.BudgetBar
 import app.wherego.core.model.MoneyFormatter
 import app.wherego.core.model.PresetCategories
+import app.wherego.core.model.Recurrence
 import app.wherego.core.model.Transaction
 import app.wherego.core.model.UserProfile
 import app.wherego.core.sync.CloudDot
 import app.wherego.core.sync.CloudStatus
+import app.wherego.core.sync.DueReminder
 import app.wherego.core.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -26,7 +34,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -50,36 +57,40 @@ data class HomeUiState(
     val streakDays: Int = 0,
     val hasTxToday: Boolean = false,
     val cloudDot: CloudDot = CloudDot.Offline,
+    val budgetBars: List<BudgetBar> = emptyList(),
+    val due: List<DueItem> = emptyList(),
+    val currency: String = UserProfile.DEFAULT_CURRENCY,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val ledger: LedgerStore,
+    private val plan: PlanStore,
     private val profiles: UserProfileStore,
     cloudStatus: CloudStatus,
     private val syncScheduler: SyncScheduler,
+    private val reminder: DueReminder,
 ) : ViewModel() {
     private val undoId = MutableStateFlow<String?>(null)
     private var undoJob: Job? = null
     private val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
     @Volatile private var lastZone: ZoneId = ZoneId.of(UserProfile.DEFAULT_ZONE)
 
-    val state: StateFlow<HomeUiState> = combine(
-        profiles.profile,
-        undoId,
-        cloudStatus.dot,
-    ) { profile, undo, dot ->
+    val state: StateFlow<HomeUiState> = combine(profiles.profile, undoId, cloudStatus.dot) { profile, undo, dot ->
         Triple(profile, undo, dot)
     }.flatMapLatest { (profile, undo, dot) ->
         val zone = zoneOf(profile)
         lastZone = zone
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
-        val greeting = profile?.displayName
-            ?.substringBefore(" ")
-            ?.takeIf { it.isNotBlank() }
-            ?: "you"
-        ledger.observeHome(zone).map { home ->
+        val greeting = profile?.displayName?.substringBefore(" ")?.takeIf { it.isNotBlank() } ?: "you"
+        val today = LocalDate.now(zone).toString()
+        val ym = YearMonth.from(LocalDate.now(zone)).toString()
+        combine(
+            ledger.observeHome(zone),
+            plan.observeBars(ym, zone),
+            plan.observeDue(today),
+        ) { home, bars, due ->
             HomeUiState(
                 greetingName = greeting,
                 monthSpentLabel = MoneyFormatter.format(home.monthSpentMinor, currency),
@@ -90,6 +101,9 @@ class HomeViewModel @Inject constructor(
                 streakDays = home.streakDays,
                 hasTxToday = home.hasTxToday,
                 cloudDot = dot,
+                budgetBars = bars,
+                due = due,
+                currency = currency,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
@@ -120,6 +134,33 @@ class HomeViewModel @Inject constructor(
     fun duplicateNow(id: String) {
         viewModelScope.launch {
             ledger.duplicateNow(id, lastZone)
+            syncScheduler.enqueueNow()
+        }
+    }
+
+    fun confirmDue(item: DueItem) {
+        viewModelScope.launch {
+            val old = plan.confirmDue(item.rule.id, lastZone) ?: return@launch
+            ledger.save(
+                CaptureDraft(
+                    kind = old.kind,
+                    amountMinor = old.amountMinor,
+                    currency = old.currency,
+                    categoryId = old.categoryId,
+                    note = old.note,
+                    occurredOn = old.nextOn,
+                    occurredAt = ledger.occurredAtForDate(old.nextOn, lastZone),
+                    recurringId = old.id,
+                ),
+                editingId = null,
+            )
+            val next = Recurrence.advance(
+                LocalDate.parse(old.nextOn),
+                old.freq,
+                old.interval,
+                old.dayOfMonth,
+            )
+            reminder.schedule(old.copy(nextOn = next.toString()), lastZone)
             syncScheduler.enqueueNow()
         }
     }

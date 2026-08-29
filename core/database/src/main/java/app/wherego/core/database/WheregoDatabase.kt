@@ -11,8 +11,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CategoryEntity::class,
         TransactionEntity::class,
         SyncStateEntity::class,
+        BudgetEntity::class,
+        RecurringEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
@@ -20,6 +22,9 @@ abstract class WheregoDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao
     abstract fun syncStateDao(): SyncStateDao
+    abstract fun budgetDao(): BudgetDao
+    abstract fun recurringDao(): RecurringDao
+
 
 
     companion object {
@@ -91,6 +96,51 @@ abstract class WheregoDatabase : RoomDatabase() {
                         PRIMARY KEY(`collection`)
                     )
                     """.trimIndent(),
+                )
+            }
+        }
+
+        val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `budgets` (
+                        `id` TEXT NOT NULL,
+                        `categoryId` TEXT,
+                        `amountMinor` INTEGER NOT NULL,
+                        `currency` TEXT NOT NULL,
+                        `yearMonth` TEXT NOT NULL,
+                        `rollover` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `recurring_rules` (
+                        `id` TEXT NOT NULL,
+                        `kind` TEXT NOT NULL,
+                        `amountMinor` INTEGER NOT NULL,
+                        `currency` TEXT NOT NULL,
+                        `categoryId` TEXT NOT NULL,
+                        `note` TEXT NOT NULL,
+                        `freq` TEXT NOT NULL,
+                        `interval` INTEGER NOT NULL,
+                        `dayOfMonth` INTEGER,
+                        `weekday` INTEGER,
+                        `startOn` TEXT NOT NULL,
+                        `endOn` TEXT,
+                        `nextOn` TEXT NOT NULL,
+                        `remindDaysBefore` INTEGER NOT NULL,
+                        `autoPost` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_recurring_rules_nextOn` ON `recurring_rules` (`nextOn`)",
                 )
             }
         }

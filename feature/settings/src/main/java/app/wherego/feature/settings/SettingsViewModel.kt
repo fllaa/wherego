@@ -3,6 +3,7 @@ package app.wherego.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wherego.core.database.LedgerStore
+import app.wherego.core.database.PlanStore
 import app.wherego.core.database.UserProfileStore
 import app.wherego.core.database.zoneOf
 import app.wherego.core.datastore.ThemePreferences
@@ -34,6 +35,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val profiles: UserProfileStore,
     private val ledger: LedgerStore,
+    private val plan: PlanStore,
     private val themePreferences: ThemePreferences,
 ) : ViewModel() {
     private val balanceDigits = MutableStateFlow("")
@@ -112,4 +114,6 @@ class SettingsViewModel @Inject constructor(
             profiles.completeOnboarding(currency, startingBalanceMinor, displayName)
         }
     }
+
+    suspend fun exportCsv(): String = plan.exportCsv()
 }

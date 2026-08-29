@@ -70,3 +70,20 @@
 - Blocked: H1 H2 H3 — `BLOCKED.md`
 
 
+## 2026-08-30  T0105  slice=S4
+- Goal: budgets, recurring, CSV export; Plan tab live
+- Files changed: Room v4 `budgets`/`recurring_rules`; `PlanStore`; Plan tab; Home budget card (max 3) + due inbox; `DueReminder` 08:00; Me Export CSV share sheet
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:model:testDebugUnitTest` → PlanTest 5 passed (due, advance weekly/monthly incl. Jan 31, CSV escape, compact rb, over-budget)
+  - `./gradlew :core:database:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS
+- Decisions:
+  - Budgets keyed to current `yearMonth` only (no rollover)
+  - Confirm due creates a tx with `recurringId`, then advances `nextOn`; `autoPost=false`
+  - Reminder copy: `"{note} usually hits today. Log it?"` at 08:00 local; POST_NOTIFICATIONS declared, no runtime prompt
+  - CSV columns `date,kind,amount,currency,category,note` (amount = minor units string); share as `text/csv`
+  - Compact IDR: `rb`/`jt` for budget remaining labels
+- Not done / deferred: OCR/S5, goals/FX/S6, runtime notification permission UI
+- Blocked: none (H1–H3 still open for real Firebase; S4 does not need them)
+
+

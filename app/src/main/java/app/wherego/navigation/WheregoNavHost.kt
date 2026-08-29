@@ -15,7 +15,7 @@ import app.wherego.core.designsystem.component.WheregoTab
 import app.wherego.core.designsystem.component.WheregoTabBar
 import app.wherego.core.designsystem.theme.WheregoTheme
 import app.wherego.feature.home.HomeRoute
-import app.wherego.feature.plan.PlanScreen
+import app.wherego.feature.plan.PlanRoute
 import app.wherego.feature.settings.MeScreen
 import app.wherego.feature.stories.StoriesRoute
 
@@ -58,9 +58,9 @@ fun WheregoNavHost(modifier: Modifier = Modifier) {
             startDestination = Routes.Home,
             modifier = Modifier.weight(1f),
         ) {
-            composable(Routes.Home) { HomeRoute() }
+            composable(Routes.Home) { HomeRoute(onOpenPlan = { navController.navigate(Routes.Plan) }) }
             composable(Routes.Stories) { StoriesRoute() }
-            composable(Routes.Plan) { PlanScreen() }
+            composable(Routes.Plan) { PlanRoute() }
             composable(Routes.Me) { MeScreen() }
         }
         WheregoTabBar(

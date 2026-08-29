@@ -1,5 +1,6 @@
 package app.wherego.feature.settings
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,10 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +56,8 @@ fun MeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val balance by viewModel.balanceNow.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showCats by remember { mutableStateOf(false) }
     var showAuth by remember { mutableStateOf(false) }
     when {
@@ -72,6 +78,17 @@ fun MeScreen(
             onSetBalance = viewModel::setBalanceTo,
             onCategories = { showCats = true },
             onSignIn = { showAuth = true },
+            onExport = {
+                scope.launch {
+                    val csv = viewModel.exportCsv()
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/csv"
+                        putExtra(Intent.EXTRA_TEXT, csv)
+                        putExtra(Intent.EXTRA_SUBJECT, "Wherego export")
+                    }
+                    context.startActivity(Intent.createChooser(send, "Export CSV"))
+                }
+            },
         )
     }
 }
@@ -87,6 +104,7 @@ fun SettingsScreen(
     onSetBalance: () -> Unit,
     onCategories: () -> Unit,
     onSignIn: () -> Unit,
+    onExport: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
     var name by remember(state.displayName) { mutableStateOf(state.displayName) }
@@ -182,6 +200,12 @@ fun SettingsScreen(
             style = WheregoType.cta,
             color = colors.tealDeep,
             modifier = Modifier.clickable(onClick = onCategories),
+        )
+        Text(
+            "Export CSV",
+            style = WheregoType.cta,
+            color = colors.tealDeep,
+            modifier = Modifier.clickable(onClick = onExport),
         )
     }
 }

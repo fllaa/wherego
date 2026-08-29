@@ -7,11 +7,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -63,6 +65,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeRoute(
     viewModel: HomeViewModel = hiltViewModel(),
+    onOpenPlan: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     HomeScreen(
@@ -70,6 +73,8 @@ fun HomeRoute(
         onDelete = viewModel::delete,
         onUndo = viewModel::undoDelete,
         onDuplicate = viewModel::duplicateNow,
+        onConfirmDue = viewModel::confirmDue,
+        onOpenPlan = onOpenPlan,
     )
 }
 
@@ -80,6 +85,8 @@ fun HomeScreen(
     onDelete: (String) -> Unit,
     onUndo: () -> Unit,
     onDuplicate: (String) -> Unit,
+    onConfirmDue: (app.wherego.core.database.DueItem) -> Unit,
+    onOpenPlan: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = WheregoTheme.colors
@@ -147,6 +154,37 @@ fun HomeScreen(
             }
             item {
                 WheregoHero(amountLabel = state.monthSpentLabel)
+            }
+            if (state.budgetBars.isNotEmpty()) {
+                item {
+                    BudgetCard(bars = state.budgetBars, currency = state.currency, onPlan = onOpenPlan)
+                }
+            }
+            if (state.due.isNotEmpty()) {
+                item {
+                    Text("Due", style = WheregoType.cardTitle, color = colors.ink)
+                }
+                items(state.due, key = { it.rule.id }) { item ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text(
+                                item.rule.note.ifBlank { item.categoryName },
+                                style = WheregoType.chip,
+                                color = colors.ink,
+                            )
+                            Text(item.rule.nextOn, style = WheregoType.meta, color = colors.muted)
+                        }
+                        Text(
+                            "Log it",
+                            color = colors.tealDeep,
+                            style = WheregoType.cta,
+                            modifier = Modifier.clickable { onConfirmDue(item) },
+                        )
+                    }
+                }
             }
             item {
                 Row(
@@ -305,3 +343,57 @@ private fun TxItem(
         }
     }
 }
+
+@Composable
+private fun BudgetCard(
+    bars: List<app.wherego.core.model.BudgetBar>,
+    currency: String,
+    onPlan: () -> Unit,
+) {
+    val colors = WheregoTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(colors.white)
+            .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(15.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Budget check", style = WheregoType.cardTitle, color = colors.ink)
+            Text("Plan →", style = WheregoType.meta, color = colors.teal, modifier = Modifier.clickable(onClick = onPlan))
+        }
+        bars.forEach { bar ->
+            val fraction = if (bar.capMinor <= 0L) 0f else (bar.spentMinor.toFloat() / bar.capMinor).coerceIn(0f, 1f)
+            val fill = if (bar.over) colors.coral else app.wherego.core.designsystem.theme.parseHexColor(bar.colorHex)
+            val label = if (bar.over) {
+                "${app.wherego.core.model.MoneyFormatter.compact(-bar.remainingMinor, currency)} over"
+            } else {
+                "${app.wherego.core.model.MoneyFormatter.compact(bar.remainingMinor, currency)} left"
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("${bar.emoji}  ${bar.name}", style = WheregoType.chip, color = colors.ink)
+                    Text(label, style = WheregoType.meta, color = if (bar.over) colors.coral else colors.tealDeep)
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(13.dp)
+                        .clip(RoundedCornerShape(99.dp))
+                        .background(colors.track),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(if (bar.over) 1f else fraction)
+                            .height(13.dp)
+                            .clip(RoundedCornerShape(99.dp))
+                            .background(fill),
+                    )
+                }
+            }
+        }
+    }
+}
+
