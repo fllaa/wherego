@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -22,4 +23,13 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories WHERE id = :id LIMIT 1")
     suspend fun get(id: String): CategoryEntity?
+
+    @Update
+    suspend fun update(row: CategoryEntity)
+
+    @Query("SELECT * FROM categories WHERE deletedAt IS NULL ORDER BY archived ASC, sortOrder ASC")
+    fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories WHERE deletedAt IS NULL ORDER BY archived ASC, sortOrder ASC")
+    suspend fun listAll(): List<CategoryEntity>
 }

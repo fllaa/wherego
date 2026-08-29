@@ -17,7 +17,7 @@ import app.wherego.core.designsystem.theme.WheregoTheme
 import app.wherego.feature.home.HomeRoute
 import app.wherego.feature.plan.PlanScreen
 import app.wherego.feature.settings.MeScreen
-import app.wherego.feature.stories.StoriesScreen
+import app.wherego.feature.stories.StoriesRoute
 
 private object Routes {
     const val Home = "home"
@@ -59,7 +59,7 @@ fun WheregoNavHost(modifier: Modifier = Modifier) {
             modifier = Modifier.weight(1f),
         ) {
             composable(Routes.Home) { HomeRoute() }
-            composable(Routes.Stories) { StoriesScreen() }
+            composable(Routes.Stories) { StoriesRoute() }
             composable(Routes.Plan) { PlanScreen() }
             composable(Routes.Me) { MeScreen() }
         }

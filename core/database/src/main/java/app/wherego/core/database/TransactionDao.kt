@@ -43,4 +43,7 @@ interface TransactionDao {
         """,
     )
     suspend fun sumExpenses(startOn: String, endOn: String): Long
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
+    suspend fun countForCategory(categoryId: String): Int
 }

@@ -58,6 +58,7 @@ import java.time.ZoneOffset
 fun CaptureSheet(
     editing: Transaction?,
     onDismiss: () -> Unit,
+    onParked: () -> Unit = {},
     viewModel: CaptureViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -86,7 +87,7 @@ fun CaptureSheet(
             onYesterday = viewModel::onYesterday,
             onPickRequested = viewModel::onPickRequested,
             onToggleMore = viewModel::onToggleMore,
-            onSave = { viewModel.save(onDismiss) },
+            onSave = { viewModel.save { onParked(); onDismiss() } },
         )
     }
     if (state.showDatePicker) {

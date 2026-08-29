@@ -3,6 +3,8 @@ package app.wherego.core.database
 import app.wherego.core.common.UlidGenerator
 import app.wherego.core.model.UserProfile
 import java.time.Clock
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -21,5 +23,35 @@ class UserProfileStore @Inject constructor(
         val created = UserProfile.guest(id = ulid.next(), nowMillis = clock.millis())
         dao.insert(UserProfileEntity.from(created))
         return created
+    }
+
+    suspend fun completeOnboarding(
+        baseCurrency: String,
+        startingBalanceMinor: Long,
+        displayName: String?,
+    ) {
+        val existing = dao.get() ?: return
+        val zone = ZoneId.of(existing.timeZoneId)
+        val today = LocalDate.now(clock.withZone(zone)).toString()
+        dao.update(
+            existing.copy(
+                baseCurrency = baseCurrency,
+                startingBalanceMinor = startingBalanceMinor,
+                startingBalanceOn = if (startingBalanceMinor != 0L) today else existing.startingBalanceOn,
+                displayName = displayName?.trim()?.ifBlank { null } ?: existing.displayName,
+                onboardingDone = true,
+                updatedAt = clock.millis(),
+            ),
+        )
+    }
+
+    suspend fun updateDisplayName(name: String) {
+        val existing = dao.get() ?: return
+        dao.update(
+            existing.copy(
+                displayName = name.trim().ifBlank { null },
+                updatedAt = clock.millis(),
+            ),
+        )
     }
 }

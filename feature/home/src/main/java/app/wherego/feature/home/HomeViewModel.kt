@@ -44,6 +44,8 @@ data class HomeUiState(
     val today: List<TxRowUi> = emptyList(),
     val earlierThisWeek: List<TxRowUi> = emptyList(),
     val undoId: String? = null,
+    val streakDays: Int = 0,
+    val hasTxToday: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -75,6 +77,8 @@ class HomeViewModel @Inject constructor(
                 today = home.today.map { it.toRow(zone, currency) },
                 earlierThisWeek = home.earlierThisWeek.map { it.toRow(zone, currency) },
                 undoId = undo,
+                streakDays = home.streakDays,
+                hasTxToday = home.hasTxToday,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())

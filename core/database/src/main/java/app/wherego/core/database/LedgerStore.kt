@@ -2,7 +2,10 @@ package app.wherego.core.database
 
 import app.wherego.core.common.UlidGenerator
 import app.wherego.core.model.Category
+import app.wherego.core.model.LogStreak
+import app.wherego.core.model.MonthStory
 import app.wherego.core.model.PresetCategories
+import app.wherego.core.model.SpendRow
 import app.wherego.core.model.Transaction
 import app.wherego.core.model.TransactionKind
 import app.wherego.core.model.UserProfile
@@ -23,6 +26,8 @@ data class HomeLedger(
     val todayExpenseMinor: Long,
     val today: List<HomeTx>,
     val earlierThisWeek: List<HomeTx>,
+    val streakDays: Int,
+    val hasTxToday: Boolean,
 )
 
 data class HomeTx(
@@ -188,6 +193,86 @@ class LedgerStore @Inject constructor(
         }
     }
 
+    val allCategories: Flow<List<Category>> =
+        categoryDao.observeAll().map { rows -> rows.map { it.toModel() } }
+
+    fun observeMonth(yearMonth: YearMonth): Flow<List<app.wherego.core.model.CategorySpend>> = combine(
+        transactionDao.observeActive(),
+        categoryDao.observeAll(),
+    ) { txs, cats ->
+        val catMap = cats.associate { it.id to it.toModel() }
+        val start = yearMonth.atDay(1).toString()
+        val end = yearMonth.atEndOfMonth().toString()
+        val rows = txs.map { it.toModel() }
+            .filter { it.kind == TransactionKind.EXPENSE }
+            .filter { it.occurredOn >= start && it.occurredOn <= end }
+            .map { tx ->
+                val cat = catMap[tx.categoryId]
+                SpendRow(
+                    categoryId = tx.categoryId,
+                    name = cat?.name ?: "Other",
+                    emoji = cat?.emoji ?: "📦",
+                    colorHex = cat?.colorHex ?: "#78918E",
+                    amountMinor = tx.amountBaseMinor,
+                )
+            }
+        MonthStory.aggregate(rows)
+    }
+
+    suspend fun currentBalance(startingBalanceMinor: Long): Long {
+        val txs = transactionDao.listActive()
+        val income = txs.filter { it.kind == TransactionKind.INCOME }.sumOf { it.amountBaseMinor }
+        val expense = txs.filter { it.kind == TransactionKind.EXPENSE }.sumOf { it.amountBaseMinor }
+        val adj = txs.filter { it.kind == TransactionKind.ADJUSTMENT }.sumOf { it.amountBaseMinor }
+        return startingBalanceMinor + income - expense + adj
+    }
+
+    suspend fun setBalanceTo(
+        targetMinor: Long,
+        startingBalanceMinor: Long,
+        currency: String,
+        zoneId: ZoneId,
+    ) {
+        val current = currentBalance(startingBalanceMinor)
+        val delta = targetMinor - current
+        if (delta == 0L) return
+        val today = todayOn(zoneId)
+        save(
+            CaptureDraft(
+                kind = TransactionKind.ADJUSTMENT,
+                amountMinor = delta,
+                currency = currency,
+                categoryId = "cat_other",
+                note = "Set balance",
+                occurredOn = today,
+                occurredAt = clock.millis(),
+            ),
+            editingId = null,
+        )
+    }
+
+    suspend fun updateCategory(id: String, name: String, emoji: String, colorHex: String) {
+        val existing = categoryDao.get(id) ?: return
+        categoryDao.update(
+            existing.copy(
+                name = name.trim().ifBlank { existing.name },
+                emoji = emoji.trim().ifBlank { existing.emoji },
+                colorHex = colorHex,
+                updatedAt = clock.millis(),
+            ),
+        )
+    }
+
+    suspend fun archiveCategory(id: String, archived: Boolean) {
+        val existing = categoryDao.get(id) ?: return
+        categoryDao.update(
+            existing.copy(archived = archived, updatedAt = clock.millis()),
+        )
+    }
+
+    suspend fun transactionCountForCategory(id: String): Int = transactionDao.countForCategory(id)
+
+
 
 
     private fun assembleHome(
@@ -228,6 +313,8 @@ class LedgerStore @Inject constructor(
             todayExpenseMinor = todayExpense,
             today = todayTxs.map(::wrap),
             earlierThisWeek = earlier.map(::wrap),
+            streakDays = app.wherego.core.model.LogStreak.distinctDays(txs.map { it.occurredOn }),
+            hasTxToday = todayTxs.isNotEmpty(),
         )
     }
 }

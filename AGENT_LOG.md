@@ -35,3 +35,21 @@
 - Not done / deferred: Fredoka/Nunito, budget card chrome (S4), mascot art (S2)
 - Blocked: none. Human gate **H5** (real-phone 20s feel) is not agent-certified
 
+## 2026-08-30  T0045  slice=S2
+- Goal: month story, onboarding, settings, streak, Go states
+- Files changed: `MonthStory`/`LogStreak`; Stories month pager; onboarding N1/N2; Me settings (theme DataStore, display name, set-balance adjustment); category archive/rename; Home streak pill + Go idle/happy/sleepy
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:model:testDebugUnitTest` → SUCCESS (MonthStory 4, LogStreak 2, plus existing formatter/digit/profile)
+  - `./gradlew :core:database:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS
+- Decisions:
+  - Sentence template uses top 2: `"{cat1} {p1}% · {cat2} {p2}% · rest is quieter."`; empty: `"New page. Nothing parked this month."`
+  - Streak = distinct `occurredOn` among non-deleted txs (all-time), not consecutive
+  - Categories: archive only, never hard-delete
+  - Set balance writes signed `adjustment` on `cat_other` (does not rewrite starting balance)
+  - Theme override in DataStore (`system`/`light`/`dark`); Go states via emoji in the 40dp circle (no custom art)
+  - Onboarding shows for any profile with `onboardingDone=false` (includes S1 guests)
+- Not done / deferred: Fredoka/Nunito, budgets (S4), Firebase (S3)
+- Blocked: none. H5 still human.
+
+

@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,13 +46,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wherego.core.designsystem.component.GoMood
 import app.wherego.core.designsystem.component.WheregoGoAvatar
 import app.wherego.core.designsystem.component.WheregoHero
+import app.wherego.core.designsystem.component.WheregoStreakPill
 import app.wherego.core.designsystem.component.WheregoTxRow
 import app.wherego.core.designsystem.theme.WheregoTheme
 import app.wherego.core.designsystem.theme.WheregoType
 import app.wherego.core.model.Transaction
 import app.wherego.feature.capture.CaptureSheet
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeRoute(
@@ -77,8 +82,15 @@ fun HomeScreen(
 ) {
     val colors = WheregoTheme.colors
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var captureOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
+    var goMood by remember { mutableStateOf(GoMood.Idle) }
+    LaunchedEffect(state.hasTxToday) {
+        if (goMood != GoMood.Happy) {
+            goMood = if (state.hasTxToday) GoMood.Idle else GoMood.Sleepy
+        }
+    }
 
     LaunchedEffect(state.undoId) {
         if (state.undoId == null) {
@@ -107,13 +119,15 @@ fun HomeScreen(
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    WheregoGoAvatar()
+                    WheregoGoAvatar(mood = goMood)
                     Spacer(Modifier.width(12.dp))
                     Text(
                         text = "Hey ${state.greetingName} 👋",
                         style = WheregoType.greeting,
                         color = colors.ink,
+                        modifier = Modifier.weight(1f),
                     )
+                    WheregoStreakPill(days = state.streakDays)
                 }
             }
             item {
@@ -204,6 +218,13 @@ fun HomeScreen(
             onDismiss = {
                 captureOpen = false
                 editing = null
+            },
+            onParked = {
+                goMood = GoMood.Happy
+                scope.launch {
+                    delay(800)
+                    goMood = GoMood.Idle
+                }
             },
         )
     }

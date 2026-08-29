@@ -52,7 +52,21 @@ fun WheregoTheme(
     content: @Composable () -> Unit,
 ) {
     val scheme = if (darkTheme) DarkScheme else LightScheme
-    CompositionLocalProvider(LocalWheregoColors provides WheregoColors.Default) {
+    val palette = if (darkTheme) {
+        WheregoColors.Default.copy(
+            paper = WheregoColors.Default.darkPaper,
+            ink = WheregoColors.Default.darkInk,
+            white = WheregoColors.Default.darkSurface,
+            sheet = WheregoColors.Default.darkSurface,
+            chipIdle = WheregoColors.Default.darkSurface,
+            key = WheregoColors.Default.darkSurface,
+            mascotFill = WheregoColors.Default.darkSurface,
+            noteChip = WheregoColors.Default.darkSurface,
+        )
+    } else {
+        WheregoColors.Default
+    }
+    CompositionLocalProvider(LocalWheregoColors provides palette) {
         MaterialTheme(
             colorScheme = scheme,
             typography = WheregoType.typography(),
