@@ -1,5 +1,6 @@
 package app.wherego.feature.stories
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -24,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,7 +37,9 @@ import app.wherego.core.designsystem.theme.parseHexColor
 import app.wherego.core.model.CategorySpend
 import app.wherego.core.model.MoneyFormatter
 import app.wherego.core.model.UserProfile
-
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.core.entry.entryModelOf
 @Composable
 fun StoriesRoute(
     viewModel: StoriesViewModel = hiltViewModel(),
@@ -59,6 +65,7 @@ fun StoriesScreen(
             .fillMaxSize()
             .background(colors.paper)
             .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -90,6 +97,32 @@ fun StoriesScreen(
         Text("Spent this month", style = WheregoType.eyebrow, color = colors.muted)
         Text(state.totalLabel, style = WheregoType.heroAmount, color = colors.ink)
         Text(state.sentence, style = WheregoType.meta, color = colors.ink)
+        if (state.balance.size >= 2) {
+            Text("Balance", style = WheregoType.chip, color = colors.ink)
+            val ys = state.balance.map { it.balanceMinor.toFloat() }
+            Chart(
+                chart = lineChart(),
+                model = entryModelOf(*ys.toTypedArray()),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp),
+            )
+        }
+        val context = LocalContext.current
+        Text(
+            "Share PDF",
+            style = WheregoType.cta,
+            color = colors.tealDeep,
+            modifier = Modifier.clickable {
+                val uri = MonthPdfWriter.write(context, "wherego-${state.yearMonth}.pdf", state.pdfLines)
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(send, "Share month"))
+            },
+        )
         if (state.bars.isEmpty()) {
             Text("No category bars yet.", style = WheregoType.meta, color = colors.muted)
         } else {

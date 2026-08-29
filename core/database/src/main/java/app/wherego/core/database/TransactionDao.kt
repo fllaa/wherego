@@ -55,4 +55,7 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
     suspend fun countForCategory(categoryId: String): Int
+
+    @Query("SELECT DISTINCT currency FROM transactions WHERE deletedAt IS NULL")
+    suspend fun distinctCurrencies(): List<String>
 }

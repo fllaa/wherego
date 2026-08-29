@@ -14,8 +14,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         BudgetEntity::class,
         RecurringEntity::class,
         ReceiptEntity::class,
+        GoalEntity::class,
+        FxRateEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
@@ -26,6 +28,8 @@ abstract class WheregoDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun recurringDao(): RecurringDao
     abstract fun receiptDao(): ReceiptDao
+    abstract fun goalDao(): GoalDao
+    abstract fun fxRateDao(): FxRateDao
 
 
     companion object {
@@ -165,6 +169,33 @@ abstract class WheregoDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_receipts_transactionId` ON `receipts` (`transactionId`)",
+                )
+            }
+        }
+
+        val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `goals` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `allocatedMinor` INTEGER NOT NULL,
+                        `currency` TEXT NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `fx_rates` (
+                        `currency` TEXT NOT NULL,
+                        `rateToBase` TEXT NOT NULL,
+                        `fetchedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`currency`)
+                    )
+                    """.trimIndent(),
                 )
             }
         }

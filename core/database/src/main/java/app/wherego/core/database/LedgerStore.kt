@@ -2,6 +2,8 @@ package app.wherego.core.database
 
 import app.wherego.core.common.UlidGenerator
 import app.wherego.core.model.Category
+import app.wherego.core.model.CsvRow
+import app.wherego.core.model.FxConvert
 import app.wherego.core.model.LogStreak
 import app.wherego.core.model.MonthStory
 import app.wherego.core.model.PresetCategories
@@ -44,6 +46,8 @@ data class CaptureDraft(
     val occurredOn: String,
     val occurredAt: Long?,
     val recurringId: String? = null,
+    val fxRateToBase: String = "1",
+    val baseCurrency: String = UserProfile.DEFAULT_CURRENCY,
 )
 
 @Singleton
@@ -97,14 +101,16 @@ class LedgerStore @Inject constructor(
 
     suspend fun save(draft: CaptureDraft, editingId: String?): Transaction {
         val now = clock.millis()
+        val rate = draft.fxRateToBase.ifBlank { "1" }
+        val baseMinor = FxConvert.toBase(draft.amountMinor, draft.currency, rate, draft.baseCurrency)
         val row = if (editingId == null) {
             Transaction(
                 id = ulid.next(),
                 kind = draft.kind,
                 amountMinor = draft.amountMinor,
                 currency = draft.currency,
-                fxRateToBase = "1",
-                amountBaseMinor = draft.amountMinor,
+                fxRateToBase = rate,
+                amountBaseMinor = baseMinor,
                 categoryId = draft.categoryId,
                 note = draft.note,
                 occurredOn = draft.occurredOn,
@@ -123,7 +129,8 @@ class LedgerStore @Inject constructor(
                 kind = draft.kind,
                 amountMinor = draft.amountMinor,
                 currency = draft.currency,
-                amountBaseMinor = draft.amountMinor,
+                fxRateToBase = rate,
+                amountBaseMinor = baseMinor,
                 categoryId = draft.categoryId,
                 note = draft.note,
                 occurredOn = draft.occurredOn,
@@ -135,6 +142,48 @@ class LedgerStore @Inject constructor(
         val entity = TransactionEntity.from(row)
         if (editingId == null) transactionDao.insert(entity) else transactionDao.update(entity)
         return row
+    }
+
+    fun observeActive(): Flow<List<Transaction>> =
+        transactionDao.observeActive().map { rows -> rows.map { it.toModel() } }
+
+    suspend fun usedCurrencies(): List<String> = transactionDao.distinctCurrencies()
+
+    suspend fun importRows(rows: List<CsvRow>, baseCurrency: String, zoneId: ZoneId): Int {
+        val cats = categoryDao.listAll()
+        val byName = cats.associate { it.name.trim().lowercase() to it }
+        var n = 0
+        for (row in rows) {
+            val amount = row.amount.toLongOrNull() ?: continue
+            if (amount == 0L) continue
+            val date = row.date
+            if (!date.matches(Regex("""\d{4}-\d{2}-\d{2}"""))) continue
+            val kind = when (row.kind.trim().lowercase()) {
+                TransactionKind.INCOME -> TransactionKind.INCOME
+                TransactionKind.ADJUSTMENT -> TransactionKind.ADJUSTMENT
+                else -> TransactionKind.EXPENSE
+            }
+            val fallbackId = if (kind == TransactionKind.INCOME) "cat_other_in" else "cat_other"
+            val cat = byName[row.category.trim().lowercase()] ?: cats.firstOrNull { it.id == fallbackId }
+            val categoryId = cat?.id ?: fallbackId
+            val currency = row.currency.ifBlank { baseCurrency }
+            save(
+                CaptureDraft(
+                    kind = kind,
+                    amountMinor = amount,
+                    currency = currency,
+                    categoryId = categoryId,
+                    note = row.note.take(80),
+                    occurredOn = date,
+                    occurredAt = occurredAtForDate(date, zoneId),
+                    fxRateToBase = "1",
+                    baseCurrency = baseCurrency,
+                ),
+                editingId = null,
+            )
+            n++
+        }
+        return n
     }
 
     suspend fun setReceiptId(transactionId: String, receiptId: String) {

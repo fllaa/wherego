@@ -21,6 +21,7 @@ object DatabaseModule {
                 WheregoDatabase.MIGRATION_2_3,
                 WheregoDatabase.MIGRATION_3_4,
                 WheregoDatabase.MIGRATION_4_5,
+                WheregoDatabase.MIGRATION_5_6,
             )
             .build()
 
@@ -44,4 +45,10 @@ object DatabaseModule {
 
     @Provides
     fun provideReceiptDao(db: WheregoDatabase): ReceiptDao = db.receiptDao()
+
+    @Provides
+    fun provideGoalDao(db: WheregoDatabase): GoalDao = db.goalDao()
+
+    @Provides
+    fun provideFxRateDao(db: WheregoDatabase): FxRateDao = db.fxRateDao()
 }

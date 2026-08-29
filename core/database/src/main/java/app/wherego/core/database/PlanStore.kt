@@ -5,6 +5,7 @@ import app.wherego.core.model.Budget
 import app.wherego.core.model.BudgetBar
 import app.wherego.core.model.CsvExport
 import app.wherego.core.model.CsvRow
+import app.wherego.core.model.Goal
 import app.wherego.core.model.Recurrence
 import app.wherego.core.model.RecurringRule
 import app.wherego.core.model.TransactionKind
@@ -32,6 +33,7 @@ class PlanStore @Inject constructor(
     private val recurringDao: RecurringDao,
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
+    private val goalDao: GoalDao,
     private val ulid: UlidGenerator,
     private val clock: Clock,
 ) {
@@ -40,6 +42,9 @@ class PlanStore @Inject constructor(
 
     fun observeRules(): Flow<List<RecurringRule>> =
         recurringDao.observeAll().map { rows -> rows.map { it.toModel() } }
+
+    fun observeGoals(): Flow<List<Goal>> =
+        goalDao.observeAll().map { rows -> rows.map { it.toModel() } }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeDue(today: String): Flow<List<DueItem>> =
@@ -175,6 +180,22 @@ class PlanStore @Inject constructor(
             )
         }
         return CsvExport.table(rows)
+    }
+
+    suspend fun addGoal(name: String, allocatedMinor: Long, currency: String): Goal {
+        val goal = Goal(
+            id = ulid.next(),
+            name = name.trim().ifBlank { "Goal" },
+            allocatedMinor = allocatedMinor,
+            currency = currency,
+            updatedAt = clock.millis(),
+        )
+        goalDao.upsert(GoalEntity.from(goal))
+        return goal
+    }
+
+    suspend fun deleteGoal(id: String) {
+        goalDao.delete(id)
     }
 }
 

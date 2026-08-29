@@ -8,6 +8,8 @@ import app.wherego.core.database.UserProfileStore
 import app.wherego.core.database.zoneOf
 import app.wherego.core.datastore.ThemePreferences
 import app.wherego.core.model.Category
+import app.wherego.core.model.CsvImport
+import app.wherego.core.model.CsvMapping
 import app.wherego.core.model.DigitBuffer
 import app.wherego.core.model.MoneyFormatter
 import app.wherego.core.model.ThemeMode
@@ -116,4 +118,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     suspend fun exportCsv(): String = plan.exportCsv()
+
+    suspend fun importCsv(text: String, mapping: CsvMapping, skipHeader: Boolean): Int {
+        val parsed = CsvImport.parse(text)
+        val rows = CsvImport.apply(parsed, mapping, skipHeader)
+        val profile = profiles.profile.first()
+        return ledger.importRows(
+            rows,
+            profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY,
+            zoneOf(profile),
+        )
+    }
 }

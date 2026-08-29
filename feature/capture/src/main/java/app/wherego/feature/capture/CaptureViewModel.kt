@@ -3,6 +3,7 @@ package app.wherego.feature.capture
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wherego.core.database.CaptureDraft
+import app.wherego.core.database.FxRateStore
 import app.wherego.core.database.LedgerStore
 import app.wherego.core.database.UserProfileStore
 import app.wherego.core.database.zoneOf
@@ -37,6 +38,8 @@ data class CaptureUiState(
     val recentIds: List<String> = emptyList(),
     val zoneId: ZoneId = ZoneId.of(UserProfile.DEFAULT_ZONE),
     val currency: String = UserProfile.DEFAULT_CURRENCY,
+    val baseCurrency: String = UserProfile.DEFAULT_CURRENCY,
+    val fxRate: String = "1",
 ) {
     val amountMinor: Long get() = DigitBuffer.amountMinor(digits)
     val canSave: Boolean get() = amountMinor > 0L && categoryId != null
@@ -53,12 +56,12 @@ data class CaptureUiState(
             return matching.take(6)
         }
 }
-
 @HiltViewModel
 class CaptureViewModel @Inject constructor(
     private val ledger: LedgerStore,
     private val profiles: UserProfileStore,
     private val syncScheduler: SyncScheduler,
+    private val fxRates: FxRateStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CaptureUiState())
     val state: StateFlow<CaptureUiState> = _state.asStateFlow()
@@ -90,6 +93,8 @@ class CaptureViewModel @Inject constructor(
                     recentIds = recent,
                     zoneId = zone,
                     currency = currency,
+                    baseCurrency = currency,
+                    fxRate = "1",
                 )
             }
         }
@@ -113,6 +118,8 @@ class CaptureViewModel @Inject constructor(
                     recentIds = recent,
                     zoneId = zone,
                     currency = tx.currency,
+                    baseCurrency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY,
+                    fxRate = tx.fxRateToBase,
                 )
             }
         }
@@ -181,6 +188,21 @@ class CaptureViewModel @Inject constructor(
         _state.update { it.copy(showAllCategories = !it.showAllCategories) }
     }
 
+    fun cycleCurrency() {
+        viewModelScope.launch {
+            val codes = listOf("IDR", "USD", "SGD", "EUR")
+            val i = codes.indexOf(_state.value.currency)
+            val next = codes[(if (i < 0) 0 else i + 1) % codes.size]
+            val rate = fxRates.rateToBase(next, _state.value.baseCurrency)
+            _state.update { it.copy(currency = next, fxRate = rate) }
+        }
+    }
+
+    fun onFxRate(raw: String) {
+        _state.update { it.copy(fxRate = raw.filter { ch -> ch.isDigit() || ch == '.' }.take(12).ifBlank { "1" }) }
+    }
+
+
     fun save(onDone: (Transaction) -> Unit) {
         val snapshot = _state.value
         if (!snapshot.canSave) return
@@ -195,6 +217,8 @@ class CaptureViewModel @Inject constructor(
                     note = snapshot.note.trim(),
                     occurredOn = snapshot.occurredOn,
                     occurredAt = ledger.occurredAtForDate(snapshot.occurredOn, snapshot.zoneId),
+                    fxRateToBase = snapshot.fxRate,
+                    baseCurrency = snapshot.baseCurrency,
                 ),
                 editingId = snapshot.editingId,
             )

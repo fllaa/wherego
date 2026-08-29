@@ -104,3 +104,22 @@
 - Blocked: H1–H3 still open (`BLOCKED.md`); S5 usable offline
 
 
+## 2026-08-30  T0220  slice=S6
+- Goal: goals, FX, Vico balance, CSV import, month PDF
+- Files changed: Room v6 `goals`/`fx_rates`; Plan earmarks; capture currency+rate; Stories Vico line + Share PDF; Me Import CSV wizard; weekly Frankfurter cache worker (fail-open)
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:model:testDebugUnitTest` → S6Test 5 passed (USD→IDR BigDecimal, same-currency, running balance, quoted CSV preview, PDF lines)
+  - `./gradlew :core:database:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS
+- Decisions:
+  - Goals are earmarks (`allocatedMinor`) on Plan, not accounts
+  - `fxRateToBase` is a decimal string; convert with BigDecimal, never store money as Double
+  - Rate defaults to cached table or `"1"`; weekly worker only if a non-IDR tx exists; no API key — Frankfurter, fail-open to manual
+  - Capture cycles IDR/USD/SGD/EUR; rate field only when ≠ base
+  - CSV import: map columns, preview 5, amount = minor units string; unmatched category → `cat_other` / `cat_other_in`
+  - Month PDF is monospace text (title, bars, tx list), not marketing
+  - Vico 1.13.1 line chart; float only for drawing
+- Not done / deferred: real Firebase (H1–H3); Play (H4); 20s feel (H5)
+- Blocked: none for S6; H1–H3 still in `BLOCKED.md`
+
+

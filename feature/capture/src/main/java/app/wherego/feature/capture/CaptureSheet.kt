@@ -92,6 +92,8 @@ fun CaptureSheet(
             onPickRequested = viewModel::onPickRequested,
             onToggleMore = viewModel::onToggleMore,
             onAttach = { id -> attachId = id },
+            onCycleCurrency = viewModel::cycleCurrency,
+            onFxRate = viewModel::onFxRate,
             onSave = { viewModel.save { parked -> onParked(parked); onDismiss() } },
         )
     }
@@ -147,6 +149,8 @@ private fun CaptureSheetBody(
     onPickRequested: () -> Unit,
     onToggleMore: () -> Unit,
     onAttach: (String) -> Unit,
+    onCycleCurrency: () -> Unit,
+    onFxRate: (String) -> Unit,
     onSave: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
@@ -176,9 +180,21 @@ private fun CaptureSheetBody(
             QuickChip("15rb", onClick = { onQuickAmount(15_000L) })
             QuickChip("25rb", onClick = { onQuickAmount(25_000L) })
             QuickChip("note", selected = state.noteOpen, onClick = onToggleNote)
+            QuickChip(state.currency, selected = state.currency != state.baseCurrency, onClick = onCycleCurrency)
             if (state.editingId != null) {
                 QuickChip("photo", onClick = { onAttach(state.editingId) })
             }
+        }
+        if (state.currency != state.baseCurrency) {
+            OutlinedTextField(
+                value = state.fxRate,
+                onValueChange = onFxRate,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                singleLine = true,
+                placeholder = { Text("rate to ${state.baseCurrency}", color = colors.muted) },
+            )
         }
         if (state.noteOpen) {
             OutlinedTextField(
@@ -263,14 +279,8 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
 @Composable
 private fun AmountDisplay(state: CaptureUiState) {
     val colors = WheregoTheme.colors
-    val digits = if (state.digits.isEmpty()) "0" else {
-        val formatted = state.amountLabel.removePrefix("Rp ").ifBlank { "0" }
-        formatted
-    }
     Row(verticalAlignment = Alignment.Bottom) {
-        Text("Rp", style = WheregoType.currencyPrefix, color = colors.muted)
-        Spacer(Modifier.width(8.dp))
-        Text(digits, style = WheregoType.amountHuge, color = colors.ink)
+        Text(state.amountLabel, style = WheregoType.amountHuge, color = colors.ink)
         Spacer(Modifier.width(4.dp))
         Box(
             Modifier

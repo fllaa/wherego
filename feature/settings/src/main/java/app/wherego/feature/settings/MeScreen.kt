@@ -60,6 +60,7 @@ fun MeScreen(
     val scope = rememberCoroutineScope()
     var showCats by remember { mutableStateOf(false) }
     var showAuth by remember { mutableStateOf(false) }
+    var showImport by remember { mutableStateOf(false) }
     when {
         showAuth -> AuthScreen(onBack = { showAuth = false })
         showCats -> CategoryManagerScreen(
@@ -67,6 +68,10 @@ fun MeScreen(
             onBack = { showCats = false },
             onSave = viewModel::updateCategory,
             onArchive = viewModel::archiveCategory,
+        )
+        showImport -> CsvImportScreen(
+            onBack = { showImport = false },
+            onCommit = { text, mapping, skip -> viewModel.importCsv(text, mapping, skip) },
         )
         else -> SettingsScreen(
             state = state,
@@ -89,6 +94,7 @@ fun MeScreen(
                     context.startActivity(Intent.createChooser(send, "Export CSV"))
                 }
             },
+            onImport = { showImport = true },
         )
     }
 }
@@ -105,6 +111,7 @@ fun SettingsScreen(
     onCategories: () -> Unit,
     onSignIn: () -> Unit,
     onExport: () -> Unit,
+    onImport: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
     var name by remember(state.displayName) { mutableStateOf(state.displayName) }
@@ -206,6 +213,12 @@ fun SettingsScreen(
             style = WheregoType.cta,
             color = colors.tealDeep,
             modifier = Modifier.clickable(onClick = onExport),
+        )
+        Text(
+            "Import CSV",
+            style = WheregoType.cta,
+            color = colors.tealDeep,
+            modifier = Modifier.clickable(onClick = onImport),
         )
     }
 }

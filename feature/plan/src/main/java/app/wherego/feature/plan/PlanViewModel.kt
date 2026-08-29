@@ -8,6 +8,7 @@ import app.wherego.core.database.UserProfileStore
 import app.wherego.core.database.zoneOf
 import app.wherego.core.model.Budget
 import app.wherego.core.model.Category
+import app.wherego.core.model.Goal
 import app.wherego.core.model.Recurrence
 import app.wherego.core.model.RecurringRule
 import app.wherego.core.model.TransactionKind
@@ -31,6 +32,7 @@ data class PlanUiState(
     val yearMonth: String = YearMonth.now().toString(),
     val budgets: List<Budget> = emptyList(),
     val rules: List<RecurringRule> = emptyList(),
+    val goals: List<Goal> = emptyList(),
     val categories: List<Category> = emptyList(),
     val currency: String = UserProfile.DEFAULT_CURRENCY,
 )
@@ -53,9 +55,10 @@ class PlanViewModel @Inject constructor(
         combine(
             plan.observeBudgets(ym),
             plan.observeRules(),
+            plan.observeGoals(),
             ledger.categories,
-        ) { budgets, rules, cats ->
-            PlanUiState(ym, budgets, rules, cats.filter { it.kind != "income" }, currency)
+        ) { budgets, rules, goals, cats ->
+            PlanUiState(ym, budgets, rules, goals, cats.filter { it.kind != "income" }, currency)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanUiState())
 
@@ -95,5 +98,13 @@ class PlanViewModel @Inject constructor(
 
     fun deleteRule(id: String) {
         viewModelScope.launch { plan.deleteRule(id) }
+    }
+
+    fun addGoal(name: String, allocatedMinor: Long) {
+        viewModelScope.launch { plan.addGoal(name, allocatedMinor, currency) }
+    }
+
+    fun deleteGoal(id: String) {
+        viewModelScope.launch { plan.deleteGoal(id) }
     }
 }

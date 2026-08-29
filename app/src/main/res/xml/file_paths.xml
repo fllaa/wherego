@@ -2,4 +2,5 @@
 <paths>
     <files-path name="receipts" path="receipts/" />
     <cache-path name="camera" path="camera/" />
+    <cache-path name="pdf" path="pdf/" />
 </paths>

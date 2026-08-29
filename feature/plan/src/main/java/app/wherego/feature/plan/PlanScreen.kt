@@ -31,6 +31,7 @@ import app.wherego.core.designsystem.theme.WheregoType
 import app.wherego.core.model.Budget
 import app.wherego.core.model.Category
 import app.wherego.core.model.DigitBuffer
+import app.wherego.core.model.Goal
 import app.wherego.core.model.MoneyFormatter
 import app.wherego.core.model.Recurrence
 import app.wherego.core.model.RecurringRule
@@ -46,6 +47,8 @@ fun PlanRoute(
         onDeleteBudget = viewModel::deleteBudget,
         onAddRule = viewModel::addRule,
         onDeleteRule = viewModel::deleteRule,
+        onAddGoal = viewModel::addGoal,
+        onDeleteGoal = viewModel::deleteGoal,
     )
 }
 
@@ -56,10 +59,13 @@ fun PlanScreen(
     onDeleteBudget: (String) -> Unit,
     onAddRule: (Long, String, String, String, Int?) -> Unit,
     onDeleteRule: (String) -> Unit,
+    onAddGoal: (String, Long) -> Unit,
+    onDeleteGoal: (String) -> Unit,
 ) {
     val colors = WheregoTheme.colors
     var budgetDialog by remember { mutableStateOf(false) }
     var ruleDialog by remember { mutableStateOf(false) }
+    var goalDialog by remember { mutableStateOf(false) }
     Column(
         Modifier
             .fillMaxSize()
@@ -92,6 +98,17 @@ fun PlanScreen(
                 RuleRow(rule, state.categories, onDelete = { onDeleteRule(rule.id) })
             }
         }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Goals", style = WheregoType.chip, color = colors.ink)
+            Text("Add", color = colors.tealDeep, style = WheregoType.cta, modifier = Modifier.clickable { goalDialog = true })
+        }
+        if (state.goals.isEmpty()) {
+            Text("Earmark a slice. Not another account.", style = WheregoType.meta, color = colors.muted)
+        } else {
+            state.goals.forEach { goal ->
+                GoalRow(goal, onDelete = { onDeleteGoal(goal.id) })
+            }
+        }
     }
     if (budgetDialog) {
         AmountCategoryDialog(
@@ -117,6 +134,16 @@ fun PlanScreen(
                     onAddRule(amount, catId, note, Recurrence.MONTHLY, 1)
                 }
                 ruleDialog = false
+            },
+        )
+    }
+    if (goalDialog) {
+        GoalDialog(
+            currency = state.currency,
+            onDismiss = { goalDialog = false },
+            onConfirm = { name, amount ->
+                onAddGoal(name, amount)
+                goalDialog = false
             },
         )
     }
@@ -212,6 +239,58 @@ private fun AmountCategoryDialog(
             TextButton(onClick = { onConfirm(selected, DigitBuffer.amountMinor(digits), note) }) {
                 Text("Save")
             }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
+}
+
+@Composable
+private fun GoalRow(goal: Goal, onDelete: () -> Unit) {
+    val colors = WheregoTheme.colors
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column {
+            Text(goal.name, style = WheregoType.chip, color = colors.ink)
+            Text(MoneyFormatter.format(goal.allocatedMinor, goal.currency), style = WheregoType.meta, color = colors.muted)
+        }
+        Text("Remove", color = colors.coral, style = WheregoType.meta, modifier = Modifier.clickable(onClick = onDelete))
+    }
+}
+
+@Composable
+private fun GoalDialog(
+    currency: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String, Long) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var digits by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New goal") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(40) },
+                    singleLine = true,
+                    label = { Text("Name") },
+                )
+                Text(MoneyFormatter.format(DigitBuffer.amountMinor(digits), currency))
+                OutlinedTextField(
+                    value = digits,
+                    onValueChange = { digits = it.filter { ch -> ch.isDigit() }.take(12) },
+                    singleLine = true,
+                    label = { Text("Allocated") },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name, DigitBuffer.amountMinor(digits)) }) { Text("Save") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Close") }
