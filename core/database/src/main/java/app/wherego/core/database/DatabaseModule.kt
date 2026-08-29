@@ -20,6 +20,7 @@ object DatabaseModule {
                 WheregoDatabase.MIGRATION_1_2,
                 WheregoDatabase.MIGRATION_2_3,
                 WheregoDatabase.MIGRATION_3_4,
+                WheregoDatabase.MIGRATION_4_5,
             )
             .build()
 
@@ -40,4 +41,7 @@ object DatabaseModule {
 
     @Provides
     fun provideRecurringDao(db: WheregoDatabase): RecurringDao = db.recurringDao()
+
+    @Provides
+    fun provideReceiptDao(db: WheregoDatabase): ReceiptDao = db.receiptDao()
 }

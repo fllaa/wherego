@@ -181,12 +181,12 @@ class CaptureViewModel @Inject constructor(
         _state.update { it.copy(showAllCategories = !it.showAllCategories) }
     }
 
-    fun save(onDone: () -> Unit) {
+    fun save(onDone: (Transaction) -> Unit) {
         val snapshot = _state.value
         if (!snapshot.canSave) return
         viewModelScope.launch {
             val categoryId = snapshot.categoryId ?: return@launch
-            ledger.save(
+            val row = ledger.save(
                 CaptureDraft(
                     kind = snapshot.kind,
                     amountMinor = snapshot.amountMinor,
@@ -199,7 +199,7 @@ class CaptureViewModel @Inject constructor(
                 editingId = snapshot.editingId,
             )
             syncScheduler.enqueueNow()
-            onDone()
+            onDone(row)
         }
     }
 }

@@ -13,8 +13,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SyncStateEntity::class,
         BudgetEntity::class,
         RecurringEntity::class,
+        ReceiptEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
@@ -24,7 +25,7 @@ abstract class WheregoDatabase : RoomDatabase() {
     abstract fun syncStateDao(): SyncStateDao
     abstract fun budgetDao(): BudgetDao
     abstract fun recurringDao(): RecurringDao
-
+    abstract fun receiptDao(): ReceiptDao
 
 
     companion object {
@@ -141,6 +142,29 @@ abstract class WheregoDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_recurring_rules_nextOn` ON `recurring_rules` (`nextOn`)",
+                )
+            }
+        }
+
+        val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `receipts` (
+                        `id` TEXT NOT NULL,
+                        `transactionId` TEXT NOT NULL,
+                        `localPath` TEXT NOT NULL,
+                        `remotePath` TEXT,
+                        `ocrRaw` TEXT NOT NULL,
+                        `ocrAmountMinor` INTEGER,
+                        `uploaded` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_receipts_transactionId` ON `receipts` (`transactionId`)",
                 )
             }
         }

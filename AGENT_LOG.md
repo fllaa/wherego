@@ -87,3 +87,20 @@
 - Blocked: none (H1–H3 still open for real Firebase; S4 does not need them)
 
 
+## 2026-08-30  T0140  slice=S5
+- Goal: receipt photo + OCR confirm; never auto-save OCR
+- Files changed: Room v5 `receipts`; JPEG compress max edge 1080 q70; ML Kit latin OCR; camera/gallery after Park it and edit `photo` chip; `ReceiptUploader` fake + WorkManager fail-open
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:model:testDebugUnitTest` → OcrAmountTest 6 passed (largest IDR, skip year, million grouped, empty, USD scale, 1080 scale)
+  - `./gradlew :core:database:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS
+- Decisions:
+  - Largest plausible amount, not “Total” heuristic — cash/change can beat the line total
+  - Years 1900–2099 dropped when another number exists
+  - OCR amount applies only on “Use it”; “Keep mine” leaves the parked amount
+  - Upload path `users/{uid}/receipts/{id}.jpg` when signed in; FakeAuth is guest so worker no-ops; photo stays in `filesDir/receipts/`
+  - No Coil thumbnail; no EXIF rotate; no Firebase Storage SDK
+- Not done / deferred: S6 goals/FX/Vico/CSV import/PDF; real Storage after H1
+- Blocked: H1–H3 still open (`BLOCKED.md`); S5 usable offline
+
+

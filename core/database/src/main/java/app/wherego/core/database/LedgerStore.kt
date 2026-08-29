@@ -137,6 +137,25 @@ class LedgerStore @Inject constructor(
         return row
     }
 
+    suspend fun setReceiptId(transactionId: String, receiptId: String) {
+        val existing = transactionDao.get(transactionId) ?: return
+        val now = clock.millis()
+        transactionDao.update(existing.copy(receiptId = receiptId, updatedAt = now, dirty = true))
+    }
+
+    suspend fun applyOcrAmount(transactionId: String, amountMinor: Long) {
+        val existing = transactionDao.get(transactionId) ?: return
+        val now = clock.millis()
+        transactionDao.update(
+            existing.copy(
+                amountMinor = amountMinor,
+                amountBaseMinor = amountMinor,
+                updatedAt = now,
+                dirty = true,
+            ),
+        )
+    }
+
     suspend fun softDelete(id: String): Transaction? {
         val existing = transactionDao.get(id) ?: return null
         val now = clock.millis()

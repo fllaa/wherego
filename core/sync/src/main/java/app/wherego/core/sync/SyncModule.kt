@@ -16,4 +16,8 @@ abstract class SyncModule {
     @Binds
     @Singleton
     abstract fun cloud(impl: FakeCloudDataSource): CloudDataSource
+
+    @Binds
+    @Singleton
+    abstract fun receipts(impl: FakeReceiptUploader): ReceiptUploader
 }

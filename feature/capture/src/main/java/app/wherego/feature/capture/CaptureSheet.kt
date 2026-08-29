@@ -33,6 +33,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,10 +61,11 @@ import java.time.ZoneOffset
 fun CaptureSheet(
     editing: Transaction?,
     onDismiss: () -> Unit,
-    onParked: () -> Unit = {},
+    onParked: (Transaction) -> Unit = {},
     viewModel: CaptureViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var attachId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(editing?.id) {
         if (editing == null) viewModel.beginCreate() else viewModel.beginEdit(editing)
     }
@@ -87,7 +91,8 @@ fun CaptureSheet(
             onYesterday = viewModel::onYesterday,
             onPickRequested = viewModel::onPickRequested,
             onToggleMore = viewModel::onToggleMore,
-            onSave = { viewModel.save { onParked(); onDismiss() } },
+            onAttach = { id -> attachId = id },
+            onSave = { viewModel.save { parked -> onParked(parked); onDismiss() } },
         )
     }
     if (state.showDatePicker) {
@@ -118,6 +123,13 @@ fun CaptureSheet(
             DatePicker(state = pickerState)
         }
     }
+    val pendingAttach = attachId
+    if (pendingAttach != null) {
+        ReceiptAttachDialog(
+            transactionId = pendingAttach,
+            onFinished = { attachId = null },
+        )
+    }
 }
 
 @Composable
@@ -134,6 +146,7 @@ private fun CaptureSheetBody(
     onYesterday: () -> Unit,
     onPickRequested: () -> Unit,
     onToggleMore: () -> Unit,
+    onAttach: (String) -> Unit,
     onSave: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
@@ -163,6 +176,9 @@ private fun CaptureSheetBody(
             QuickChip("15rb", onClick = { onQuickAmount(15_000L) })
             QuickChip("25rb", onClick = { onQuickAmount(25_000L) })
             QuickChip("note", selected = state.noteOpen, onClick = onToggleNote)
+            if (state.editingId != null) {
+                QuickChip("photo", onClick = { onAttach(state.editingId) })
+            }
         }
         if (state.noteOpen) {
             OutlinedTextField(

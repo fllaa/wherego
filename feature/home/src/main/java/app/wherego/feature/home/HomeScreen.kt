@@ -57,6 +57,7 @@ import app.wherego.core.designsystem.component.WheregoTxRow
 import app.wherego.core.designsystem.theme.WheregoTheme
 import app.wherego.core.designsystem.theme.WheregoType
 import app.wherego.feature.capture.CaptureSheet
+import app.wherego.feature.capture.ReceiptAttachDialog
 import app.wherego.core.model.Transaction
 import app.wherego.core.sync.CloudDot
 import kotlinx.coroutines.delay
@@ -93,6 +94,7 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var captureOpen by remember { mutableStateOf(false) }
+    var receiptTxId by remember { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
     var goMood by remember { mutableStateOf(GoMood.Idle) }
     LaunchedEffect(state.hasTxToday) {
@@ -272,13 +274,21 @@ fun HomeScreen(
                 captureOpen = false
                 editing = null
             },
-            onParked = {
+            onParked = { parked ->
                 goMood = GoMood.Happy
+                receiptTxId = parked.id
                 scope.launch {
                     delay(800)
                     goMood = GoMood.Idle
                 }
             },
+        )
+    }
+    val pendingReceipt = receiptTxId
+    if (pendingReceipt != null) {
+        ReceiptAttachDialog(
+            transactionId = pendingReceipt,
+            onFinished = { receiptTxId = null },
         )
     }
 }

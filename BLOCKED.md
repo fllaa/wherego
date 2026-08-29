@@ -44,4 +44,6 @@ Collections (when live):
 - `users/{uid}/categories/{id}`
 - `users/{uid}/profile`
 
+Firebase Storage path when live: `users/{uid}/receipts/{id}.jpg`. S5 keeps photos on-device and fail-opens if upload is skipped (guest / no SDK).
+
 Crashlytics is also gated on H1.
