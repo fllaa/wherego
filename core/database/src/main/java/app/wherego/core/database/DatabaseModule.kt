@@ -15,8 +15,16 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): WheregoDatabase =
-        Room.databaseBuilder(context, WheregoDatabase::class.java, "wherego.db").build()
+        Room.databaseBuilder(context, WheregoDatabase::class.java, "wherego.db")
+            .addMigrations(WheregoDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideUserProfileDao(db: WheregoDatabase): UserProfileDao = db.userProfileDao()
+
+    @Provides
+    fun provideCategoryDao(db: WheregoDatabase): CategoryDao = db.categoryDao()
+
+    @Provides
+    fun provideTransactionDao(db: WheregoDatabase): TransactionDao = db.transactionDao()
 }

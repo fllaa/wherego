@@ -2,6 +2,7 @@ package app.wherego
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wherego.core.database.LedgerStore
 import app.wherego.core.database.UserProfileStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userProfileStore: UserProfileStore,
+    private val ledgerStore: LedgerStore,
 ) : ViewModel() {
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
@@ -20,6 +22,7 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             userProfileStore.ensureGuest()
+            ledgerStore.seedCategoriesIfEmpty()
             _ready.value = true
         }
     }

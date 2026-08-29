@@ -17,3 +17,21 @@
   - No `INTERNET` permission. Capture/Firebase/mascot art not started
 - Not done / deferred: Fredoka/Nunito, capture FAB, category seed, MoneyFormatter
 - Blocked: none
+
+## 2026-08-30  T0038  slice=S1
+- Goal: add expense/income to Room and see it on Home (20-second loop)
+- Files changed: `core/model` Money/CurrencyScale/MoneyFormatter/presets; Room v2 categories+transactions+migration 1→2; `LedgerStore`; capture sheet; Home FAB/list/swipe/undo/duplicate
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:database:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS (database 2 passed: insert+month aggregate+soft delete, duplicate; app 6 passed: IDR 0/18000/1250000 + scale + guest)
+  - extra `./gradlew :core:model:testDebugUnitTest` → SUCCESS
+- Decisions:
+  - Room **v2** with `MIGRATION_1_2` (S0 was profile-only v1)
+  - Transport emoji `🚕`, Fun `🎬` from design-system (playbook had 🛵/🎮)
+  - Date chips Today / Yesterday / Pick (playbook) plus mock quick amounts 10rb/15rb/25rb and `000` key
+  - Save copy `Park it`; week window Monday–today in `Asia/Jakarta`
+  - Room tests via Robolectric SDK 34 + in-memory DB
+  - No `INTERNET`. Guest still local-only
+- Not done / deferred: Fredoka/Nunito, budget card chrome (S4), mascot art (S2)
+- Blocked: none. Human gate **H5** (real-phone 20s feel) is not agent-certified
+

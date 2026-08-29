@@ -43,6 +43,41 @@ object WheregoType {
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
     )
+    val amountHuge = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 52.sp,
+    )
+    val currencyPrefix = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp,
+    )
+    val key = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.Medium,
+        fontSize = 24.sp,
+    )
+    val cta = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 19.sp,
+    )
+    val txTitle = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 15.sp,
+    )
+    val txAmount = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+    )
+    val chip = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+    )
 
     fun typography(): Typography = Typography(
         headlineLarge = heroAmount,
