@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -53,8 +54,9 @@ import app.wherego.core.designsystem.component.WheregoStreakPill
 import app.wherego.core.designsystem.component.WheregoTxRow
 import app.wherego.core.designsystem.theme.WheregoTheme
 import app.wherego.core.designsystem.theme.WheregoType
-import app.wherego.core.model.Transaction
 import app.wherego.feature.capture.CaptureSheet
+import app.wherego.core.model.Transaction
+import app.wherego.core.sync.CloudDot
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -126,6 +128,19 @@ fun HomeScreen(
                         style = WheregoType.greeting,
                         color = colors.ink,
                         modifier = Modifier.weight(1f),
+                    )
+                    Box(
+                        Modifier
+                            .padding(end = 8.dp)
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when (state.cloudDot) {
+                                    CloudDot.Synced -> colors.teal
+                                    CloudDot.Pending -> colors.coral
+                                    CloudDot.Offline -> colors.muted
+                                },
+                            ),
                     )
                     WheregoStreakPill(days = state.streakDays)
                 }

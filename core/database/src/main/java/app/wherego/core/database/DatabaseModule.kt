@@ -16,7 +16,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): WheregoDatabase =
         Room.databaseBuilder(context, WheregoDatabase::class.java, "wherego.db")
-            .addMigrations(WheregoDatabase.MIGRATION_1_2)
+            .addMigrations(WheregoDatabase.MIGRATION_1_2, WheregoDatabase.MIGRATION_2_3)
             .build()
 
     @Provides
@@ -27,4 +27,7 @@ object DatabaseModule {
 
     @Provides
     fun provideTransactionDao(db: WheregoDatabase): TransactionDao = db.transactionDao()
+
+    @Provides
+    fun provideSyncStateDao(db: WheregoDatabase): SyncStateDao = db.syncStateDao()
 }

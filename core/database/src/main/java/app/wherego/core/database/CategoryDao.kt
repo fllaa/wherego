@@ -27,6 +27,9 @@ interface CategoryDao {
     @Update
     suspend fun update(row: CategoryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(row: CategoryEntity)
+
     @Query("SELECT * FROM categories WHERE deletedAt IS NULL ORDER BY archived ASC, sortOrder ASC")
     fun observeAll(): Flow<List<CategoryEntity>>
 

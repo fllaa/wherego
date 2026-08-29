@@ -6,6 +6,7 @@ import app.wherego.core.database.LedgerStore
 import app.wherego.core.database.UserProfileStore
 import app.wherego.core.datastore.ThemePreferences
 import app.wherego.core.model.ThemeMode
+import app.wherego.core.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ class MainViewModel @Inject constructor(
     private val userProfileStore: UserProfileStore,
     private val ledgerStore: LedgerStore,
     themePreferences: ThemePreferences,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
@@ -40,6 +42,8 @@ class MainViewModel @Inject constructor(
             userProfileStore.ensureGuest()
             ledgerStore.seedCategoriesIfEmpty()
             _ready.value = true
+            syncScheduler.enqueuePeriodic()
+            syncScheduler.enqueueNow()
         }
     }
 }

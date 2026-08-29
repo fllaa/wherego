@@ -35,4 +35,19 @@ data class CategoryEntity(
         updatedAt = updatedAt,
         deletedAt = deletedAt,
     )
+
+    companion object {
+        fun from(model: Category): CategoryEntity = CategoryEntity(
+            id = model.id,
+            name = model.name,
+            emoji = model.emoji,
+            colorHex = model.colorHex,
+            kind = model.kind,
+            isPreset = model.isPreset,
+            archived = model.archived,
+            sortOrder = model.sortOrder,
+            updatedAt = model.updatedAt,
+            deletedAt = model.deletedAt,
+        )
+    }
 }

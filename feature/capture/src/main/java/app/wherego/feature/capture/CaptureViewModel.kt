@@ -6,6 +6,7 @@ import app.wherego.core.database.CaptureDraft
 import app.wherego.core.database.LedgerStore
 import app.wherego.core.database.UserProfileStore
 import app.wherego.core.database.zoneOf
+import app.wherego.core.sync.SyncScheduler
 import app.wherego.core.model.Category
 import app.wherego.core.model.DigitBuffer
 import app.wherego.core.model.MoneyFormatter
@@ -57,6 +58,7 @@ data class CaptureUiState(
 class CaptureViewModel @Inject constructor(
     private val ledger: LedgerStore,
     private val profiles: UserProfileStore,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CaptureUiState())
     val state: StateFlow<CaptureUiState> = _state.asStateFlow()
@@ -196,6 +198,7 @@ class CaptureViewModel @Inject constructor(
                 ),
                 editingId = snapshot.editingId,
             )
+            syncScheduler.enqueueNow()
             onDone()
         }
     }

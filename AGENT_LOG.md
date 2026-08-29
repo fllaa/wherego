@@ -53,3 +53,20 @@
 - Blocked: none. H5 still human.
 
 
+## 2026-08-30  T0052  slice=S3
+- Goal: cloud sync + Google — H1 H2 H3 missing, so interfaces + fake + BLOCKED.md
+- Files changed: `AuthRepository`/`CloudDataSource`; `SyncMerge` LWW; `FakeAuthRepository`/`FakeCloudDataSource` (filesDir); `SyncEngine`+WorkManager 15min; Room v3 `sync_state`; Home cloud dot; Me “Sign in to backup”; AUTH stub
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:sync:testDebugUnitTest` → 4 passed (remote newer wins, local dirty push, clear dirty if updatedAt unchanged)
+  - `./gradlew :core:database:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS
+- Decisions:
+  - No Firebase SDK, no `google-services.json`, no Crashlytics, no INTERNET permission
+  - Guest cloud dot = Offline (no firebaseUid). Capture never blocked
+  - Fake cloud writes `filesDir/wherego-cloud/{uid}/…` for when uid exists
+  - WorkManager via EntryPoint (no HiltWorkerFactory)
+  - Categories have no `dirty`; full push then LWW pull
+- Not done / deferred: real Credential Manager, Firestore, Crashlytics — see BLOCKED.md
+- Blocked: H1 H2 H3 — `BLOCKED.md`
+
+

@@ -15,6 +15,15 @@ interface TransactionDao {
     @Update
     suspend fun update(row: TransactionEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(row: TransactionEntity)
+
+    @Query("SELECT * FROM transactions WHERE dirty = 1")
+    suspend fun listDirty(): List<TransactionEntity>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE dirty = 1")
+    fun observeDirtyCount(): Flow<Int>
+
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     suspend fun get(id: String): TransactionEntity?
 

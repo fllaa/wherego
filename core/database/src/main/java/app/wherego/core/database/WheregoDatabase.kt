@@ -10,14 +10,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         UserProfileEntity::class,
         CategoryEntity::class,
         TransactionEntity::class,
+        SyncStateEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao
+    abstract fun syncStateDao(): SyncStateDao
+
 
     companion object {
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
@@ -73,6 +76,21 @@ abstract class WheregoDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_transactions_deletedAt` ON `transactions` (`deletedAt`)",
+                )
+            }
+        }
+
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `sync_state` (
+                        `collection` TEXT NOT NULL,
+                        `lastPullEpoch` INTEGER NOT NULL,
+                        `lastPushEpoch` INTEGER NOT NULL,
+                        PRIMARY KEY(`collection`)
+                    )
+                    """.trimIndent(),
                 )
             }
         }

@@ -39,6 +39,7 @@ import app.wherego.core.designsystem.theme.parseHexColor
 import app.wherego.core.model.Category
 import app.wherego.core.model.MoneyFormatter
 import app.wherego.core.model.ThemeMode
+import app.wherego.feature.auth.AuthScreen
 
 private val Palette = listOf(
     "#FF6B4A", "#0A7F70", "#4CA8FF", "#8B7CF6", "#E85A9B",
@@ -52,15 +53,16 @@ fun MeScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val balance by viewModel.balanceNow.collectAsStateWithLifecycle()
     var showCats by remember { mutableStateOf(false) }
-    if (showCats) {
-        CategoryManagerScreen(
+    var showAuth by remember { mutableStateOf(false) }
+    when {
+        showAuth -> AuthScreen(onBack = { showAuth = false })
+        showCats -> CategoryManagerScreen(
             categories = state.categories,
             onBack = { showCats = false },
             onSave = viewModel::updateCategory,
             onArchive = viewModel::archiveCategory,
         )
-    } else {
-        SettingsScreen(
+        else -> SettingsScreen(
             state = state,
             balanceMinor = balance,
             onDisplayName = viewModel::onDisplayName,
@@ -69,6 +71,7 @@ fun MeScreen(
             onBalanceBackspace = viewModel::onBalanceBackspace,
             onSetBalance = viewModel::setBalanceTo,
             onCategories = { showCats = true },
+            onSignIn = { showAuth = true },
         )
     }
 }
@@ -83,6 +86,7 @@ fun SettingsScreen(
     onBalanceBackspace: () -> Unit,
     onSetBalance: () -> Unit,
     onCategories: () -> Unit,
+    onSignIn: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
     var name by remember(state.displayName) { mutableStateOf(state.displayName) }
@@ -97,6 +101,12 @@ fun SettingsScreen(
     ) {
         Text("Me", style = WheregoType.cardTitle, color = colors.ink)
         Text("Guest · offline", style = WheregoType.meta, color = colors.muted)
+        Text(
+            "Sign in to backup",
+            style = WheregoType.cta,
+            color = colors.tealDeep,
+            modifier = Modifier.clickable(onClick = onSignIn),
+        )
         OutlinedTextField(
             value = name,
             onValueChange = {
