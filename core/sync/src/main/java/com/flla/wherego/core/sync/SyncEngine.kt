@@ -22,15 +22,23 @@ class SyncEngine @Inject constructor(
     private val syncState: SyncStateDao,
     private val clock: Clock,
 ) {
-    suspend fun sync() {
-        val uid = auth.current().firebaseUid ?: return
-        if (!cloud.available) return
+    /**
+     * @return whether the local profile is onboarded after this pass — true if we
+     * adopted an already-onboarded cloud profile on reinstall.
+     */
+    suspend fun sync(): Boolean {
+        val uid = auth.current().firebaseUid ?: return profiles.get()?.onboardingDone == true
+        if (!cloud.available) return profiles.get()?.onboardingDone == true
+        val restoring = profiles.get()?.onboardingDone != true
+        if (restoring) pullProfile(uid)
+        val restored = restoring && profiles.get()?.onboardingDone == true
         pushTransactions(uid)
-        pushCategories(uid)
+        if (!restored) pushCategories(uid)
         pushProfile(uid)
         pullTransactions(uid)
-        pullCategories(uid)
-        pullProfile(uid)
+        pullCategories(uid, preferRemote = restored)
+        if (!restoring) pullProfile(uid)
+        return profiles.get()?.onboardingDone == true
     }
 
     private suspend fun pushTransactions(uid: String) {
@@ -74,17 +82,20 @@ class SyncEngine @Inject constructor(
         markPushed("categories")
     }
 
-    private suspend fun pullCategories(uid: String) {
+    private suspend fun pullCategories(uid: String, preferRemote: Boolean = false) {
         val since = syncState.get("categories")?.lastPullEpoch ?: 0L
         cloud.pullCategories(uid, since).forEach { incoming ->
             val local = categories.get(incoming.id)
-            when (
+            val decision = if (preferRemote) {
+                MergeDecision.ApplyRemote
+            } else {
                 SyncMerge.decide(
                     localUpdatedAt = local?.updatedAt,
                     localDirty = false,
                     remoteUpdatedAt = incoming.updatedAt,
                 )
-            ) {
+            }
+            when (decision) {
                 MergeDecision.ApplyRemote -> categories.upsert(CategoryEntity.from(incoming))
                 MergeDecision.PushLocal, MergeDecision.KeepLocal -> Unit
             }
@@ -103,14 +114,22 @@ class SyncEngine @Inject constructor(
         val remote = cloud.pullProfile(uid, since) ?: return
         val local = profiles.get()
         when (
-            SyncMerge.decide(
+            SyncMerge.decideProfile(
+                localOnboardingDone = local?.onboardingDone,
                 localUpdatedAt = local?.updatedAt,
-                localDirty = false,
+                remoteOnboardingDone = remote.onboardingDone,
                 remoteUpdatedAt = remote.updatedAt,
             )
         ) {
             MergeDecision.ApplyRemote -> {
-                val merged = remote.copy(id = local?.id ?: remote.id)
+                val merged = remote.copy(
+                    id = local?.id ?: remote.id,
+                    firebaseUid = local?.firebaseUid ?: remote.firebaseUid,
+                    googleSub = local?.googleSub ?: remote.googleSub,
+                    email = local?.email ?: remote.email,
+                    displayName = local?.displayName ?: remote.displayName,
+                    photoUrl = local?.photoUrl ?: remote.photoUrl,
+                )
                 if (local != null) {
                     profiles.update(UserProfileEntity.from(merged))
                 }

@@ -55,31 +55,25 @@ private const val PROOF_CARD_TILT = 2.5f
 /**
  * First-run gate from `pencil-new.pen` → `Sign In`. Backup is offered here, never
  * required: "Try it first, sign in later" drops straight into onboarding, so capture
- * is never blocked on an account.
+ * is never blocked on an account. Continue with Google restores an onboarded cloud
+ * profile and skips the tour — reinstall is not a new user.
  */
 @Composable
 fun WelcomeScreen(
-    onContinue: () -> Unit,
+    onContinue: (fromBackup: Boolean) -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val colors = WheregoTheme.colors
     val context = LocalContext.current
     val authState by viewModel.state.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
     var message by remember { mutableStateOf<String?>(null) }
 
     fun onGoogle() {
-        if (authState.signedIn) {
-            onContinue()
-            return
-        }
-        val activity = context.findActivity()
-        if (activity == null) {
-            message = "Need an Activity to sign in."
-            return
-        }
-        viewModel.signIn(activity) { result ->
+        if (busy) return
+        viewModel.signIn(context.findActivity()) { result ->
             message = result
-            if (result == SIGN_IN_OK) onContinue()
+            if (result == SIGN_IN_OK) onContinue(viewModel.fromBackup)
         }
     }
 
@@ -127,13 +121,17 @@ fun WelcomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            GoogleButton(signedIn = authState.signedIn, onClick = ::onGoogle)
+            GoogleButton(
+                signedIn = authState.signedIn,
+                busy = busy,
+                onClick = ::onGoogle,
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
                     .clip(RoundedCornerShape(99.dp))
-                    .clickable(onClick = onContinue)
+                    .clickable(enabled = !busy, onClick = { onContinue(false) })
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text("Try it first, sign in later", style = WheregoType.chip, color = colors.ink)
@@ -221,7 +219,7 @@ private fun ProofCard() {
 }
 
 @Composable
-private fun GoogleButton(signedIn: Boolean, onClick: () -> Unit) {
+private fun GoogleButton(signedIn: Boolean, busy: Boolean, onClick: () -> Unit) {
     val colors = WheregoTheme.colors
     val shape = RoundedCornerShape(22.dp)
     Row(
@@ -232,14 +230,18 @@ private fun GoogleButton(signedIn: Boolean, onClick: () -> Unit) {
             .clip(shape)
             .background(colors.sheet)
             .border(BorderStroke(2.5.dp, colors.ink), shape)
-            .clickable(onClick = onClick),
+            .clickable(enabled = !busy, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         Text("G", style = WheregoType.buttonLabel.copy(fontSize = 22.sp), color = Color(0xFF4285F4))
         Spacer(Modifier.width(11.dp))
         Text(
-            if (signedIn) "Continue" else "Continue with Google",
+            when {
+                busy -> "Restoring…"
+                signedIn -> "Continue"
+                else -> "Continue with Google"
+            },
             style = WheregoType.buttonLabel.copy(fontSize = 17.sp),
             color = colors.ink,
         )

@@ -26,6 +26,27 @@ object SyncMerge {
         return MergeDecision.KeepLocal
     }
 
+    /**
+     * Reinstall creates a fresh guest with `updatedAt = now`. Last-write-wins would
+     * keep that placeholder and hide an already-onboarded cloud profile. A guest
+     * that has not finished the tour never beats a remote profile that has.
+     */
+    fun decideProfile(
+        localOnboardingDone: Boolean?,
+        localUpdatedAt: Long?,
+        remoteOnboardingDone: Boolean,
+        remoteUpdatedAt: Long,
+    ): MergeDecision {
+        if (localOnboardingDone != true && remoteOnboardingDone) {
+            return MergeDecision.ApplyRemote
+        }
+        return decide(
+            localUpdatedAt = localUpdatedAt,
+            localDirty = false,
+            remoteUpdatedAt = remoteUpdatedAt,
+        )
+    }
+
     fun shouldClearDirty(updatedAtBeforePush: Long, updatedAtAfterPush: Long): Boolean =
         updatedAtBeforePush == updatedAtAfterPush
 }

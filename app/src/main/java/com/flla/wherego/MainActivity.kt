@@ -44,12 +44,16 @@ class MainActivity : ComponentActivity() {
                 val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
                 val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
                 var openCaptureOnStart by remember { mutableStateOf(false) }
+                var skipOnboarding by remember { mutableStateOf(false) }
                 when {
                     !ready || welcomeSeen == null -> GuestSplash()
                     welcomeSeen == false -> WelcomeScreen(
-                        onContinue = { viewModel.setWelcomeSeen(true) },
+                        onContinue = { fromBackup ->
+                            skipOnboarding = fromBackup
+                            viewModel.setWelcomeSeen(true)
+                        },
                     )
-                    !onboardingDone -> OnboardingRoute(
+                    !onboardingDone && !skipOnboarding -> OnboardingRoute(
                         onBackToWelcome = { viewModel.setWelcomeSeen(false) },
                         onFinish = { openCapture -> openCaptureOnStart = openCapture },
                     )

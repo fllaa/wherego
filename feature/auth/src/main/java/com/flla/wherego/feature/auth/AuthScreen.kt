@@ -29,11 +29,14 @@ import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.sync.AuthRepository
 import com.flla.wherego.core.sync.AuthState
+import com.flla.wherego.core.sync.SyncEngine
 import com.flla.wherego.core.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -41,6 +44,7 @@ import kotlinx.coroutines.launch
 class AuthViewModel @Inject constructor(
     private val auth: AuthRepository,
     private val syncScheduler: SyncScheduler,
+    private val syncEngine: SyncEngine,
 ) : ViewModel() {
     val state: StateFlow<AuthState> = auth.state.stateIn(
         viewModelScope,
@@ -48,14 +52,38 @@ class AuthViewModel @Inject constructor(
         AuthState.Guest,
     )
 
-    fun signIn(activity: Activity, onResult: (String) -> Unit) {
+    private val _busy = MutableStateFlow(false)
+    val busy: StateFlow<Boolean> = _busy.asStateFlow()
+
+    /** True when the last successful Google continue adopted an onboarded cloud profile. */
+    var fromBackup: Boolean = false
+        private set
+
+    fun signIn(activity: Activity?, onResult: (String) -> Unit) {
+        if (_busy.value) return
         viewModelScope.launch {
-            val result = auth.signIn(activity)
-            result.onSuccess {
+            _busy.value = true
+            try {
+                if (!auth.current().signedIn) {
+                    val act = activity ?: run {
+                        onResult("Need an Activity to sign in.")
+                        return@launch
+                    }
+                    auth.signIn(act).onFailure {
+                        onResult(it.message ?: "Sign-in didn’t land.")
+                        return@launch
+                    }
+                }
+                val onboarded = runCatching { syncEngine.sync() }
+                    .getOrElse {
+                        onResult(it.message ?: "Couldn’t restore backup.")
+                        return@launch
+                    }
+                fromBackup = onboarded
                 syncScheduler.enqueueNow()
                 onResult("Backup is on. Capture never waited.")
-            }.onFailure {
-                onResult(it.message ?: "Sign-in didn’t land.")
+            } finally {
+                _busy.value = false
             }
         }
     }
