@@ -12,8 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,6 +36,7 @@ fun WheregoTxRow(
     amountLabel: String,
     badgeSoftHex: String,
     modifier: Modifier = Modifier,
+    hasReceipt: Boolean = false,
 ) {
     val colors = WheregoTheme.colors
     Row(
@@ -52,7 +58,20 @@ fun WheregoTxRow(
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(title, style = WheregoType.txTitle, color = colors.ink)
-            Text(subtitle, style = WheregoType.helper, color = colors.muted)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(subtitle, style = WheregoType.helper, color = colors.muted)
+                if (hasReceipt) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.ReceiptLong,
+                        contentDescription = stringResource(R.string.receipt_parked_title),
+                        tint = colors.teal,
+                        modifier = Modifier.size(13.dp),
+                    )
+                }
+            }
         }
         Text(amountLabel, style = WheregoType.txAmount, color = colors.ink)
     }

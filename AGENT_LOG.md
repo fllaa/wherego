@@ -306,3 +306,21 @@
   `rotation`, `effect`, `opacity`, `layoutPosition` and `strokeAlignment`, not just the box model
 - Blocked: none
 
+
+## 2026-08-30  T0615  ux-receipt
+- Goal: remove redundant post-save receipt attach dialog; enable fast in-sheet receipt capture and long-press receipt-first scan
+- Files changed:
+  - `:core:i18n` — receipt strings for source picker, attached options, and OCR banner
+  - `:core:database` — `CaptureDraft.receiptId`, `LedgerStore.save` with `draftId` and `receiptId`, safe `occurredAtForDate`
+  - `:core:designsystem` — `WheregoTabBar` `onScanReceipt` via `combinedClickable`, `WheregoTxRow` receipt indicator icon
+  - `:feature:capture` — in-sheet photo chip with OCR suggestion banner and actions; removed blocking post-park modal; new `CaptureViewModelTest`
+  - `:feature:home` & `:feature:stories` — `hasReceipt` propagated to transaction rows
+  - `:app` — `WheregoNavHost` wired long-press `+` to fast scan; removed root `ReceiptAttachDialog`
+- Commands:
+  - `./gradlew testDebugUnitTest :app:assembleDebug` → SUCCESS
+- Decisions:
+  - Instant "Park it": saving closes the sheet immediately without post-save modal interruptions
+  - Inline Photo: photo chip accessible during both create and edit in `CaptureSheet`
+  - Fast Scan: long-pressing `+` opens camera $\to$ OCR auto-fills amount and opens sheet for 1-tap categorization
+- Blocked: none
+

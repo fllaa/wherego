@@ -305,6 +305,7 @@ fun StoriesScreen(
                             subtitle = tx.time?.let { "$it · $name" } ?: name,
                             amountLabel = tx.amountLabel,
                             badgeSoftHex = tx.badgeSoftHex,
+                            hasReceipt = tx.hasReceipt,
                         )
                     }
                 }

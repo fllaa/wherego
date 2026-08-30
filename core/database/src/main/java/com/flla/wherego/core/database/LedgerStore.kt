@@ -48,6 +48,7 @@ data class CaptureDraft(
     val occurredOn: String,
     val occurredAt: Long?,
     val recurringId: String? = null,
+    val receiptId: String? = null,
     val fxRateToBase: String = "1",
     val baseCurrency: String = UserProfile.DEFAULT_CURRENCY,
 )
@@ -101,13 +102,13 @@ class LedgerStore @Inject constructor(
 
     suspend fun getTransaction(id: String): Transaction? = transactionDao.get(id)?.toModel()
 
-    suspend fun save(draft: CaptureDraft, editingId: String?): Transaction {
+    suspend fun save(draft: CaptureDraft, editingId: String?, draftId: String? = null): Transaction {
         val now = clock.millis()
         val rate = draft.fxRateToBase.ifBlank { "1" }
         val baseMinor = FxConvert.toBase(draft.amountMinor, draft.currency, rate, draft.baseCurrency)
         val row = if (editingId == null) {
             Transaction(
-                id = ulid.next(),
+                id = draftId ?: ulid.next(),
                 kind = draft.kind,
                 amountMinor = draft.amountMinor,
                 currency = draft.currency,
@@ -118,7 +119,7 @@ class LedgerStore @Inject constructor(
                 occurredOn = draft.occurredOn,
                 occurredAt = draft.occurredAt,
                 recurringId = draft.recurringId,
-                receiptId = null,
+                receiptId = draft.receiptId,
                 createdAt = now,
                 updatedAt = now,
                 deletedAt = null,
@@ -137,6 +138,7 @@ class LedgerStore @Inject constructor(
                 note = draft.note,
                 occurredOn = draft.occurredOn,
                 occurredAt = draft.occurredAt,
+                receiptId = draft.receiptId ?: existing.receiptId,
                 updatedAt = now,
                 dirty = true,
             )
@@ -256,7 +258,7 @@ class LedgerStore @Inject constructor(
 
     fun occurredAtForDate(occurredOn: String, zoneId: ZoneId): Long {
         val today = LocalDate.now(clock.withZone(zoneId))
-        val date = LocalDate.parse(occurredOn)
+        val date = runCatching { LocalDate.parse(occurredOn) }.getOrNull() ?: today
         return if (date == today) {
             clock.millis()
         } else {

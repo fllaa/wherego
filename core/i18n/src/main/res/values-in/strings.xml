@@ -154,6 +154,11 @@
     <string name="receipt_parked_body">Fotonya tetap di HP ini.</string>
     <string name="receipt_attach_title">Lampirin struk?</string>
     <string name="receipt_attach_body">Kamera atau galeri. Foto tetap di HP ini kalau backup belum masuk.</string>
+    <string name="receipt_photo_source_title">Foto struk</string>
+    <string name="receipt_photo_change_title">Struk terlampir</string>
+    <string name="receipt_photo_replace">Ganti foto</string>
+    <string name="receipt_photo_remove">Hapus foto</string>
+    <string name="receipt_ocr_banner_title">Struk terbaca: %1$s</string>
     <string name="receipt_camera">Kamera</string>
     <string name="receipt_gallery">Galeri</string>
     <string name="receipt_err_save_photo">Nggak bisa simpan fotonya</string>

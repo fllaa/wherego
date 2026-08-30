@@ -42,18 +42,24 @@ class SyncScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     fun enqueueNow() {
-        val request = OneTimeWorkRequestBuilder<SyncWorker>().build()
-        WorkManager.getInstance(context)
-            .enqueueUniqueWork(UNIQUE_NOW, ExistingWorkPolicy.REPLACE, request)
+        try {
+            val request = OneTimeWorkRequestBuilder<SyncWorker>().build()
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork(UNIQUE_NOW, ExistingWorkPolicy.REPLACE, request)
+        } catch (_: Exception) {
+        }
     }
 
     fun enqueuePeriodic() {
-        val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES).build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            UNIQUE_PERIODIC,
-            ExistingPeriodicWorkPolicy.KEEP,
-            request,
-        )
+        try {
+            val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES).build()
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                UNIQUE_PERIODIC,
+                ExistingPeriodicWorkPolicy.KEEP,
+                request,
+            )
+        } catch (_: Exception) {
+        }
     }
 
     private companion object {

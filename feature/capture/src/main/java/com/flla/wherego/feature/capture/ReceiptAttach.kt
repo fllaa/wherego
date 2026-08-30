@@ -131,8 +131,7 @@ fun ReceiptAttachDialog(
         }
     }
 }
-
-private fun cameraCaptureUri(context: Context): Uri {
+fun cameraCaptureUri(context: Context): Uri {
     val dir = File(context.cacheDir, "camera").apply { mkdirs() }
     val file = File(dir, "shot.jpg")
     return FileProvider.getUriForFile(context, "${context.packageName}.files", file)

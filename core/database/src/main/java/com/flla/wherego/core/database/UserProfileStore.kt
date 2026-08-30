@@ -18,6 +18,7 @@ class UserProfileStore @Inject constructor(
 ) {
     val profile: Flow<UserProfile?> = dao.observe().map { it?.toModel() }
 
+    suspend fun get(): UserProfile? = dao.get()?.toModel()
     suspend fun ensureGuest(): UserProfile {
         dao.get()?.toModel()?.let { return it }
         val created = UserProfile.guest(id = ulid.next(), nowMillis = clock.millis())

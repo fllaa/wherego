@@ -4,9 +4,11 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -65,11 +67,13 @@ enum class WheregoTab(
     Me(R.string.ds_tab_me, Icons.Outlined.Person, Icons.Filled.Person),
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WheregoTabBar(
     selected: WheregoTab,
     onSelect: (WheregoTab) -> Unit,
     onAdd: () -> Unit,
+    onScanReceipt: () -> Unit = onAdd,
     modifier: Modifier = Modifier,
 ) {
     val colors = WheregoTheme.colors
@@ -112,7 +116,10 @@ fun WheregoTabBar(
                 .border(2.5.dp, colors.ink, CircleShape)
                 .clip(CircleShape)
                 .background(colors.teal)
-                .clickable(onClick = onAdd),
+                .combinedClickable(
+                    onClick = onAdd,
+                    onLongClick = onScanReceipt,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

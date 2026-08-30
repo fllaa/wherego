@@ -58,13 +58,16 @@ class ReceiptUploadScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     fun enqueue(receiptId: String) {
-        val request = OneTimeWorkRequestBuilder<ReceiptUploadWorker>()
-            .setInputData(workDataOf(ReceiptUploadWorker.KEY_ID to receiptId))
-            .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "receipt-$receiptId",
-            ExistingWorkPolicy.REPLACE,
-            request,
-        )
+        try {
+            val request = OneTimeWorkRequestBuilder<ReceiptUploadWorker>()
+                .setInputData(workDataOf(ReceiptUploadWorker.KEY_ID to receiptId))
+                .build()
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "receipt-$receiptId",
+                ExistingWorkPolicy.REPLACE,
+                request,
+            )
+        } catch (_: Exception) {
+        }
     }
 }

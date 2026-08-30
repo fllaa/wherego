@@ -49,6 +49,7 @@ data class TxRowUi(
     val emoji: String,
     val badgeSoftHex: String,
     val transaction: Transaction,
+    val hasReceipt: Boolean = false,
 )
 
 data class HomeUiState(
@@ -192,6 +193,7 @@ class HomeViewModel @Inject constructor(
             emoji = category?.emoji ?: "📦",
             badgeSoftHex = category?.softColorHex ?: PresetCategories.softHex(tx.categoryId),
             transaction = tx,
+            hasReceipt = tx.receiptId != null,
         )
     }
 }

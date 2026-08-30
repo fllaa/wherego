@@ -1,5 +1,12 @@
 package com.flla.wherego.feature.capture
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -40,11 +47,13 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -70,6 +79,7 @@ import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.model.Category
+import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
 import java.time.Instant
@@ -81,13 +91,53 @@ import java.time.ZoneOffset
 fun CaptureSheet(
     editing: Transaction?,
     onDismiss: () -> Unit,
+    initialReceiptUri: Uri? = null,
     onParked: (Transaction) -> Unit = {},
     viewModel: CaptureViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var attachId by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(editing?.id) {
-        if (editing == null) viewModel.beginCreate() else viewModel.beginEdit(editing)
+    val context = LocalContext.current
+    var showSourcePicker by remember { mutableStateOf(false) }
+    var showAttachedOptions by remember { mutableStateOf(false) }
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val pickGallery = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri != null) viewModel.attachReceipt(uri)
+    }
+
+    val takePicture = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { ok ->
+        val uri = cameraUri
+        if (ok && uri != null) viewModel.attachReceipt(uri)
+    }
+
+    val requestCamera = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            val uri = cameraCaptureUri(context)
+            cameraUri = uri
+            takePicture.launch(uri)
+        }
+    }
+
+    fun launchCamera() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            val uri = cameraCaptureUri(context)
+            cameraUri = uri
+            takePicture.launch(uri)
+        } else {
+            requestCamera.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    LaunchedEffect(editing?.id, initialReceiptUri) {
+        if (editing == null) viewModel.beginCreate(initialReceiptUri) else viewModel.beginEdit(editing)
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val colors = WheregoTheme.colors
@@ -111,10 +161,65 @@ fun CaptureSheet(
             onYesterday = viewModel::onYesterday,
             onPickRequested = viewModel::onPickRequested,
             onToggleMore = viewModel::onToggleMore,
-            onAttach = { id -> attachId = id },
+            onPhotoClick = {
+                if (state.hasReceipt) {
+                    showAttachedOptions = true
+                } else {
+                    showSourcePicker = true
+                }
+            },
+            onApplyOcrAmount = viewModel::applySuggestedOcrAmount,
+            onDismissOcrAmount = viewModel::dismissSuggestedOcrAmount,
             onCycleCurrency = viewModel::cycleCurrency,
             onFxRate = viewModel::onFxRate,
             onSave = { viewModel.save { parked -> onParked(parked); onDismiss() } },
+        )
+    }
+    if (showSourcePicker) {
+        AlertDialog(
+            onDismissRequest = { showSourcePicker = false },
+            title = { Text(stringResource(R.string.receipt_photo_source_title)) },
+            text = { Text(stringResource(R.string.receipt_attach_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSourcePicker = false
+                        launchCamera()
+                    },
+                ) { Text(stringResource(R.string.receipt_camera)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showSourcePicker = false
+                        pickGallery.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                        )
+                    },
+                ) { Text(stringResource(R.string.receipt_gallery)) }
+            },
+        )
+    }
+    if (showAttachedOptions) {
+        AlertDialog(
+            onDismissRequest = { showAttachedOptions = false },
+            title = { Text(stringResource(R.string.receipt_photo_change_title)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showAttachedOptions = false
+                        showSourcePicker = true
+                    },
+                ) { Text(stringResource(R.string.receipt_photo_replace)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showAttachedOptions = false
+                        viewModel.removeReceipt()
+                    },
+                ) { Text(stringResource(R.string.receipt_photo_remove)) }
+            },
         )
     }
     if (state.showDatePicker) {
@@ -145,13 +250,6 @@ fun CaptureSheet(
             DatePicker(state = pickerState)
         }
     }
-    val pendingAttach = attachId
-    if (pendingAttach != null) {
-        ReceiptAttachDialog(
-            transactionId = pendingAttach,
-            onFinished = { attachId = null },
-        )
-    }
 }
 
 @Composable
@@ -168,7 +266,9 @@ private fun CaptureSheetBody(
     onYesterday: () -> Unit,
     onPickRequested: () -> Unit,
     onToggleMore: () -> Unit,
-    onAttach: (String) -> Unit,
+    onPhotoClick: () -> Unit,
+    onApplyOcrAmount: () -> Unit,
+    onDismissOcrAmount: () -> Unit,
     onCycleCurrency: () -> Unit,
     onFxRate: (String) -> Unit,
     onSave: () -> Unit,
@@ -186,6 +286,43 @@ private fun CaptureSheetBody(
     ) {
         KindToggle(kind = state.kind, onKind = onKind)
         AmountDisplay(state = state)
+        if (state.ocrSuggestedAmount != null) {
+            val label = MoneyFormatter.format(state.ocrSuggestedAmount, state.currency)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.tealSoft)
+                    .border(1.5.dp, colors.teal, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.receipt_ocr_banner_title, label),
+                    style = WheregoType.meta,
+                    color = colors.ink,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = stringResource(R.string.receipt_use_it),
+                        style = WheregoType.txAmount,
+                        color = colors.teal,
+                        modifier = Modifier
+                            .clickable(onClick = onApplyOcrAmount)
+                            .padding(4.dp),
+                    )
+                    Text(
+                        text = "✕",
+                        style = WheregoType.txAmount,
+                        color = colors.muted,
+                        modifier = Modifier
+                            .clickable(onClick = onDismissOcrAmount)
+                            .padding(4.dp),
+                    )
+                }
+            }
+        }
         Row(
             Modifier
                 .fillMaxWidth()
@@ -211,9 +348,16 @@ private fun CaptureSheetBody(
             QuickChip("25rb", onClick = { onQuickAmount(25_000L) })
             QuickChip(stringResource(R.string.capture_chip_note), selected = state.noteOpen, onClick = onToggleNote)
             QuickChip(state.currency, selected = state.currency != state.baseCurrency, onClick = onCycleCurrency)
-            if (state.editingId != null) {
-                QuickChip(stringResource(R.string.capture_chip_photo), onClick = { onAttach(state.editingId) })
+            val photoLabel = when {
+                state.isReadingOcr -> "⏳ " + stringResource(R.string.receipt_reading_title)
+                state.hasReceipt -> "✓ " + stringResource(R.string.capture_chip_photo)
+                else -> stringResource(R.string.capture_chip_photo)
             }
+            QuickChip(
+                photoLabel,
+                selected = state.hasReceipt,
+                onClick = onPhotoClick,
+            )
         }
         if (state.currency != state.baseCurrency) {
             OutlinedTextField(

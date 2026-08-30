@@ -1,5 +1,10 @@
 package com.flla.wherego.navigation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
@@ -13,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,7 +31,7 @@ import com.flla.wherego.core.designsystem.component.WheregoTabBar
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.feature.capture.CaptureSheet
-import com.flla.wherego.feature.capture.ReceiptAttachDialog
+import com.flla.wherego.feature.capture.cameraCaptureUri
 import com.flla.wherego.feature.home.HomeRoute
 import com.flla.wherego.feature.plan.PlanRoute
 import com.flla.wherego.feature.settings.MeScreen
@@ -62,14 +69,48 @@ fun WheregoNavHost(
     val entry by navController.currentBackStackEntryAsState()
     val selected = (entry?.destination?.route ?: Routes.Home).toTab()
     val colors = WheregoTheme.colors
+    val context = LocalContext.current
     var captureOpen by remember { mutableStateOf(openCaptureOnStart) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
-    var receiptTxId by remember { mutableStateOf<String?>(null) }
+    var fastScanUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraFastUri by remember { mutableStateOf<Uri?>(null) }
     var goMood by remember { mutableStateOf(GoMood.Idle) }
 
-    fun openCapture(tx: Transaction?) {
+    fun openCapture(tx: Transaction?, initialReceipt: Uri? = null) {
         editing = tx
+        fastScanUri = initialReceipt
         captureOpen = true
+    }
+
+    val takeFastPicture = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { ok ->
+        val uri = cameraFastUri
+        if (ok && uri != null) {
+            openCapture(null, uri)
+        }
+    }
+
+    val requestFastCamera = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            val uri = cameraCaptureUri(context)
+            cameraFastUri = uri
+            takeFastPicture.launch(uri)
+        }
+    }
+
+    fun launchFastScan() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            val uri = cameraCaptureUri(context)
+            cameraFastUri = uri
+            takeFastPicture.launch(uri)
+        } else {
+            requestFastCamera.launch(Manifest.permission.CAMERA)
+        }
     }
 
     fun go(tab: WheregoTab) {
@@ -113,26 +154,21 @@ fun WheregoNavHost(
                 selected = selected,
                 onSelect = ::go,
                 onAdd = { openCapture(null) },
+                onScanReceipt = ::launchFastScan,
             )
         }
         if (captureOpen) {
             CaptureSheet(
                 editing = editing,
+                initialReceiptUri = fastScanUri,
                 onDismiss = {
                     captureOpen = false
                     editing = null
+                    fastScanUri = null
                 },
-                onParked = { parked ->
+                onParked = {
                     goMood = GoMood.Happy
-                    receiptTxId = parked.id
                 },
-            )
-        }
-        val pendingReceipt = receiptTxId
-        if (pendingReceipt != null) {
-            ReceiptAttachDialog(
-                transactionId = pendingReceipt,
-                onFinished = { receiptTxId = null },
             )
         }
     }

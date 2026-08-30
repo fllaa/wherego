@@ -55,6 +55,7 @@ data class StoryTx(
     val time: String?,
     val amountLabel: String,
     val badgeSoftHex: String,
+    val hasReceipt: Boolean = false,
 )
 
 /** One `Day List` group: header plus the day's transactions, newest first. */
@@ -196,6 +197,7 @@ class StoriesViewModel @Inject constructor(
             time = time,
             amountLabel = MoneyFormatter.format(amountMinor, currency),
             badgeSoftHex = category?.softColorHex ?: PresetCategories.softHex(categoryId),
+            hasReceipt = receiptId != null,
         )
     }
 }

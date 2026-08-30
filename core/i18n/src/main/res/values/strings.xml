@@ -154,6 +154,11 @@
     <string name="receipt_parked_body">Photo stays on this phone.</string>
     <string name="receipt_attach_title">Attach a receipt?</string>
     <string name="receipt_attach_body">Camera or gallery. Photo stays on this phone if backup isn\'t signed in.</string>
+    <string name="receipt_photo_source_title">Receipt photo</string>
+    <string name="receipt_photo_change_title">Receipt attached</string>
+    <string name="receipt_photo_replace">Replace photo</string>
+    <string name="receipt_photo_remove">Remove photo</string>
+    <string name="receipt_ocr_banner_title">Receipt found: %1$s</string>
     <string name="receipt_camera">Camera</string>
     <string name="receipt_gallery">Gallery</string>
     <string name="receipt_err_save_photo">Couldn\'t save the photo</string>

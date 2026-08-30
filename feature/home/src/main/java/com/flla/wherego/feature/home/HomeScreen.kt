@@ -335,6 +335,7 @@ private fun TxItem(
                 subtitle = subtitle,
                 amountLabel = row.amountLabel,
                 badgeSoftHex = row.badgeSoftHex,
+                hasReceipt = row.hasReceipt,
                 modifier = Modifier.combinedClickable(
                     onClick = onClick,
                     onLongClick = { menu = true },

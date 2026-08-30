@@ -139,4 +139,30 @@ class LedgerStoreTest {
         val activeAfterArchive = db.categoryDao().listActive().map { it.id }
         assertEquals(false, customId in activeAfterArchive)
     }
+
+    @Test
+    fun saveWithDraftIdAndReceiptId() = runBlocking {
+        store.seedCategoriesIfEmpty()
+        val draftId = "draft_test_123"
+        val receiptId = "rcpt_test_456"
+        val saved = store.save(
+            CaptureDraft(
+                kind = TransactionKind.EXPENSE,
+                amountMinor = 55_000L,
+                currency = "IDR",
+                categoryId = "cat_food",
+                note = "Bakso",
+                occurredOn = "2026-08-12",
+                occurredAt = clock.millis(),
+                receiptId = receiptId,
+            ),
+            editingId = null,
+            draftId = draftId,
+        )
+        assertEquals(draftId, saved.id)
+        assertEquals(receiptId, saved.receiptId)
+        val fetched = store.getTransaction(draftId)
+        assertNotNull(fetched)
+        assertEquals(receiptId, fetched?.receiptId)
+    }
 }
