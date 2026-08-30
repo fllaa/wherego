@@ -1,13 +1,20 @@
 package com.flla.wherego.core.designsystem.component
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -16,8 +23,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
@@ -25,22 +37,29 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 
+private val DockShape = RoundedCornerShape(24.dp)
+
 enum class WheregoTab(
     val label: String,
-    val icon: ImageVector,
+    val outlined: ImageVector,
+    val filled: ImageVector,
 ) {
-    Home("Home", Icons.Outlined.Home),
-    Stories("Stories", Icons.AutoMirrored.Outlined.MenuBook),
-    Plan("Plan", Icons.Outlined.DateRange),
-    Me("Me", Icons.Outlined.Person),
+    Home("Home", Icons.Outlined.Home, Icons.Filled.Home),
+    Stories("Stories", Icons.AutoMirrored.Outlined.MenuBook, Icons.AutoMirrored.Filled.MenuBook),
+    Plan("Plan", Icons.Outlined.DateRange, Icons.Filled.DateRange),
+    Me("Me", Icons.Outlined.Person, Icons.Filled.Person),
 }
 
 @Composable
@@ -54,27 +73,37 @@ fun WheregoTabBar(
     Box(
         modifier
             .fillMaxWidth()
-            .background(colors.white)
+            .background(colors.paper)
             .navigationBarsPadding(),
     ) {
-        Row(
+        Box(
             Modifier
+                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 8.dp)
                 .fillMaxWidth()
-                .height(64.dp)
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+                .height(58.dp)
+                .wheregoHardShadow(shape = DockShape, color = colors.shadow, offsetY = 4.dp)
+                .clip(DockShape)
+                .background(colors.sheet)
+                .border(BorderStroke(2.5.dp, colors.ink), DockShape),
         ) {
-            TabItem(WheregoTab.Home, selected, onSelect)
-            TabItem(WheregoTab.Stories, selected, onSelect)
-            Spacer(Modifier.width(70.dp))
-            TabItem(WheregoTab.Plan, selected, onSelect)
-            TabItem(WheregoTab.Me, selected, onSelect)
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TabItem(WheregoTab.Home, selected, onSelect)
+                TabItem(WheregoTab.Stories, selected, onSelect)
+                Spacer(Modifier.width(64.dp))
+                TabItem(WheregoTab.Plan, selected, onSelect)
+                TabItem(WheregoTab.Me, selected, onSelect)
+            }
         }
         Box(
             Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = (-18).dp)
+                .offset(y = (-10).dp)
                 .size(64.dp)
                 .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 4.dp)
                 .border(2.5.dp, colors.ink, CircleShape)
@@ -101,24 +130,60 @@ private fun TabItem(
 ) {
     val colors = WheregoTheme.colors
     val active = tab == selected
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.96f else 1f,
+        animationSpec = tween(80),
+        label = "tabPress",
+    )
+    val badgeFill by animateColorAsState(
+        targetValue = if (active) colors.tealSoft else colors.sheet,
+        animationSpec = tween(160),
+        label = "tabBadge",
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (active) colors.tealDeep else colors.muted,
+        animationSpec = tween(160),
+        label = "tabIcon",
+    )
     Column(
         modifier = Modifier
-            .clip(CircleShape)
-            .clickable { onSelect(tab) }
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = { onSelect(tab) },
+            )
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        Icon(
-            imageVector = tab.icon,
-            contentDescription = tab.label,
-            modifier = Modifier.size(22.dp),
-            tint = if (active) colors.tealDeep else colors.muted,
-        )
-        Spacer(Modifier.height(2.dp))
+        Box(
+            Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(badgeFill)
+                .then(
+                    if (active) Modifier.border(BorderStroke(2.dp, colors.ink), CircleShape)
+                    else Modifier,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (active) tab.filled else tab.outlined,
+                contentDescription = tab.label,
+                modifier = Modifier.size(18.dp),
+                tint = iconTint,
+            )
+        }
         Text(
             text = tab.label,
-            style = WheregoType.tabLabel,
-            color = if (active) colors.tealDeep else colors.muted,
+            style = WheregoType.streakNum.copy(fontSize = 11.sp),
+            color = iconTint,
         )
     }
 }
