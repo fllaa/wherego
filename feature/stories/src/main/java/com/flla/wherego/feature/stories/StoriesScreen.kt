@@ -1,5 +1,6 @@
 package com.flla.wherego.feature.stories
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,20 +46,28 @@ import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.dayTitle
+import com.flla.wherego.core.i18n.monthLabel
+import com.flla.wherego.core.model.MoneyFormatter
+import com.flla.wherego.core.model.StoryHeadline
 import com.flla.wherego.core.model.TransactionKind
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.chart.line.lineSpec
 import com.patrykandpatrick.vico.core.entry.entryModelOf
+import java.time.LocalDate
+import kotlin.math.abs
 
 private val Pill = RoundedCornerShape(99.dp)
 private val CardShape = RoundedCornerShape(28.dp)
 
 /** The `Day List / Filter Pill` states, cycled in place by tapping the pill. */
-private enum class TxFilter(val label: String) {
-    All("All"),
-    Expense("Expense"),
-    Income("Income"),
+private enum class TxFilter(@StringRes val labelRes: Int) {
+    All(R.string.filter_all),
+    Expense(R.string.filter_expense),
+    Income(R.string.filter_income),
     ;
 
     fun next(): TxFilter = TxFilter.values()[(ordinal + 1) % TxFilter.values().size]
@@ -101,6 +112,7 @@ fun StoriesScreen(
             }
         }
     }
+    val shownMonth = monthLabel(state.month, state.currentMonth)
     Column(
         modifier
             .fillMaxSize()
@@ -110,9 +122,9 @@ fun StoriesScreen(
             .padding(start = 18.dp, end = 18.dp, top = 6.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        WheregoPageHeader("Stories") {
+        WheregoPageHeader(stringResource(R.string.stories_title)) {
             WheregoMonthStepper(
-                label = state.monthLabel,
+                label = shownMonth,
                 canGoNext = state.canGoNext,
                 onPrev = onPrev,
                 onNext = onNext,
@@ -120,13 +132,18 @@ fun StoriesScreen(
         }
 
         WheregoCard(gap = 2.dp) {
-            Text("Spent in ${state.monthLabel}", style = WheregoType.eyebrow, color = colors.muted)
+            Text(
+                stringResource(R.string.plan_spent_in_month, shownMonth),
+                style = WheregoType.eyebrow,
+                color = colors.muted,
+            )
             Text(
                 state.totalLabel,
                 style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 48.sp),
                 color = colors.ink,
             )
-            if (state.deltaLabel != null) {
+            val deltaMinor = state.deltaMinor
+            if (deltaMinor != null) {
                 Row(
                     Modifier.padding(top = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -151,9 +168,27 @@ fun StoriesScreen(
                             tint = onPill,
                             modifier = Modifier.size(15.dp),
                         )
-                        Text(state.deltaLabel, style = WheregoType.leftPill, color = onPill)
+                        Text(
+                            stringResource(
+                                if (state.deltaIsLess) {
+                                    R.string.stories_delta_less
+                                } else {
+                                    R.string.stories_delta_more
+                                },
+                                MoneyFormatter.format(abs(deltaMinor), state.currency),
+                            ),
+                            style = WheregoType.leftPill,
+                            color = onPill,
+                        )
                     }
-                    Text("than ${state.prevMonthLabel}", style = WheregoType.meta, color = colors.muted)
+                    Text(
+                        stringResource(
+                            R.string.stories_than_prev,
+                            monthLabel(state.prevMonth, state.currentMonth),
+                        ),
+                        style = WheregoType.meta,
+                        color = colors.muted,
+                    )
                 }
             }
         }
@@ -177,7 +212,7 @@ fun StoriesScreen(
                 Text("🪙", fontSize = 20.sp)
             }
             Text(
-                state.sentence,
+                headlineText(state.headline),
                 style = WheregoType.meta.copy(fontSize = 14.sp, lineHeight = 20.sp),
                 color = colors.ink,
             )
@@ -191,11 +226,23 @@ fun StoriesScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Where it went", style = WheregoType.cardTitle, color = colors.ink)
-                Text("${state.logCount} logs", style = WheregoType.leftPill, color = colors.muted)
+                Text(
+                    stringResource(R.string.stories_section_where),
+                    style = WheregoType.cardTitle,
+                    color = colors.ink,
+                )
+                Text(
+                    pluralStringResource(R.plurals.stories_log_count, state.logCount, state.logCount),
+                    style = WheregoType.leftPill,
+                    color = colors.muted,
+                )
             }
             if (state.bars.isEmpty()) {
-                Text("No category bars yet.", style = WheregoType.meta, color = colors.muted)
+                Text(
+                    stringResource(R.string.stories_empty_bars),
+                    style = WheregoType.meta,
+                    color = colors.muted,
+                )
             } else {
                 state.bars.forEach { bar -> BreakdownRow(bar) }
             }
@@ -203,7 +250,11 @@ fun StoriesScreen(
 
         if (state.days.isEmpty()) {
             WheregoCard {
-                Text("Nothing logged this month yet.", style = WheregoType.meta, color = colors.muted)
+                Text(
+                    stringResource(R.string.stories_empty_month),
+                    style = WheregoType.meta,
+                    color = colors.muted,
+                )
             }
         } else if (days.isEmpty()) {
             Row(
@@ -212,7 +263,7 @@ fun StoriesScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    "No ${filter.label.lowercase()} logs this month.",
+                    filterEmptyText(filter),
                     style = WheregoType.meta,
                     color = colors.muted,
                 )
@@ -231,7 +282,11 @@ fun StoriesScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(day.dayTitle, style = WheregoType.cardTitle, color = colors.ink)
+                            Text(
+                                dayTitle(LocalDate.parse(day.date)),
+                                style = WheregoType.cardTitle,
+                                color = colors.ink,
+                            )
                             Text(
                                 if (filter == TxFilter.Income) day.dayIncomeLabel else day.dayTotalLabel,
                                 style = WheregoType.link,
@@ -243,10 +298,11 @@ fun StoriesScreen(
                         }
                     }
                     day.transactions.forEach { tx ->
+                        val name = storyTxName(tx)
                         WheregoTxRow(
                             emoji = tx.emoji,
-                            title = tx.title,
-                            subtitle = tx.subtitle,
+                            title = tx.note.ifBlank { name },
+                            subtitle = tx.time?.let { "$it · $name" } ?: name,
                             amountLabel = tx.amountLabel,
                             badgeSoftHex = tx.badgeSoftHex,
                         )
@@ -256,7 +312,7 @@ fun StoriesScreen(
         }
 
         if (state.balance.size >= 2) {
-            WheregoSectionHeader("Balance")
+            WheregoSectionHeader(stringResource(R.string.stories_section_balance))
             WheregoCard {
                 val ys = state.balance.map { it.balanceMinor.toFloat() }
                 Chart(
@@ -274,6 +330,37 @@ fun StoriesScreen(
         }
     }
 }
+
+@Composable
+private fun headlineText(headline: StoryHeadline): String = when (headline) {
+    StoryHeadline.Empty -> stringResource(R.string.story_headline_empty)
+    is StoryHeadline.One -> stringResource(
+        R.string.story_headline_one,
+        categoryDisplayName(headline.categoryId, headline.name),
+        headline.percent,
+    )
+    is StoryHeadline.Two -> stringResource(
+        R.string.story_headline_two,
+        categoryDisplayName(headline.firstCategoryId, headline.firstName),
+        headline.firstPercent,
+        categoryDisplayName(headline.secondCategoryId, headline.secondName),
+        headline.secondPercent,
+    )
+}
+
+@Composable
+private fun filterEmptyText(filter: TxFilter): String = stringResource(
+    when (filter) {
+        TxFilter.All -> R.string.stories_empty_filter_all
+        TxFilter.Expense -> R.string.stories_empty_filter_expense
+        TxFilter.Income -> R.string.stories_empty_filter_income
+    },
+)
+
+@Composable
+private fun storyTxName(tx: StoryTx): String =
+    tx.categoryName?.let { categoryDisplayName(tx.categoryId, it) }
+        ?: stringResource(R.string.category_fallback_other)
 
 @Composable
 private fun BreakdownRow(bar: StoryBar) {
@@ -294,7 +381,7 @@ private fun BreakdownRow(bar: StoryBar) {
             ) {
                 Text(bar.emoji, fontSize = 15.sp)
                 Text(
-                    bar.name,
+                    categoryDisplayName(bar.categoryId, bar.name),
                     style = WheregoType.chip,
                     color = colors.ink,
                     maxLines = 1,
@@ -323,10 +410,10 @@ private fun FilterPill(filter: TxFilter, onClick: () -> Unit) {
     ) {
         Icon(
             Icons.Outlined.Tune,
-            contentDescription = "Filter logs",
+            contentDescription = stringResource(R.string.stories_cd_filter),
             tint = colors.ink,
             modifier = Modifier.size(14.dp),
         )
-        Text(filter.label, style = WheregoType.leftPill, color = colors.ink)
+        Text(stringResource(filter.labelRes), style = WheregoType.leftPill, color = colors.ink)
     }
 }

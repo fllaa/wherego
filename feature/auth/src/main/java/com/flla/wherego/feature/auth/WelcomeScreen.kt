@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,8 +44,8 @@ import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-
-private const val SIGN_IN_OK = "Backup is on. Capture never waited."
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
 
 /**
  * `pencil-new.pen` → `Sign In / Proof Card` carries `rotation: -2.5`. pen.dev measures
@@ -67,13 +68,13 @@ fun WelcomeScreen(
     val context = LocalContext.current
     val authState by viewModel.state.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
-    var message by remember { mutableStateOf<String?>(null) }
+    var result by remember { mutableStateOf<SignInResult?>(null) }
 
     fun onGoogle() {
         if (busy) return
-        viewModel.signIn(context.findActivity()) { result ->
-            message = result
-            if (result == SIGN_IN_OK) onContinue(viewModel.fromBackup)
+        viewModel.signIn(context.findActivity()) { signIn ->
+            result = signIn
+            if (signIn is SignInResult.Ok) onContinue(viewModel.fromBackup)
         }
     }
 
@@ -107,7 +108,7 @@ fun WelcomeScreen(
             ) {
                 Text("Wherego", style = WheregoType.wordmark, color = colors.ink)
                 Text(
-                    "See where your money went.\nLog a spend in seconds.",
+                    stringResource(R.string.welcome_tagline),
                     style = WheregoType.onboardSub.copy(fontSize = 16.sp, lineHeight = 24.sp),
                     color = colors.muted,
                     textAlign = TextAlign.Center,
@@ -134,7 +135,7 @@ fun WelcomeScreen(
                     .clickable(enabled = !busy, onClick = { onContinue(false) })
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
-                Text("Try it first, sign in later", style = WheregoType.chip, color = colors.ink)
+                Text(stringResource(R.string.welcome_try_first), style = WheregoType.chip, color = colors.ink)
                 Icon(
                     Icons.AutoMirrored.Outlined.ArrowForward,
                     contentDescription = null,
@@ -154,13 +155,18 @@ fun WelcomeScreen(
                     modifier = Modifier.size(14.dp),
                 )
                 Text(
-                    "No bank connections. You type or snap.",
+                    stringResource(R.string.welcome_privacy),
                     style = WheregoType.helper,
                     color = colors.muted,
                 )
             }
-            message?.let {
-                Text(it, style = WheregoType.helper, color = colors.coral, textAlign = TextAlign.Center)
+            result?.let {
+                Text(
+                    signInResultMessage(it),
+                    style = WheregoType.helper,
+                    color = colors.coral,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -188,7 +194,7 @@ private fun ProofCard() {
             ) {
                 Text("🪙", fontSize = 18.sp, color = colors.ink)
             }
-            Text("Parked. That one won’t vanish.", style = WheregoType.stepText, color = colors.ink)
+            Text(stringResource(R.string.welcome_proof_caption), style = WheregoType.stepText, color = colors.ink)
         }
         Box(
             Modifier
@@ -211,7 +217,7 @@ private fun ProofCard() {
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text("🍜", fontSize = 15.sp, color = colors.ink)
-                Text("Food out", style = WheregoType.stepText, color = Color.White)
+                Text(categoryDisplayName("cat_food_out", "Food out"), style = WheregoType.stepText, color = Color.White)
             }
             Text("Rp 18.000", style = WheregoType.balanceValue.copy(fontSize = 26.sp), color = colors.ink)
         }
@@ -238,9 +244,9 @@ private fun GoogleButton(signedIn: Boolean, busy: Boolean, onClick: () -> Unit) 
         Spacer(Modifier.width(11.dp))
         Text(
             when {
-                busy -> "Restoring…"
-                signedIn -> "Continue"
-                else -> "Continue with Google"
+                busy -> stringResource(R.string.welcome_google_busy)
+                signedIn -> stringResource(R.string.welcome_google_continue)
+                else -> stringResource(R.string.welcome_google_cta)
             },
             style = WheregoType.buttonLabel.copy(fontSize = 17.sp),
             color = colors.ink,

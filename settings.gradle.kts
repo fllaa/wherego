@@ -22,6 +22,7 @@ include(
     ":core:database",
     ":core:datastore",
     ":core:common",
+    ":core:i18n",
     ":core:designsystem",
     ":core:sync",
     ":feature:capture",

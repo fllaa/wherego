@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 
@@ -26,7 +28,7 @@ fun WheregoHero(
     val colors = WheregoTheme.colors
     Column(modifier) {
         Text(
-            text = "Spent this month",
+            text = stringResource(R.string.ds_hero_spent_this_month),
             style = WheregoType.eyebrow,
             color = colors.muted,
         )

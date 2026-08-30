@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 
@@ -61,7 +63,7 @@ fun WheregoOnboardTopBar(
         ) {
             Icon(
                 Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.ds_cd_back),
                 tint = colors.ink,
                 modifier = Modifier.size(19.dp),
             )
@@ -80,7 +82,7 @@ fun WheregoOnboardTopBar(
         }
         if (onSkip != null) {
             Text(
-                "Skip",
+                stringResource(R.string.ds_onboard_skip),
                 style = WheregoType.chip,
                 color = colors.muted,
                 modifier = Modifier.clickable(onClick = onSkip),

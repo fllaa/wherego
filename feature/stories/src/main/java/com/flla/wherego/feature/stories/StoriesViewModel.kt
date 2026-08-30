@@ -9,8 +9,8 @@ import com.flla.wherego.core.model.BalancePoint
 import com.flla.wherego.core.model.BalanceSeries
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.MoneyFormatter
-import com.flla.wherego.core.model.MonthPdf
 import com.flla.wherego.core.model.MonthStory
+import com.flla.wherego.core.model.StoryHeadline
 import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
@@ -23,7 +23,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,8 +49,10 @@ data class StoryTx(
     val id: String,
     val kind: String,
     val emoji: String,
-    val title: String,
-    val subtitle: String,
+    val note: String,
+    val categoryId: String,
+    val categoryName: String?,
+    val time: String?,
     val amountLabel: String,
     val badgeSoftHex: String,
 )
@@ -59,32 +60,27 @@ data class StoryTx(
 /** One `Day List` group: header plus the day's transactions, newest first. */
 data class StoryDay(
     val date: String,
-    val dayTitle: String,
     val dayTotalLabel: String,
     val dayIncomeLabel: String,
     val transactions: List<StoryTx>,
 )
 
 data class StoriesUiState(
-    /** `MMMM yyyy` — the PDF report title, not shown on screen. */
-    val title: String = "",
-    /** Bare month name, e.g. `August`. */
-    val monthLabel: String = "",
-    /** Bare month name of the month before the shown one, e.g. `July`. */
-    val prevMonthLabel: String = "",
+    val month: YearMonth = YearMonth.now(),
+    val prevMonth: YearMonth = YearMonth.now().minusMonths(1),
+    val currentMonth: YearMonth = YearMonth.now(),
     val yearMonth: String = "",
     val totalLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
-    /** e.g. `Rp 412.000 less`; null when the previous month has nothing to compare against. */
-    val deltaLabel: String? = null,
+    /** Signed `prevSpent - thisSpent`; null when the previous month has nothing to compare against. */
+    val deltaMinor: Long? = null,
     val deltaIsLess: Boolean = true,
     val logCount: Int = 0,
     val bars: List<StoryBar> = emptyList(),
     val days: List<StoryDay> = emptyList(),
-    val sentence: String = MonthStory.sentence(emptyList()),
+    val headline: StoryHeadline = StoryHeadline.Empty,
     val canGoNext: Boolean = false,
     val balance: List<BalancePoint> = emptyList(),
     val currency: String = UserProfile.DEFAULT_CURRENCY,
-    val pdfLines: List<String> = emptyList(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -94,10 +90,7 @@ class StoriesViewModel @Inject constructor(
     profiles: UserProfileStore,
 ) : ViewModel() {
     private val month = MutableStateFlow<YearMonth?>(null)
-    private val titleFmt = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
-    private val monthFmt = DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH)
-    private val dayFmt = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
-    private val timeFmt = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+    private val timeFmt = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
 
     val state: StateFlow<StoriesUiState> = combine(profiles.profile, month) { profile, picked ->
         val zone = zoneOf(profile)
@@ -122,25 +115,15 @@ class StoriesViewModel @Inject constructor(
             val catById = cats.associateBy { it.id }
             val total = spends.sumOf { it.amountMinor }
             val totalLabel = MoneyFormatter.format(total, currency)
-            val title = ym.format(titleFmt)
             val top = spends.take(5)
-            val txLines = inMonth.map { tx ->
-                val name = catById[tx.categoryId]?.name ?: tx.categoryId
-                "${tx.occurredOn}  ${tx.kind}  ${MoneyFormatter.format(tx.amountMinor, tx.currency)}  $name  ${tx.note}"
-            }
-            val barPairs = top.map { "${it.emoji} ${it.name}" to MoneyFormatter.format(it.amountMinor, currency) }
             val delta = prevSpends.sumOf { it.amountMinor } - total
             StoriesUiState(
-                title = title,
-                monthLabel = ym.format(monthFmt),
-                prevMonthLabel = prevYm.format(monthFmt),
+                month = ym,
+                prevMonth = prevYm,
+                currentMonth = current,
                 yearMonth = ym.toString(),
                 totalLabel = totalLabel,
-                deltaLabel = if (prevSpends.isEmpty()) {
-                    null
-                } else {
-                    MoneyFormatter.format(abs(delta), currency) + (if (delta >= 0L) " less" else " more")
-                },
+                deltaMinor = if (prevSpends.isEmpty()) null else delta,
                 deltaIsLess = delta >= 0L,
                 logCount = inMonth.size,
                 bars = top.map { spend ->
@@ -155,11 +138,10 @@ class StoriesViewModel @Inject constructor(
                     )
                 },
                 days = dayGroups(inMonth, catById, currency, zone),
-                sentence = MonthStory.sentence(spends),
+                headline = MonthStory.headline(spends),
                 canGoNext = ym < current,
                 balance = BalanceSeries.points(starting, txs, start, end),
                 currency = currency,
-                pdfLines = MonthPdf.lines(title, totalLabel, barPairs, txLines),
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StoriesUiState())
@@ -191,7 +173,6 @@ class StoriesViewModel @Inject constructor(
             val ordered = rows.sortedByDescending { it.occurredAt ?: it.createdAt }
             StoryDay(
                 date = date,
-                dayTitle = LocalDate.parse(date).format(dayFmt),
                 dayTotalLabel = MoneyFormatter.format(sumOfKind(ordered, TransactionKind.EXPENSE), currency),
                 dayIncomeLabel = MoneyFormatter.format(sumOfKind(ordered, TransactionKind.INCOME), currency),
                 transactions = ordered.map { tx -> tx.toStoryTx(catById[tx.categoryId], currency, zone) },
@@ -202,7 +183,6 @@ class StoriesViewModel @Inject constructor(
         txs.filter { it.kind == kind }.sumOf { it.amountBaseMinor }
 
     private fun Transaction.toStoryTx(category: Category?, currency: String, zone: ZoneId): StoryTx {
-        val name = category?.name ?: "Other"
         val time = occurredAt?.let {
             Instant.ofEpochMilli(it).atZone(zone).toLocalTime().format(timeFmt)
         }
@@ -210,8 +190,10 @@ class StoriesViewModel @Inject constructor(
             id = id,
             kind = kind,
             emoji = category?.emoji ?: "📦",
-            title = note.ifBlank { name },
-            subtitle = if (time != null) "$time · $name" else name,
+            note = note,
+            categoryId = categoryId,
+            categoryName = category?.name,
+            time = time,
             amountLabel = MoneyFormatter.format(amountMinor, currency),
             badgeSoftHex = category?.softColorHex ?: PresetCategories.softHex(categoryId),
         )

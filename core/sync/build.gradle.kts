@@ -31,6 +31,7 @@ kotlin {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":core:i18n"))
     implementation(project(":core:database"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

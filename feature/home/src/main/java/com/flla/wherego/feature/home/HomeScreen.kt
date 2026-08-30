@@ -42,6 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +54,10 @@ import com.flla.wherego.core.designsystem.component.WheregoStreakPill
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.weekdayFull
+import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.sync.CloudDot
 
@@ -101,13 +107,15 @@ fun HomeScreen(
         }
     }
 
+    val removedMessage = stringResource(R.string.home_snack_removed)
+    val undoLabel = stringResource(R.string.home_snack_undo)
     LaunchedEffect(state.undoId) {
         if (state.undoId == null) {
             snackbarHostState.currentSnackbarData?.dismiss()
         } else {
             val result = snackbarHostState.showSnackbar(
-                message = "Removed",
-                actionLabel = "Undo",
+                message = removedMessage,
+                actionLabel = undoLabel,
                 duration = SnackbarDuration.Indefinite,
             )
             if (result == SnackbarResult.ActionPerformed) onUndo()
@@ -132,14 +140,21 @@ fun HomeScreen(
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            text = "Hey ${state.greetingName} 👋",
+                            text = stringResource(
+                                R.string.home_greeting,
+                                state.greetingName ?: stringResource(R.string.home_greeting_fallback),
+                            ),
                             style = WheregoType.greeting,
                             color = colors.ink,
                         )
                         Text(
                             text = listOfNotNull(
-                                state.weekdayLabel.takeIf { it.isNotBlank() },
-                                "${state.weekLoggedCount} logged this week",
+                                state.weekday?.let { weekdayFull(it) },
+                                pluralStringResource(
+                                    R.plurals.home_sub_logged_week,
+                                    state.weekLoggedCount,
+                                    state.weekLoggedCount,
+                                ),
                             ).joinToString(" · "),
                             style = WheregoType.meta,
                             color = colors.muted,
@@ -164,8 +179,12 @@ fun HomeScreen(
             item {
                 WheregoHero(
                     amountLabel = state.monthSpentLabel,
-                    incomeLabel = state.incomeLabel,
-                    leftLabel = state.leftLabel,
+                    incomeLabel = state.monthIncomeMinor?.let {
+                        stringResource(R.string.home_hero_income, MoneyFormatter.format(it, state.currency))
+                    },
+                    leftLabel = state.monthLeftMinor?.let {
+                        stringResource(R.string.money_left, MoneyFormatter.format(it, state.currency))
+                    },
                 )
             }
             item {
@@ -173,7 +192,7 @@ fun HomeScreen(
             }
             if (state.due.isNotEmpty()) {
                 item {
-                    Text("Due", style = WheregoType.cardTitle, color = colors.ink)
+                    Text(stringResource(R.string.home_section_due), style = WheregoType.cardTitle, color = colors.ink)
                 }
                 items(state.due, key = { it.rule.id }) { item ->
                     Row(
@@ -182,14 +201,16 @@ fun HomeScreen(
                     ) {
                         Column {
                             Text(
-                                item.rule.note.ifBlank { item.categoryName },
+                                item.rule.note.ifBlank {
+                                    categoryDisplayName(item.rule.categoryId, item.categoryName)
+                                },
                                 style = WheregoType.chip,
                                 color = colors.ink,
                             )
                             Text(item.rule.nextOn, style = WheregoType.meta, color = colors.muted)
                         }
                         Text(
-                            "Log it",
+                            stringResource(R.string.home_cta_log_it),
                             color = colors.tealDeep,
                             style = WheregoType.link,
                             modifier = Modifier.clickable { onConfirmDue(item) },
@@ -203,14 +224,14 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom,
                 ) {
-                    Text("Today", style = WheregoType.cardTitle, color = colors.ink)
+                    Text(stringResource(R.string.home_section_today), style = WheregoType.cardTitle, color = colors.ink)
                     Text(state.todayTotalLabel, style = WheregoType.streakNum, color = colors.muted)
                 }
             }
             if (state.today.isEmpty()) {
                 item {
                     Text(
-                        "First one is the hardest. Tap +",
+                        stringResource(R.string.home_empty_today),
                         style = WheregoType.meta,
                         color = colors.muted,
                     )
@@ -227,8 +248,12 @@ fun HomeScreen(
             }
             if (state.earlierThisWeek.isNotEmpty()) {
                 val earlierDates = state.earlierThisWeek.map { it.transaction.occurredOn }.distinct()
-                val earlierTitle = if (earlierDates.size == 1) "Yesterday" else "Earlier this week"
                 item {
+                    val earlierTitle = if (earlierDates.size == 1) {
+                        stringResource(R.string.home_section_yesterday)
+                    } else {
+                        stringResource(R.string.home_section_earlier_week)
+                    }
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -236,7 +261,7 @@ fun HomeScreen(
                     ) {
                         Text(earlierTitle, style = WheregoType.cardTitle, color = colors.ink)
                         Text(
-                            "Stories →",
+                            stringResource(R.string.home_link_stories),
                             style = WheregoType.link,
                             color = colors.teal,
                             modifier = Modifier.clickable(onClick = onOpenStories),
@@ -272,6 +297,10 @@ private fun TxItem(
     onDuplicate: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
+    val name = row.categoryName?.let { categoryDisplayName(row.categoryId, it) }
+        ?: stringResource(R.string.category_fallback_other)
+    val title = row.note.ifBlank { name }
+    val subtitle = row.time?.let { "$it · $name" } ?: name
     var menu by remember { mutableStateOf(false) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -295,15 +324,15 @@ private fun TxItem(
                         .padding(end = 18.dp),
                     contentAlignment = Alignment.CenterEnd,
                 ) {
-                    Text("Delete", color = colors.white, style = WheregoType.meta)
+                    Text(stringResource(R.string.home_swipe_delete), color = colors.white, style = WheregoType.meta)
                 }
             },
             enableDismissFromStartToEnd = false,
         ) {
             WheregoTxRow(
                 emoji = row.emoji,
-                title = row.title,
-                subtitle = row.subtitle,
+                title = title,
+                subtitle = subtitle,
                 amountLabel = row.amountLabel,
                 badgeSoftHex = row.badgeSoftHex,
                 modifier = Modifier.combinedClickable(
@@ -314,7 +343,7 @@ private fun TxItem(
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text("Same again") },
+                text = { Text(stringResource(R.string.home_menu_same_again)) },
                 onClick = {
                     menu = false
                     onDuplicate()
@@ -341,28 +370,36 @@ private fun BudgetCard(
         verticalArrangement = Arrangement.spacedBy(15.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Budget check", style = WheregoType.cardTitle, color = colors.ink)
+            Text(stringResource(R.string.home_section_budget_check), style = WheregoType.cardTitle, color = colors.ink)
             Text(
-                "Plan →",
+                stringResource(R.string.home_link_plan),
                 style = WheregoType.link,
                 color = colors.teal,
                 modifier = Modifier.clickable(onClick = onPlan),
             )
         }
         if (bars.isEmpty()) {
-            Text("No budgets yet · set them in Plan", style = WheregoType.meta, color = colors.muted)
+            Text(stringResource(R.string.home_empty_budget), style = WheregoType.meta, color = colors.muted)
         } else {
             bars.forEach { bar ->
                 val fraction = if (bar.capMinor <= 0L) 0f else (bar.spentMinor.toFloat() / bar.capMinor).coerceIn(0f, 1f)
                 val fill = if (bar.over) colors.coral else colors.teal
+                val name = bar.categoryId?.let { categoryDisplayName(it, bar.name) }
+                    ?: stringResource(R.string.plan_choice_overall)
                 val label = if (bar.over) {
-                    "${com.flla.wherego.core.model.MoneyFormatter.compact(-bar.remainingMinor, currency)} over"
+                    stringResource(
+                        R.string.money_over,
+                        MoneyFormatter.compact(-bar.remainingMinor, currency),
+                    )
                 } else {
-                    "${com.flla.wherego.core.model.MoneyFormatter.compact(bar.remainingMinor, currency)} left"
+                    stringResource(
+                        R.string.money_left,
+                        MoneyFormatter.compact(bar.remainingMinor, currency),
+                    )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${bar.emoji}  ${bar.name}", style = WheregoType.chip, color = colors.ink)
+                        Text("${bar.emoji}  $name", style = WheregoType.chip, color = colors.ink)
                         Text(label, style = WheregoType.meta, color = if (bar.over) colors.coral else colors.tealDeep)
                     }
                     Box(

@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Design system chrome -->
+    <string name="ds_cta_park_it">Catet!</string>
+    <string name="ds_hero_spent_this_month">Keluar bulan ini</string>
+    <string name="ds_onboard_skip">Lewati</string>
+    <string name="ds_cd_back">Kembali</string>
+    <string name="ds_cd_prev_month">Bulan sebelumnya</string>
+    <string name="ds_cd_next_month">Bulan berikutnya</string>
+    <string name="ds_cd_go">Go</string>
+    <string name="ds_cd_backspace">Hapus</string>
+    <string name="ds_cd_add">Tambah</string>
+    <string name="ds_tab_home">Home</string>
+    <string name="ds_tab_stories">Cerita</string>
+    <string name="ds_tab_plan">Rencana</string>
+    <string name="ds_tab_me">Aku</string>
+
+    <!-- Shared -->
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Batal</string>
+    <string name="money_over">%1$s lewat</string>
+    <string name="money_left">%1$s sisa</string>
+    <string name="category_fallback_other">Lainnya</string>
+    <string name="recurring_fallback_label">Tagihan</string>
+    <string name="freq_weekly">Mingguan</string>
+    <string name="freq_monthly">Bulanan</string>
+    <string name="kind_expense">Keluar</string>
+    <string name="kind_income">Masuk</string>
+    <string name="kind_adjustment">Penyesuaian</string>
+    <string name="kind_both">Dua-duanya</string>
+
+    <!-- Languages: endonyms, identical in every translation -->
+    <string name="lang_system">Ikut HP</string>
+    <string name="lang_en">English</string>
+    <string name="lang_id">Indonesia</string>
+
+    <!-- Currencies -->
+    <string name="currency_idr">Rupiah</string>
+    <string name="currency_usd">Dolar AS</string>
+    <string name="currency_sgd">Dolar Singapura</string>
+    <string name="currency_myr">Ringgit Malaysia</string>
+    <string name="currency_eur">Euro</string>
+
+    <!-- Preset categories -->
+    <string name="category_cat_food_out">Makan di luar</string>
+    <string name="category_cat_groceries">Belanja dapur</string>
+    <string name="category_cat_transport">Transport</string>
+    <string name="category_cat_rent">Sewa &amp; tagihan</string>
+    <string name="category_cat_fun">Hiburan</string>
+    <string name="category_cat_shopping">Belanja</string>
+    <string name="category_cat_health">Kesehatan</string>
+    <string name="category_cat_gifts">Hadiah</string>
+    <string name="category_cat_other">Lainnya</string>
+    <string name="category_cat_bills">Tagihan</string>
+    <string name="category_cat_salary">Gaji</string>
+    <string name="category_cat_side">Kerja sampingan</string>
+    <string name="category_cat_refund">Pengembalian</string>
+    <string name="category_cat_other_in">Masuk lainnya</string>
+    <string name="pack_everyday_id">Harian</string>
+    <string name="pack_minimal">Minimalis</string>
+    <string name="pack_custom">Sendiri</string>
+
+    <!-- Welcome -->
+    <string name="welcome_tagline">Lihat duitmu ke mana.\nCatet pengeluaran dalam hitungan detik.</string>
+    <string name="welcome_try_first">Coba dulu, masuk nanti</string>
+    <string name="welcome_privacy">Nggak nyambung ke bank. Kamu ketik atau foto.</string>
+    <string name="welcome_proof_caption">Kecatet. Nggak bakal ilang.</string>
+    <string name="welcome_google_busy">Balikin data…</string>
+    <string name="welcome_google_continue">Lanjut</string>
+    <string name="welcome_google_cta">Lanjut pakai Google</string>
+
+    <!-- Auth -->
+    <string name="auth_back_me">← Aku</string>
+    <string name="auth_title">Backup</string>
+    <string name="auth_body">Masuk buat backup. Nyatet nggak perlu nunggu ini.</string>
+    <string name="auth_signed_in">Udah masuk</string>
+    <string name="auth_sign_out">Keluar</string>
+    <string name="auth_sign_out_done">Data di HP tetap aman. Cloud berhenti.</string>
+    <string name="auth_sign_in_google">Masuk pakai Google</string>
+    <string name="auth_ok_backup_on">Backup nyala. Nyatet tetap jalan.</string>
+    <string name="auth_err_need_activity">Belum bisa buka Google dari sini.</string>
+    <string name="auth_err_sign_in_failed">Masuknya nggak jadi.</string>
+    <string name="auth_err_restore_failed">Nggak bisa balikin backup.</string>
+    <string name="auth_err_missing_client_id">Google Sign-In butuh web client ID. Download ulang google-services.json setelah Google Sign-In diaktifkan.</string>
+    <string name="auth_err_no_id_token">Google nggak ngasih ID token.</string>
+    <string name="auth_err_no_user">Firebase Auth nggak ngasih user.</string>
+    <string name="auth_err_cancelled">Masuknya dibatalin.</string>
+    <string name="auth_err_no_google_account">Tambahin akun Google di HP ini, terus coba lagi.</string>
+    <string name="auth_err_not_google_credential">Credential-nya bukan Google ID token.</string>
+
+    <!-- Onboarding -->
+    <string name="onb_welcome_title">Kamu nggak butuh spreadsheet. Cukup 20 detik.</string>
+    <string name="onb_welcome_sub">Wherego itu buku catatan saku, bukan lemari arsip.</string>
+    <string name="onb_welcome_step1">Tap + gede pas kamu bayar.</string>
+    <string name="onb_welcome_step2">Ketik nominalnya. Tap gambarnya.</string>
+    <string name="onb_welcome_step3">Udah, gitu aja. Nggak ada form, nggak ada folder.</string>
+    <string name="onb_cta_lets_go">Gas</string>
+    <string name="onb_cta_continue">Lanjut</string>
+    <string name="onb_currency_title">Kita ngitung apa?</string>
+    <string name="onb_currency_body">Kira-kira ada berapa di kantong dan bank, digabung?</string>
+    <string name="onb_currency_helper">Kira-kira aja udah cukup. Bisa dibenerin kapan aja di Aku → Setel saldo.</string>
+    <string name="onb_currency_skip">Nggak tau — lewati aja</string>
+    <string name="onb_currency_no_decimals">tanpa desimal</string>
+    <string name="onb_currency_meta">%1$s · %2$s · %3$s</string>
+    <string name="onb_cat_title">Pilih kantongmu</string>
+    <string name="onb_cat_sub">Enam udah cukup buat mulai. Tap buat nambah atau ngurangin.</string>
+    <string name="onb_cat_helper">Ganti nama, warna, atau arsipin kapan aja di Aku → Kategori.</string>
+    <string name="onb_first_title">Satu lagi.</string>
+    <string name="onb_first_sub">Catet sesuatu dari hari ini. Parkir Rp 2.000 pun masuk — yang penting kebiasaannya, bukan nominalnya.</string>
+    <string name="onb_first_card_title">Catet pengeluaran pertamamu</string>
+    <string name="onb_first_card_helper">Sekitar 20 detik</string>
+    <string name="onb_cta_log_now">Catet sekarang</string>
+    <string name="onb_cta_later">Ke Home dulu, nanti aku catet</string>
+
+    <!-- Home -->
+    <string name="home_greeting">Hai %1$s 👋</string>
+    <string name="home_greeting_fallback">kamu</string>
+    <string name="home_section_due">Jatuh tempo</string>
+    <string name="home_cta_log_it">Catet</string>
+    <string name="home_section_today">Hari ini</string>
+    <string name="home_empty_today">Yang pertama paling berat. Tap +</string>
+    <string name="home_section_yesterday">Kemarin</string>
+    <string name="home_section_earlier_week">Awal minggu ini</string>
+    <string name="home_link_stories">Cerita →</string>
+    <string name="home_link_plan">Rencana →</string>
+    <string name="home_swipe_delete">Hapus</string>
+    <string name="home_menu_same_again">Ulangi yang sama</string>
+    <string name="home_section_budget_check">Cek budget</string>
+    <string name="home_empty_budget">Belum ada budget · atur di Rencana</string>
+    <string name="home_snack_removed">Dihapus</string>
+    <string name="home_snack_undo">Balikin</string>
+    <string name="home_hero_income">dari %1$s masuk</string>
+
+    <!-- Capture -->
+    <string name="capture_tab_expense">Keluar</string>
+    <string name="capture_tab_income">Masuk</string>
+    <string name="capture_chip_today">Hari ini</string>
+    <string name="capture_chip_yesterday">Kemarin</string>
+    <string name="capture_chip_pick">Pilih</string>
+    <string name="capture_chip_note">catatan</string>
+    <string name="capture_chip_photo">foto</string>
+    <string name="capture_hint_note">catatan</string>
+    <string name="capture_hint_fx">kurs ke %1$s</string>
+    <string name="capture_cd_more_categories">Kategori lainnya</string>
+
+    <!-- Receipt -->
+    <string name="receipt_reading_title">Baca struk</string>
+    <string name="receipt_reading_body">Udah kecatet di HP. Lagi baca angkanya…</string>
+    <string name="receipt_confirm_title">Pakai nominal ini?</string>
+    <string name="receipt_confirm_body">Kayaknya %1$s. Nggak disimpan sampai kamu bilang iya.</string>
+    <string name="receipt_use_it">Pakai</string>
+    <string name="receipt_keep_mine">Pakai punyaku</string>
+    <string name="receipt_parked_title">Struk kecatet</string>
+    <string name="receipt_parked_body">Fotonya tetap di HP ini.</string>
+    <string name="receipt_attach_title">Lampirin struk?</string>
+    <string name="receipt_attach_body">Kamera atau galeri. Foto tetap di HP ini kalau backup belum masuk.</string>
+    <string name="receipt_camera">Kamera</string>
+    <string name="receipt_gallery">Galeri</string>
+    <string name="receipt_err_save_photo">Nggak bisa simpan fotonya</string>
+    <string name="receipt_err_no_amount">Fotonya kesimpan. Nominalnya nggak kebaca.</string>
+
+    <!-- Plan -->
+    <string name="plan_title">Rencana</string>
+    <string name="plan_spent_in_month">Keluar di %1$s</string>
+    <string name="plan_section_budgets">Budget</string>
+    <string name="plan_edit">Ubah</string>
+    <string name="plan_done">Selesai</string>
+    <string name="plan_empty_budgets">Belum ada budget · pasang batas buat bulan ini.</string>
+    <string name="plan_cta_add_budget">Pasang budget buat kategori lain</string>
+    <string name="plan_section_set_aside">Sisihin</string>
+    <string name="plan_hint_same_pot">dari kantong yang sama</string>
+    <string name="plan_empty_goals">Sisihin sebagian. Bukan bikin rekening baru.</string>
+    <string name="plan_cta_add_goal">Sisihin buat hal baru</string>
+    <string name="plan_section_recurring">Rutin</string>
+    <string name="plan_empty_recurring">Wifi, sewa, pulsa — catet pas datang.</string>
+    <string name="plan_cta_add_recurring">Tambah tagihan rutin</string>
+    <string name="plan_sheet_set_budget">Pasang budget</string>
+    <string name="plan_choice_overall">Keseluruhan</string>
+    <string name="plan_cta_set_it">Pasang</string>
+    <string name="plan_sheet_add_bill">Tambah tagihan</string>
+    <string name="plan_cta_add_it">Tambah</string>
+    <string name="plan_sheet_month">Bulan</string>
+    <string name="plan_cap_no_caps">Belum ada batas buat %1$s</string>
+    <string name="plan_cap_left_of">%1$s sisa dari %2$s</string>
+    <string name="plan_cap_over_of">%1$s lewat dari %2$s</string>
+    <string name="plan_days_last_day">Hari terakhir</string>
+    <string name="plan_cta_remove">Hapus</string>
+    <string name="plan_recurring_detail">%1$s · berikutnya %2$s</string>
+    <string name="plan_field_note">Catatan</string>
+    <string name="plan_sheet_set_aside">Sisihin</string>
+    <string name="plan_field_name">Nama</string>
+    <string name="plan_tab_now">Sekarang</string>
+    <string name="plan_tab_target">Target</string>
+    <string name="plan_budget_detail">%1$s dari %2$s</string>
+    <string name="plan_goal_set_aside">%1$s disisihin</string>
+
+    <!-- Stories -->
+    <string name="stories_title">Cerita</string>
+    <string name="stories_than_prev">dari %1$s</string>
+    <string name="stories_delta_less">%1$s lebih hemat</string>
+    <string name="stories_delta_more">%1$s lebih boros</string>
+    <string name="stories_section_where">Ke mana aja</string>
+    <string name="stories_empty_bars">Belum ada batang kategori.</string>
+    <string name="stories_empty_month">Bulan ini belum ada catatan.</string>
+    <string name="stories_empty_filter_all">Bulan ini belum ada catatan.</string>
+    <string name="stories_empty_filter_expense">Belum ada catatan pengeluaran bulan ini.</string>
+    <string name="stories_empty_filter_income">Belum ada catatan pemasukan bulan ini.</string>
+    <string name="stories_section_balance">Saldo</string>
+    <string name="stories_cd_filter">Filter catatan</string>
+    <string name="filter_all">Semua</string>
+    <string name="filter_expense">Keluar</string>
+    <string name="filter_income">Masuk</string>
+    <string name="story_headline_empty">Halaman baru. Bulan ini belum ada catatan.</string>
+    <string name="story_headline_one">%1$s %2$d%% · sisanya santai.</string>
+    <string name="story_headline_two">%1$s %2$d%% · %3$s %4$d%% · sisanya santai.</string>
+
+    <!-- Me -->
+    <string name="me_title">Aku</string>
+    <string name="me_stat_day_streak">hari berturut</string>
+    <string name="me_stat_logs_in">catatan di %1$s</string>
+    <string name="me_stat_days_logged">hari tercatat</string>
+    <string name="me_section_your_money">DUITMU</string>
+    <string name="me_row_categories">Kategori</string>
+    <string name="me_row_recurring">Rutin</string>
+    <string name="me_row_adjust_balance">Setel saldo</string>
+    <string name="me_row_currency">Mata uang</string>
+    <string name="me_section_app">APLIKASI</string>
+    <string name="me_row_appearance">Tampilan</string>
+    <string name="me_row_reminders">Pengingat</string>
+    <string name="me_value_on">Nyala</string>
+    <string name="me_value_off">Mati</string>
+    <string name="me_section_data">DATA</string>
+    <string name="me_row_export_csv">Ekspor CSV</string>
+    <string name="me_row_import_csv">Impor CSV</string>
+    <string name="me_row_month_pdf">Laporan bulan PDF</string>
+    <string name="me_sheet_appearance">Tampilan</string>
+    <string name="theme_system">Ikut HP</string>
+    <string name="theme_light">Terang</string>
+    <string name="theme_dark">Gelap</string>
+    <string name="me_sheet_currency">Mata uang</string>
+    <string name="me_sheet_adjust_balance">Setel saldo</string>
+    <string name="me_sheet_recurring">Rutin</string>
+    <string name="me_empty_recurring">Belum ada yang rutin. Tambah aturan di Rencana.</string>
+    <string name="me_recurring_plan_owns">Ubahnya di Rencana — buka Rencana buat ganti aturan.</string>
+    <string name="me_recurring_next">berikutnya %1$s</string>
+    <string name="me_sheet_reminders">Pengingat</string>
+    <string name="me_reminders_on_body">Nyala. Wherego nyapa pagi-pagi pas tagihan rutin jatuh tempo.</string>
+    <string name="me_reminders_body_2">Tiap aturan yang kamu tambah di Rencana bikin pengingatnya sendiri.</string>
+    <string name="me_greeting_fallback">Hai kamu</string>
+    <string name="me_pill_synced">Tersinkron</string>
+    <string name="me_pill_offline">Offline</string>
+    <string name="me_sign_out">Keluar</string>
+    <string name="me_sign_in">Masuk</string>
+    <string name="me_balance_now">Sekarang %1$s</string>
+    <string name="me_categories_back">← Kategori</string>
+    <string name="me_category_archived">Diarsipin</string>
+    <string name="me_category_edit_title">Ubah kategori</string>
+    <string name="me_field_name">Nama</string>
+    <string name="me_field_emoji">Emoji</string>
+    <string name="me_save">Simpan</string>
+    <string name="me_unarchive">Keluarin dari arsip</string>
+    <string name="me_archive">Arsipin</string>
+    <string name="me_close">Tutup</string>
+    <string name="me_share_subject">Ekspor Wherego</string>
+    <string name="me_share_csv_title">Ekspor CSV</string>
+    <string name="me_share_month_title">Bagikan bulan</string>
+    <string name="settings_account_guest">Tamu · offline</string>
+    <string name="settings_account_signed_in">Udah masuk</string>
+
+    <!-- Profile -->
+    <string name="profile_sub_backup_on">Backup nyala</string>
+    <string name="profile_sub_local">Catatan di HP</string>
+    <string name="profile_row_timezone">Zona waktu</string>
+    <string name="profile_row_language">Bahasa</string>
+    <string name="profile_sheet_timezone">Zona waktu</string>
+    <string name="profile_sheet_language">Bahasa</string>
+    <string name="profile_section_backup">BACKUP</string>
+    <string name="profile_backup_google">Google</string>
+    <string name="profile_backup_not_signed_in">Belum masuk</string>
+    <string name="profile_backup_body">Nyatet nggak perlu nunggu ini.</string>
+    <string name="profile_pill_local_only">Cuma di HP</string>
+    <string name="tz_jakarta">Jakarta (WIB)</string>
+    <string name="tz_makassar">Makassar (WITA)</string>
+    <string name="tz_jayapura">Jayapura (WIT)</string>
+    <string name="tz_singapore">Singapura</string>
+    <string name="tz_kuala_lumpur">Kuala Lumpur</string>
+    <string name="tz_new_york">New York</string>
+    <string name="tz_berlin">Berlin</string>
+
+    <!-- CSV import -->
+    <string name="csv_back_to_me">Balik ke Aku</string>
+    <string name="csv_title_pick">Bawa CSV</string>
+    <string name="csv_sub_pick">Catet baris dari spreadsheet. Tanggal YYYY-MM-DD. Nominal bilangan bulat.</string>
+    <string name="csv_empty_no_file">Belum ada file</string>
+    <string name="csv_helper_export">Hasil ekspor Wherego udah punya kolom yang benar.</string>
+    <string name="csv_cta_pick_file">Pilih file</string>
+    <string name="csv_cta_pick_different">Pilih file lain</string>
+    <string name="csv_title_map">Cocokin kolom</string>
+    <string name="csv_sub_map">Kami nebak dari header. Tap chip kalau salah.</string>
+    <string name="csv_fallback_title">CSV</string>
+    <string name="csv_toggle_headers">Baris pertama header</string>
+    <string name="csv_col_date">Tanggal</string>
+    <string name="csv_col_kind">Jenis</string>
+    <string name="csv_col_amount">Nominal</string>
+    <string name="csv_col_currency">Mata uang</string>
+    <string name="csv_col_category">Kategori</string>
+    <string name="csv_col_note">Catatan</string>
+    <string name="csv_column_n">Kolom %1$d</string>
+    <string name="csv_title_preview">Udah bener?</string>
+    <string name="csv_sub_preview">Kategori yang nggak dikenal masuk ke Lainnya.</string>
+    <string name="csv_empty_no_match">Nggak ada baris yang cocok sama pengaturan ini.</string>
+    <string name="csv_helper_no_match">Cek kolom tanggal dan nominal, terus balik.</string>
+    <string name="csv_showing_of">Nampilin %1$d dari %2$d</string>
+    <string name="csv_cta_park_them">Catet semua</string>
+    <string name="csv_cta_parking">Nyatet...</string>
+    <string name="csv_success_title">Kecatet.</string>
+    <string name="csv_success_sub">Udah masuk Hari ini dan Cerita.</string>
+    <string name="csv_success_helper">di buku catatan</string>
+    <string name="csv_err_read_file">Nggak bisa baca file itu.</string>
+    <string name="csv_err_no_rows">File itu nggak ada baris yang kebaca.</string>
+    <string name="csv_err_commit_format">Nggak bisa nyatet ini. Tanggal harus YYYY-MM-DD, nominal bilangan bulat.</string>
+    <string name="csv_err_commit_retry">Nggak bisa nyatet ini. Coba file-nya lagi.</string>
+
+    <!-- Notification -->
+    <string name="notif_channel_due">Pengingat tagihan</string>
+    <string name="notif_due_title">Wherego</string>
+    <string name="notif_due_body">%1$s biasanya datang hari ini. Catet?</string>
+
+    <!-- PDF export -->
+    <string name="pdf_title">Wherego · %1$s</string>
+    <string name="pdf_spent">Keluar %1$s</string>
+    <string name="pdf_no_bars">Nggak ada batang kategori.</string>
+    <string name="pdf_no_transactions">Nggak ada transaksi.</string>
+
+    <plurals name="home_sub_logged_week">
+        <item quantity="other">%d catatan minggu ini</item>
+    </plurals>
+    <plurals name="plan_days_left">
+        <item quantity="other">%d hari lagi</item>
+    </plurals>
+    <plurals name="stories_log_count">
+        <item quantity="other">%d catatan</item>
+    </plurals>
+    <plurals name="me_value_active">
+        <item quantity="other">%d aktif</item>
+    </plurals>
+    <plurals name="csv_rows_ready">
+        <item quantity="other">%d baris siap</item>
+    </plurals>
+    <plurals name="csv_success_rows">
+        <item quantity="other">%d baris</item>
+    </plurals>
+    <plurals name="onb_currency_decimals">
+        <item quantity="other">%d desimal</item>
+    </plurals>
+</resources>

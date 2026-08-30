@@ -20,11 +20,13 @@ import com.flla.wherego.core.sync.CloudStatus
 import com.flla.wherego.core.sync.DueReminder
 import com.flla.wherego.core.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -39,8 +41,10 @@ import kotlinx.coroutines.launch
 
 data class TxRowUi(
     val id: String,
-    val title: String,
-    val subtitle: String,
+    val note: String,
+    val categoryId: String,
+    val categoryName: String?,
+    val time: String?,
     val amountLabel: String,
     val emoji: String,
     val badgeSoftHex: String,
@@ -48,11 +52,11 @@ data class TxRowUi(
 )
 
 data class HomeUiState(
-    val greetingName: String = "you",
-    val weekdayLabel: String = "",
+    val greetingName: String? = null,
+    val weekday: DayOfWeek? = null,
     val weekLoggedCount: Int = 0,
-    val incomeLabel: String? = null,
-    val leftLabel: String? = null,
+    val monthIncomeMinor: Long? = null,
+    val monthLeftMinor: Long? = null,
     val monthSpentLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
     val todayTotalLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
     val today: List<TxRowUi> = emptyList(),
@@ -78,7 +82,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     private val undoId = MutableStateFlow<String?>(null)
     private var undoJob: Job? = null
-    private val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
+    private val timeFormat = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
     @Volatile private var lastZone: ZoneId = ZoneId.of(UserProfile.DEFAULT_ZONE)
 
     val state: StateFlow<HomeUiState> = combine(profiles.profile, undoId, cloudStatus.dot) { profile, undo, dot ->
@@ -87,7 +91,7 @@ class HomeViewModel @Inject constructor(
         val zone = zoneOf(profile)
         lastZone = zone
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
-        val greeting = profile?.displayName?.substringBefore(" ")?.takeIf { it.isNotBlank() } ?: "you"
+        val greeting = profile?.displayName?.substringBefore(" ")?.takeIf { it.isNotBlank() }
         val todayDate = LocalDate.now(zone)
         val today = todayDate.toString()
         val ym = YearMonth.from(todayDate).toString()
@@ -98,14 +102,10 @@ class HomeViewModel @Inject constructor(
         ) { home, bars, due ->
             HomeUiState(
                 greetingName = greeting,
-                weekdayLabel = todayDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH),
+                weekday = todayDate.dayOfWeek,
                 weekLoggedCount = home.weekLoggedCount,
-                incomeLabel = home.monthIncomeMinor.takeIf { it > 0L }?.let {
-                    "of ${MoneyFormatter.format(it, currency)} in"
-                },
-                leftLabel = home.monthIncomeMinor.takeIf { it > 0L }?.let {
-                    "${MoneyFormatter.format(it - home.monthSpentMinor, currency)} left"
-                },
+                monthIncomeMinor = home.monthIncomeMinor.takeIf { it > 0L },
+                monthLeftMinor = home.monthIncomeMinor.takeIf { it > 0L }?.let { it - home.monthSpentMinor },
                 monthSpentLabel = MoneyFormatter.format(home.monthSpentMinor, currency),
                 todayTotalLabel = MoneyFormatter.format(home.todayExpenseMinor, currency),
                 today = home.today.map { it.toRow(zone, currency) },
@@ -179,16 +179,15 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun HomeTx.toRow(zone: ZoneId, currency: String): TxRowUi {
-        val name = category?.name ?: "Other"
-        val title = tx.note.ifBlank { name }
         val time = tx.occurredAt?.let {
             Instant.ofEpochMilli(it).atZone(zone).toLocalTime().format(timeFormat)
         }
-        val subtitle = if (time != null) "$time · $name" else name
         return TxRowUi(
             id = tx.id,
-            title = title,
-            subtitle = subtitle,
+            note = tx.note,
+            categoryId = tx.categoryId,
+            categoryName = category?.name,
+            time = time,
             amountLabel = MoneyFormatter.format(tx.amountMinor, currency),
             emoji = category?.emoji ?: "📦",
             badgeSoftHex = category?.softColorHex ?: PresetCategories.softHex(tx.categoryId),

@@ -90,20 +90,22 @@ object CsvImport {
 
 object MonthPdf {
     fun lines(
-        title: String,
-        totalLabel: String,
+        titleLine: String,
+        totalLine: String,
         bars: List<Pair<String, String>>,
         txs: List<String>,
+        emptyBars: String,
+        emptyTxs: String,
     ): List<String> {
-        val out = mutableListOf("Wherego · $title", "Spent $totalLabel", "")
+        val out = mutableListOf(titleLine, totalLine, "")
         if (bars.isEmpty()) {
-            out += "No category bars."
+            out += emptyBars
         } else {
             bars.forEach { (name, amount) -> out += "$name    $amount" }
         }
         out += ""
         if (txs.isEmpty()) {
-            out += "No transactions."
+            out += emptyTxs
         } else {
             txs.forEach { out += it }
         }

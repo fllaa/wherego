@@ -59,6 +59,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -76,10 +78,17 @@ import com.flla.wherego.core.designsystem.component.WheregoStatsCard
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.designsystem.theme.parseHexColor
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.monthShort
+import com.flla.wherego.core.i18n.monthYear
 import com.flla.wherego.core.model.Category
+import com.flla.wherego.core.model.CategoryKind
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
+import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.ThemeMode
+import java.time.YearMonth
 import kotlinx.coroutines.launch
 
 private val Palette = listOf(
@@ -89,11 +98,11 @@ private val Palette = listOf(
 
 /** The base currencies `Me → YOUR MONEY → Currency` offers, mirroring `Onboarding 2/3`. */
 private val Currencies = listOf(
-    "IDR" to "Indonesian Rupiah",
-    "USD" to "US Dollar",
-    "SGD" to "Singapore Dollar",
-    "MYR" to "Malaysian Ringgit",
-    "EUR" to "Euro",
+    "IDR" to R.string.currency_idr,
+    "USD" to R.string.currency_usd,
+    "SGD" to R.string.currency_sgd,
+    "MYR" to R.string.currency_myr,
+    "EUR" to R.string.currency_eur,
 )
 
 @Composable
@@ -113,6 +122,16 @@ fun MeScreen(
         showImport -> MePage.Import
         else -> MePage.Root
     }
+    val shareSubject = stringResource(R.string.me_share_subject)
+    val shareCsvTitle = stringResource(R.string.me_share_csv_title)
+    val shareMonthTitle = stringResource(R.string.me_share_month_title)
+    val pdfTitleLine = stringResource(
+        R.string.pdf_title,
+        monthYear(YearMonth.parse(state.yearMonth)),
+    )
+    val pdfSpentFormat = stringResource(R.string.pdf_spent)
+    val pdfNoBars = stringResource(R.string.pdf_no_bars)
+    val pdfNoTxs = stringResource(R.string.pdf_no_transactions)
     AnimatedContent(
         targetState = page,
         modifier = Modifier.fillMaxSize(),
@@ -162,9 +181,9 @@ fun MeScreen(
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/csv"
                             putExtra(Intent.EXTRA_TEXT, csv)
-                            putExtra(Intent.EXTRA_SUBJECT, "Wherego export")
+                            putExtra(Intent.EXTRA_SUBJECT, shareSubject)
                         }
-                        context.startActivity(Intent.createChooser(send, "Export CSV"))
+                        context.startActivity(Intent.createChooser(send, shareCsvTitle))
                     }
                 },
                 onImport = { showImport = true },
@@ -173,14 +192,19 @@ fun MeScreen(
                         val uri = MonthPdfWriter.write(
                             context,
                             "wherego-${state.yearMonth}.pdf",
-                            viewModel.monthPdfLines(),
+                            viewModel.monthPdfLines(
+                                titleLine = pdfTitleLine,
+                                totalLine = pdfSpentFormat,
+                                emptyBars = pdfNoBars,
+                                emptyTxs = pdfNoTxs,
+                            ),
                         )
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "application/pdf"
                             putExtra(Intent.EXTRA_STREAM, uri)
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
-                        context.startActivity(Intent.createChooser(send, "Share month"))
+                        context.startActivity(Intent.createChooser(send, shareMonthTitle))
                     }
                 },
             )
@@ -221,20 +245,23 @@ fun SettingsScreen(
             .padding(start = 18.dp, end = 18.dp, top = 6.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("Me", style = WheregoType.pageTitle, color = colors.ink)
+        Text(stringResource(R.string.me_title), style = WheregoType.pageTitle, color = colors.ink)
         ProfileCard(state = state, onClick = onAccount)
         WheregoStatsCard(
             listOf(
-                state.streakDays.toString() to "day streak",
-                state.logsThisMonth.toString() to "logs in ${state.monthShortLabel}",
-                "${state.daysLogged}/${state.daysInMonth}" to "days logged",
+                state.streakDays.toString() to stringResource(R.string.me_stat_day_streak),
+                state.logsThisMonth.toString() to stringResource(
+                    R.string.me_stat_logs_in,
+                    monthShort(YearMonth.parse(state.yearMonth)),
+                ),
+                "${state.daysLogged}/${state.daysInMonth}" to stringResource(R.string.me_stat_days_logged),
             ),
         )
-        SettingsGroup("YOUR MONEY") {
+        SettingsGroup(stringResource(R.string.me_section_your_money)) {
             WheregoSettingRow(
                 icon = Icons.Outlined.Sell,
                 badgeFill = colors.peach,
-                label = "Categories",
+                label = stringResource(R.string.me_row_categories),
                 onClick = onCategories,
                 value = state.categoryCount.toString(),
             )
@@ -242,31 +269,35 @@ fun SettingsScreen(
             WheregoSettingRow(
                 icon = Icons.Outlined.Repeat,
                 badgeFill = colors.blueSoft,
-                label = "Recurring",
+                label = stringResource(R.string.me_row_recurring),
                 onClick = { sheet = MeSheet.RECURRING },
-                value = "${state.recurringActiveCount} active",
+                value = pluralStringResource(
+                    R.plurals.me_value_active,
+                    state.recurringActiveCount,
+                    state.recurringActiveCount,
+                ),
             )
             WheregoSettingDivider()
             WheregoSettingRow(
                 icon = Icons.Outlined.Balance,
                 badgeFill = colors.greenSoft,
-                label = "Adjust balance",
+                label = stringResource(R.string.me_row_adjust_balance),
                 onClick = { sheet = MeSheet.BALANCE },
             )
             WheregoSettingDivider()
             WheregoSettingRow(
                 icon = Icons.Outlined.Payments,
                 badgeFill = colors.amberSoft,
-                label = "Currency",
+                label = stringResource(R.string.me_row_currency),
                 onClick = { sheet = MeSheet.CURRENCY },
                 value = state.currency,
             )
         }
-        SettingsGroup("APP") {
+        SettingsGroup(stringResource(R.string.me_section_app)) {
             WheregoSettingRow(
                 icon = Icons.Outlined.DarkMode,
                 badgeFill = colors.violetSoft,
-                label = "Appearance",
+                label = stringResource(R.string.me_row_appearance),
                 onClick = { sheet = MeSheet.APPEARANCE },
                 value = themeLabel(state.themeMode),
             )
@@ -274,30 +305,34 @@ fun SettingsScreen(
             WheregoSettingRow(
                 icon = Icons.Outlined.Notifications,
                 badgeFill = colors.amberSoft,
-                label = "Reminders",
+                label = stringResource(R.string.me_row_reminders),
                 onClick = { sheet = MeSheet.REMINDERS },
-                value = if (state.remindersOn) "On" else "Off",
+                value = if (state.remindersOn) {
+                    stringResource(R.string.me_value_on)
+                } else {
+                    stringResource(R.string.me_value_off)
+                },
             )
         }
-        SettingsGroup("DATA") {
+        SettingsGroup(stringResource(R.string.me_section_data)) {
             WheregoSettingRow(
                 icon = Icons.Outlined.Download,
                 badgeFill = colors.greenSoft,
-                label = "Export CSV",
+                label = stringResource(R.string.me_row_export_csv),
                 onClick = onExport,
             )
             WheregoSettingDivider()
             WheregoSettingRow(
                 icon = Icons.Outlined.Upload,
                 badgeFill = colors.tealSoft,
-                label = "Import CSV",
+                label = stringResource(R.string.me_row_import_csv),
                 onClick = onImport,
             )
             WheregoSettingDivider()
             WheregoSettingRow(
                 icon = Icons.Outlined.Description,
                 badgeFill = colors.blueSoft,
-                label = "Month report PDF",
+                label = stringResource(R.string.me_row_month_pdf),
                 onClick = onMonthPdf,
             )
         }
@@ -306,30 +341,35 @@ fun SettingsScreen(
     }
     when (sheet) {
         MeSheet.NONE -> Unit
-        MeSheet.APPEARANCE -> MeBottomSheet("Appearance", onDismiss = { sheet = MeSheet.NONE }) {
-            listOf(
-                ThemeMode.SYSTEM to "System",
-                ThemeMode.LIGHT to "Light",
-                ThemeMode.DARK to "Dark",
-            ).forEach { (value, label) ->
+        MeSheet.APPEARANCE -> MeBottomSheet(
+            stringResource(R.string.me_sheet_appearance),
+            onDismiss = { sheet = MeSheet.NONE },
+        ) {
+            listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK).forEach { value ->
                 ChoiceRow(
-                    label = label,
+                    label = themeLabel(value),
                     selected = state.themeMode == value,
                     onClick = { onTheme(value) },
                 )
             }
         }
-        MeSheet.CURRENCY -> MeBottomSheet("Currency", onDismiss = { sheet = MeSheet.NONE }) {
-            Currencies.forEach { (code, name) ->
+        MeSheet.CURRENCY -> MeBottomSheet(
+            stringResource(R.string.me_sheet_currency),
+            onDismiss = { sheet = MeSheet.NONE },
+        ) {
+            Currencies.forEach { (code, nameRes) ->
                 ChoiceRow(
                     label = code,
                     selected = state.currency == code,
                     onClick = { onCurrency(code) },
-                    hint = name,
+                    hint = stringResource(nameRes),
                 )
             }
         }
-        MeSheet.BALANCE -> MeBottomSheet("Adjust balance", onDismiss = { sheet = MeSheet.NONE }) {
+        MeSheet.BALANCE -> MeBottomSheet(
+            stringResource(R.string.me_sheet_adjust_balance),
+            onDismiss = { sheet = MeSheet.NONE },
+        ) {
             BalanceSheetBody(
                 state = state,
                 balanceMinor = balanceMinor,
@@ -341,10 +381,13 @@ fun SettingsScreen(
                 },
             )
         }
-        MeSheet.RECURRING -> MeBottomSheet("Recurring", onDismiss = { sheet = MeSheet.NONE }) {
+        MeSheet.RECURRING -> MeBottomSheet(
+            stringResource(R.string.me_sheet_recurring),
+            onDismiss = { sheet = MeSheet.NONE },
+        ) {
             if (state.recurringRules.isEmpty()) {
                 Text(
-                    "Nothing repeating yet. Add rules in Plan.",
+                    stringResource(R.string.me_empty_recurring),
                     style = WheregoType.helper,
                     color = colors.muted,
                 )
@@ -359,26 +402,37 @@ fun SettingsScreen(
                             Text(rule.emoji, fontSize = 16.sp)
                         }
                         Column(Modifier.weight(1f)) {
-                            Text(rule.label, style = WheregoType.txTitle, color = colors.ink)
-                            Text(rule.detail, style = WheregoType.meterDetail, color = colors.muted)
+                            Text(
+                                recurringLabel(rule),
+                                style = WheregoType.txTitle,
+                                color = colors.ink,
+                            )
+                            Text(
+                                recurringDetail(rule),
+                                style = WheregoType.meterDetail,
+                                color = colors.muted,
+                            )
                         }
                     }
                 }
                 Text(
-                    "Plan owns editing — open Plan to change a rule.",
+                    stringResource(R.string.me_recurring_plan_owns),
                     style = WheregoType.helper,
                     color = colors.muted,
                 )
             }
         }
-        MeSheet.REMINDERS -> MeBottomSheet("Reminders", onDismiss = { sheet = MeSheet.NONE }) {
+        MeSheet.REMINDERS -> MeBottomSheet(
+            stringResource(R.string.me_sheet_reminders),
+            onDismiss = { sheet = MeSheet.NONE },
+        ) {
             Text(
-                "On. Wherego pings you the morning a recurring bill is due.",
+                stringResource(R.string.me_reminders_on_body),
                 style = WheregoType.helper,
                 color = colors.muted,
             )
             Text(
-                "Every rule you add in Plan schedules its own reminder.",
+                stringResource(R.string.me_reminders_body_2),
                 style = WheregoType.helper,
                 color = colors.muted,
             )
@@ -386,10 +440,34 @@ fun SettingsScreen(
     }
 }
 
+@Composable
 private fun themeLabel(mode: String): String = when (mode) {
-    ThemeMode.LIGHT -> "Light"
-    ThemeMode.DARK -> "Dark"
-    else -> "System"
+    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+    ThemeMode.DARK -> stringResource(R.string.theme_dark)
+    else -> stringResource(R.string.theme_system)
+}
+
+@Composable
+private fun recurringLabel(rule: RecurringSummary): String {
+    if (rule.note.isNotBlank()) return rule.note
+    val stored = rule.categoryName
+    return if (stored != null) {
+        categoryDisplayName(rule.categoryId, stored)
+    } else {
+        stringResource(R.string.recurring_fallback_label)
+    }
+}
+
+@Composable
+private fun recurringDetail(rule: RecurringSummary): String {
+    val amount = MoneyFormatter.format(rule.amountMinor, rule.currency)
+    val freq = if (rule.freq == Recurrence.WEEKLY) {
+        stringResource(R.string.freq_weekly)
+    } else {
+        stringResource(R.string.freq_monthly)
+    }
+    val next = stringResource(R.string.me_recurring_next, rule.nextOn)
+    return listOf(amount, freq, next).joinToString(" · ")
 }
 
 /** `Content / Profile Card` — avatar initial, name + email, sync pill. */
@@ -427,12 +505,18 @@ private fun ProfileCard(state: SettingsUiState, onClick: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                state.displayName.ifBlank { "Hey you" },
+                state.displayName.ifBlank { stringResource(R.string.me_greeting_fallback) },
                 style = WheregoType.cardTitle,
                 color = colors.ink,
             )
             Text(
-                state.email ?: state.accountLine,
+                state.email?.takeIf { it.isNotBlank() }
+                    ?: state.accountLine
+                    ?: if (state.signedIn) {
+                        stringResource(R.string.settings_account_signed_in)
+                    } else {
+                        stringResource(R.string.settings_account_guest)
+                    },
                 style = WheregoType.helper,
                 color = colors.muted,
             )
@@ -462,7 +546,7 @@ private fun SyncPill(signedIn: Boolean, onClick: () -> Unit) {
                 .background(tint),
         )
         Text(
-            if (signedIn) "Synced" else "Offline",
+            if (signedIn) stringResource(R.string.me_pill_synced) else stringResource(R.string.me_pill_offline),
             style = WheregoType.leftPill,
             color = tint,
         )
@@ -500,7 +584,7 @@ private fun AccountRow(signedIn: Boolean, onSignOut: () -> Unit, onSignIn: () ->
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(17.dp))
         Spacer(Modifier.size(8.dp))
         Text(
-            if (signedIn) "Sign out" else "Sign in",
+            if (signedIn) stringResource(R.string.me_sign_out) else stringResource(R.string.me_sign_in),
             style = WheregoType.settingLabel.copy(fontSize = 15.sp),
             color = tint,
         )
@@ -564,7 +648,10 @@ private fun BalanceSheetBody(
 ) {
     val colors = WheregoTheme.colors
     Text(
-        "Now ${MoneyFormatter.format(balanceMinor, state.currency)}",
+        stringResource(
+            R.string.me_balance_now,
+            MoneyFormatter.format(balanceMinor, state.currency),
+        ),
         style = WheregoType.helper,
         color = colors.muted,
     )
@@ -594,7 +681,7 @@ fun CategoryManagerScreen(
             .padding(18.dp),
     ) {
         Text(
-            "← Categories",
+            stringResource(R.string.me_categories_back),
             style = WheregoType.cardTitle,
             color = colors.ink,
             modifier = Modifier.clickable(onClick = onBack),
@@ -617,9 +704,17 @@ fun CategoryManagerScreen(
                 ) {
                     Text(cat.emoji, style = WheregoType.cardTitle)
                     Column(Modifier.weight(1f)) {
-                        Text(cat.name, style = WheregoType.chip, color = colors.ink)
                         Text(
-                            if (cat.archived) "Archived" else cat.kind,
+                            categoryDisplayName(cat.id, cat.name),
+                            style = WheregoType.chip,
+                            color = colors.ink,
+                        )
+                        Text(
+                            if (cat.archived) {
+                                stringResource(R.string.me_category_archived)
+                            } else {
+                                categoryKindLabel(cat.kind)
+                            },
                             style = WheregoType.meta,
                             color = colors.muted,
                         )
@@ -646,22 +741,40 @@ fun CategoryManagerScreen(
 }
 
 @Composable
+private fun categoryKindLabel(kind: String): String = when (kind) {
+    CategoryKind.INCOME -> stringResource(R.string.kind_income)
+    CategoryKind.BOTH -> stringResource(R.string.kind_both)
+    else -> stringResource(R.string.kind_expense)
+}
+
+@Composable
 private fun CategoryEditDialog(
     category: Category,
     onDismiss: () -> Unit,
     onSave: (String, String, String) -> Unit,
     onArchive: () -> Unit,
 ) {
-    var name by remember { mutableStateOf(category.name) }
-    var emoji by remember { mutableStateOf(category.emoji) }
-    var color by remember { mutableStateOf(category.colorHex) }
+    val resolvedName = categoryDisplayName(category.id, category.name)
+    var name by remember(category.id) { mutableStateOf(resolvedName) }
+    var emoji by remember(category.id) { mutableStateOf(category.emoji) }
+    var color by remember(category.id) { mutableStateOf(category.colorHex) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit category") },
+        title = { Text(stringResource(R.string.me_category_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it.take(24) }, singleLine = true, label = { Text("Name") })
-                OutlinedTextField(value = emoji, onValueChange = { emoji = it.take(4) }, singleLine = true, label = { Text("Emoji") })
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(24) },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.me_field_name)) },
+                )
+                OutlinedTextField(
+                    value = emoji,
+                    onValueChange = { emoji = it.take(4) },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.me_field_emoji)) },
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Palette.forEach { hex ->
                         Box(
@@ -681,14 +794,22 @@ private fun CategoryEditDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(name, emoji, color) }) { Text("Save") }
+            TextButton(
+                onClick = { onSave(if (name == resolvedName) "" else name, emoji, color) },
+            ) { Text(stringResource(R.string.me_save)) }
         },
         dismissButton = {
             Row {
                 TextButton(onClick = onArchive) {
-                    Text(if (category.archived) "Unarchive" else "Archive")
+                    Text(
+                        if (category.archived) {
+                            stringResource(R.string.me_unarchive)
+                        } else {
+                            stringResource(R.string.me_archive)
+                        },
+                    )
                 }
-                TextButton(onClick = onDismiss) { Text("Close") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.me_close)) }
             }
         },
     )

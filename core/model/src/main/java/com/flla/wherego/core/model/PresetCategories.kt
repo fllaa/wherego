@@ -58,7 +58,6 @@ object PresetCategories {
     )
 
     const val CUSTOM_PACK_ID = "custom"
-    const val CUSTOM_PACK_LABEL = "Custom"
 
     fun softHex(id: String): String =
         all.firstOrNull { it.id == id }?.softColorHex ?: ACCENT_SOFT_HEX

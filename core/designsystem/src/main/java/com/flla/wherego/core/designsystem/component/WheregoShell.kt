@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
@@ -127,7 +129,7 @@ fun WheregoMonthStepper(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             Icon(
                 Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                contentDescription = "Previous month",
+                contentDescription = stringResource(R.string.ds_cd_prev_month),
                 tint = colors.muted,
                 modifier = Modifier
                     .size(18.dp)
@@ -135,7 +137,7 @@ fun WheregoMonthStepper(
             )
             Icon(
                 Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = "Next month",
+                contentDescription = stringResource(R.string.ds_cd_next_month),
                 tint = if (canGoNext) colors.ink else colors.muted,
                 modifier = Modifier
                     .size(18.dp)

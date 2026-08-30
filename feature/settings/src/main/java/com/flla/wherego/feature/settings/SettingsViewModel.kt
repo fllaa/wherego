@@ -24,9 +24,6 @@ import com.flla.wherego.core.sync.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,29 +36,33 @@ import kotlinx.coroutines.launch
 /** One row of the read-only `Me → Recurring` list. Plan still owns rule editing. */
 data class RecurringSummary(
     val emoji: String,
-    val label: String,
-    val detail: String,
+    val note: String,
+    val categoryId: String,
+    val categoryName: String?,
+    val amountMinor: Long,
+    val currency: String,
+    val freq: String,
+    val nextOn: String,
 )
 
 data class SettingsUiState(
     val displayName: String = "",
     val themeMode: String = ThemeMode.SYSTEM,
     val currency: String = UserProfile.DEFAULT_CURRENCY,
-    val localeTag: String = UserProfile.DEFAULT_LOCALE,
+    val localeTag: String = UserProfile.DEFAULT_LANGUAGE,
     val timeZoneId: String = UserProfile.DEFAULT_ZONE,
     val photoUrl: String? = null,
     val balanceLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
     val balanceDigits: String = "",
     val categories: List<Category> = emptyList(),
     val signedIn: Boolean = false,
-    val accountLine: String = "Guest · offline",
+    val accountLine: String? = null,
     val initial: String = "?",
     val email: String? = null,
     val streakDays: Int = 0,
     val logsThisMonth: Int = 0,
     val daysLogged: Int = 0,
     val daysInMonth: Int = YearMonth.now().lengthOfMonth(),
-    val monthShortLabel: String = shortMonth(YearMonth.now()),
     val yearMonth: String = YearMonth.now().toString(),
     val categoryCount: Int = 0,
     val recurringActiveCount: Int = 0,
@@ -72,9 +73,6 @@ data class SettingsUiState(
      */
     val remindersOn: Boolean = true,
 )
-
-private fun shortMonth(ym: YearMonth): String =
-    ym.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
 
 /** The five flows that only describe the profile/theme/account half of `Me`. */
 private data class Account(
@@ -94,7 +92,6 @@ class SettingsViewModel @Inject constructor(
     private val auth: AuthRepository,
 ) : ViewModel() {
     private val balanceDigits = MutableStateFlow("")
-    private val titleFmt = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("id", "ID"))
 
     private val account = combine(
         profiles.profile,
@@ -114,11 +111,10 @@ class SettingsViewModel @Inject constructor(
         val profile = acc.profile
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
         val accountLine = if (acc.auth.signedIn) {
-            listOf(acc.auth.displayName, acc.auth.email, "Signed in")
-                .first { !it.isNullOrBlank() }
-                .toString()
+            listOf(acc.auth.displayName, acc.auth.email)
+                .firstOrNull { !it.isNullOrBlank() }
         } else {
-            "Guest · offline"
+            null
         }
         val name = profile?.displayName?.takeIf { it.isNotBlank() }
             ?: acc.auth.displayName?.takeIf { it.isNotBlank() }
@@ -136,7 +132,7 @@ class SettingsViewModel @Inject constructor(
             displayName = name.orEmpty(),
             themeMode = acc.theme,
             currency = currency,
-            localeTag = profile?.localeTag ?: UserProfile.DEFAULT_LOCALE,
+            localeTag = profile?.localeTag ?: UserProfile.DEFAULT_LANGUAGE,
             timeZoneId = profile?.timeZoneId ?: UserProfile.DEFAULT_ZONE,
             photoUrl = acc.auth.photoUrl ?: profile?.photoUrl,
             balanceLabel = MoneyFormatter.format(0L, currency),
@@ -150,7 +146,6 @@ class SettingsViewModel @Inject constructor(
             logsThisMonth = inMonth.size,
             daysLogged = LogStreak.distinctDays(inMonth.map { it.occurredOn }),
             daysInMonth = ym.lengthOfMonth(),
-            monthShortLabel = shortMonth(ym),
             yearMonth = ym.toString(),
             categoryCount = acc.categories.count { !it.archived },
             recurringActiveCount = activeRules.size,
@@ -162,12 +157,13 @@ class SettingsViewModel @Inject constructor(
         val category = categories.firstOrNull { it.id == rule.categoryId }
         return RecurringSummary(
             emoji = category?.emoji ?: "🔁",
-            label = rule.note.ifBlank { category?.name ?: "Bill" },
-            detail = listOf(
-                MoneyFormatter.format(rule.amountMinor, rule.currency),
-                rule.freq,
-                "next ${rule.nextOn}",
-            ).joinToString(" · "),
+            note = rule.note,
+            categoryId = rule.categoryId,
+            categoryName = category?.name,
+            amountMinor = rule.amountMinor,
+            currency = rule.currency,
+            freq = rule.freq,
+            nextOn = rule.nextOn,
         )
     }
 
@@ -273,7 +269,12 @@ class SettingsViewModel @Inject constructor(
      * `Me → DATA → Month report PDF`. Same report Stories shares, built for the
      * month the device is in, ready for `MonthPdfWriter.write`.
      */
-    suspend fun monthPdfLines(): List<String> {
+    suspend fun monthPdfLines(
+        titleLine: String,
+        totalLine: String,
+        emptyBars: String,
+        emptyTxs: String,
+    ): List<String> {
         val profile = profiles.profile.first()
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
         val ym = YearMonth.from(LocalDate.now(zoneOf(profile)))
@@ -287,9 +288,15 @@ class SettingsViewModel @Inject constructor(
         val barPairs = spends.take(3).map { spend ->
             "${spend.emoji} ${spend.name}" to MoneyFormatter.format(spend.amountMinor, currency)
         }
-        val title = ym.format(titleFmt).replaceFirstChar { it.titlecase(Locale("id", "ID")) }
         val total = MoneyFormatter.format(spends.sumOf { it.amountMinor }, currency)
-        return MonthPdf.lines(title, total, barPairs, txLines)
+        return MonthPdf.lines(
+            titleLine = titleLine,
+            totalLine = totalLine.format(total),
+            bars = barPairs,
+            txs = txLines,
+            emptyBars = emptyBars,
+            emptyTxs = emptyTxs,
+        )
     }
 
     private fun pdfLine(tx: Transaction, categoryName: String?): String {

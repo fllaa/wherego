@@ -46,10 +46,12 @@ class S6Test {
     @Test
     fun monthPdfHasTitleAndRows() {
         val lines = MonthPdf.lines(
-            title = "Agustus 2026",
-            totalLabel = "Rp 18.000",
+            titleLine = "Wherego · Agustus 2026",
+            totalLine = "Spent Rp 18.000",
             bars = listOf("🍜 Food out" to "Rp 18.000"),
             txs = listOf("2026-08-12  expense  Rp 18.000  Food out  Warteg"),
+            emptyBars = "No category bars.",
+            emptyTxs = "No transactions.",
         )
         assertEquals("Wherego · Agustus 2026", lines.first())
         assertEquals("Spent Rp 18.000", lines[1])

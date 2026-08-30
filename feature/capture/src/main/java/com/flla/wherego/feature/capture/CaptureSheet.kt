@@ -42,12 +42,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.designsystem.component.ParkItButton
 import com.flla.wherego.core.designsystem.component.WheregoNumpad
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
@@ -115,10 +118,10 @@ fun CaptureSheet(
                             .toString()
                         viewModel.onDatePicked(picked)
                     },
-                ) { Text("OK") }
+                ) { Text(stringResource(R.string.dialog_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::onPickDismissed) { Text("Cancel") }
+                TextButton(onClick = viewModel::onPickDismissed) { Text(stringResource(R.string.dialog_cancel)) }
             },
         ) {
             DatePicker(state = pickerState)
@@ -172,16 +175,26 @@ private fun CaptureSheetBody(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DateChip("Today", selected = today, onClick = onToday)
-            DateChip("Yesterday", selected = yesterday, onClick = onYesterday)
-            DateChip("Pick", selected = !today && !yesterday && state.occurredOn.isNotEmpty(), onClick = onPickRequested)
+            DateChip(
+                stringResource(R.string.capture_chip_today),
+                selected = today,
+                showCalendar = true,
+                onClick = onToday,
+            )
+            DateChip(stringResource(R.string.capture_chip_yesterday), selected = yesterday, onClick = onYesterday)
+            DateChip(
+                stringResource(R.string.capture_chip_pick),
+                selected = !today && !yesterday && state.occurredOn.isNotEmpty(),
+                showCalendar = true,
+                onClick = onPickRequested,
+            )
             QuickChip("10rb", onClick = { onQuickAmount(10_000L) })
             QuickChip("15rb", onClick = { onQuickAmount(15_000L) })
             QuickChip("25rb", onClick = { onQuickAmount(25_000L) })
-            QuickChip("note", selected = state.noteOpen, onClick = onToggleNote)
+            QuickChip(stringResource(R.string.capture_chip_note), selected = state.noteOpen, onClick = onToggleNote)
             QuickChip(state.currency, selected = state.currency != state.baseCurrency, onClick = onCycleCurrency)
             if (state.editingId != null) {
-                QuickChip("photo", onClick = { onAttach(state.editingId) })
+                QuickChip(stringResource(R.string.capture_chip_photo), onClick = { onAttach(state.editingId) })
             }
         }
         if (state.currency != state.baseCurrency) {
@@ -192,7 +205,7 @@ private fun CaptureSheetBody(
                     .fillMaxWidth()
                     .height(52.dp),
                 singleLine = true,
-                placeholder = { Text("rate to ${state.baseCurrency}", color = colors.muted) },
+                placeholder = { Text(stringResource(R.string.capture_hint_fx, state.baseCurrency), color = colors.muted) },
             )
         }
         if (state.noteOpen) {
@@ -203,7 +216,7 @@ private fun CaptureSheetBody(
                     .fillMaxWidth()
                     .height(52.dp),
                 singleLine = true,
-                placeholder = { Text("note", color = colors.muted) },
+                placeholder = { Text(stringResource(R.string.capture_hint_note), color = colors.muted) },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -250,7 +263,10 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
             .background(colors.chipIdle)
             .padding(4.dp),
     ) {
-        listOf(TransactionKind.EXPENSE to "Expense", TransactionKind.INCOME to "Income").forEach { (value, label) ->
+        listOf(
+            TransactionKind.EXPENSE to stringResource(R.string.capture_tab_expense),
+            TransactionKind.INCOME to stringResource(R.string.capture_tab_income),
+        ).forEach { (value, label) ->
             val selected = kind == value
             Box(
                 Modifier
@@ -303,7 +319,7 @@ private fun AmountDisplay(state: CaptureUiState) {
 }
 
 @Composable
-private fun DateChip(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun DateChip(label: String, selected: Boolean, onClick: () -> Unit, showCalendar: Boolean = false) {
     val colors = WheregoTheme.colors
     Row(
         Modifier
@@ -314,7 +330,7 @@ private fun DateChip(label: String, selected: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        if (label == "Today" || label == "Pick") {
+        if (showCalendar) {
             Icon(
                 Icons.Outlined.CalendarMonth,
                 contentDescription = null,
@@ -372,7 +388,7 @@ private fun CategoryRow(
                 .clickable(onClick = onMore),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Outlined.MoreHoriz, contentDescription = "More categories", tint = colors.ink)
+            Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.capture_cd_more_categories), tint = colors.ink)
         }
     }
 }
@@ -422,6 +438,6 @@ private fun CategoryChip(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(cat.emoji)
-        Text(cat.name, style = WheregoType.chip, color = labelColor)
+        Text(categoryDisplayName(cat.id, cat.name), style = WheregoType.chip, color = labelColor)
     }
 }

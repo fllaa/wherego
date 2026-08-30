@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,21 +55,25 @@ import com.flla.wherego.core.designsystem.component.WheregoSettingsCard
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.model.AppLanguage
 import com.flla.wherego.feature.auth.AuthViewModel
+import com.flla.wherego.feature.auth.SignInResult
 
 private val TimeZones = listOf(
-    "Asia/Jakarta" to "Jakarta (WIB)",
-    "Asia/Makassar" to "Makassar (WITA)",
-    "Asia/Jayapura" to "Jayapura (WIT)",
-    "Asia/Singapore" to "Singapore",
-    "Asia/Kuala_Lumpur" to "Kuala Lumpur",
-    "America/New_York" to "New York",
-    "Europe/Berlin" to "Berlin",
+    "Asia/Jakarta" to R.string.tz_jakarta,
+    "Asia/Makassar" to R.string.tz_makassar,
+    "Asia/Jayapura" to R.string.tz_jayapura,
+    "Asia/Singapore" to R.string.tz_singapore,
+    "Asia/Kuala_Lumpur" to R.string.tz_kuala_lumpur,
+    "America/New_York" to R.string.tz_new_york,
+    "Europe/Berlin" to R.string.tz_berlin,
 )
 
-private val Locales = listOf(
-    "id-ID" to "Indonesian",
-    "en-US" to "English",
+private val Languages = listOf(
+    AppLanguage.SYSTEM to R.string.lang_system,
+    AppLanguage.ID to R.string.lang_id,
+    AppLanguage.EN to R.string.lang_en,
 )
 
 private enum class ProfileSheet { NONE, TIMEZONE, LOCALE }
@@ -83,10 +88,16 @@ fun ProfileScreen(
     val context = LocalContext.current
     val state by settings.state.collectAsStateWithLifecycle()
     var sheet by remember { mutableStateOf(ProfileSheet.NONE) }
-    var message by remember { mutableStateOf<String?>(null) }
-    val heading = state.displayName.ifBlank { "Hey you" }
-    val zoneLabel = TimeZones.firstOrNull { it.first == state.timeZoneId }?.second ?: state.timeZoneId
-    val localeLabel = Locales.firstOrNull { it.first == state.localeTag }?.second ?: state.localeTag
+    var signedOutBanner by remember { mutableStateOf(false) }
+    var authResult by remember { mutableStateOf<SignInResult?>(null) }
+    val heading = state.displayName.ifBlank { stringResource(R.string.me_greeting_fallback) }
+    val parsedLanguage = AppLanguage.parse(state.localeTag)
+    val zoneLabel = TimeZones.firstOrNull { it.first == state.timeZoneId }
+        ?.let { stringResource(it.second) }
+        ?: state.timeZoneId
+    val localeLabel = Languages.firstOrNull { it.first == parsedLanguage }
+        ?.let { stringResource(it.second) }
+        ?: stringResource(R.string.lang_system)
 
     Column(
         Modifier
@@ -111,7 +122,7 @@ fun ProfileScreen(
             ) {
                 Icon(
                     Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.ds_cd_back),
                     tint = colors.ink,
                     modifier = Modifier.size(19.dp),
                 )
@@ -132,8 +143,12 @@ fun ProfileScreen(
                 ProfileAvatar(photoUrl = state.photoUrl, signedIn = state.signedIn)
                 Text(heading, style = WheregoType.onboardTitle, color = colors.ink)
                 Text(
-                    if (state.signedIn) state.email ?: "Backup is on"
-                    else "Local notebook",
+                    if (state.signedIn) {
+                        state.email?.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.profile_sub_backup_on)
+                    } else {
+                        stringResource(R.string.profile_sub_local)
+                    },
                     style = WheregoType.onboardSub,
                     color = colors.muted,
                 )
@@ -143,7 +158,7 @@ fun ProfileScreen(
                 WheregoSettingRow(
                     icon = Icons.Outlined.Schedule,
                     badgeFill = colors.tealSoft,
-                    label = "Timezone",
+                    label = stringResource(R.string.profile_row_timezone),
                     onClick = { sheet = ProfileSheet.TIMEZONE },
                     value = zoneLabel,
                 )
@@ -151,34 +166,42 @@ fun ProfileScreen(
                 WheregoSettingRow(
                     icon = Icons.Outlined.Language,
                     badgeFill = colors.tealSoft,
-                    label = "Locale",
+                    label = stringResource(R.string.profile_row_language),
                     onClick = { sheet = ProfileSheet.LOCALE },
                     value = localeLabel,
                 )
             }
-            WheregoSectionLabel("BACKUP")
+            WheregoSectionLabel(stringResource(R.string.profile_section_backup))
             WheregoCard(cornerRadius = 22.dp, padding = 16.dp, gap = 10.dp) {
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("Google", style = WheregoType.txTitle, color = colors.ink)
+                    Text(
+                        stringResource(R.string.profile_backup_google),
+                        style = WheregoType.txTitle,
+                        color = colors.ink,
+                    )
                     BackupChip(signedIn = state.signedIn)
                 }
                 Text(
-                    state.email ?: "Not signed in",
+                    state.email ?: stringResource(R.string.profile_backup_not_signed_in),
                     style = WheregoType.helper,
                     color = colors.muted,
                 )
                 Text(
-                    "Capture never waits on this.",
+                    stringResource(R.string.profile_backup_body),
                     style = WheregoType.helper,
                     color = colors.muted,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (state.signedIn) "Sign out" else "Sign in with Google",
+                    if (state.signedIn) {
+                        stringResource(R.string.auth_sign_out)
+                    } else {
+                        stringResource(R.string.auth_sign_in_google)
+                    },
                     style = WheregoType.chip,
                     color = if (state.signedIn) colors.coral else colors.tealDeep,
                     modifier = Modifier
@@ -186,31 +209,43 @@ fun ProfileScreen(
                         .clickable {
                             if (state.signedIn) {
                                 auth.signOut()
-                                message = "Local stays. Cloud paused."
+                                signedOutBanner = true
+                                authResult = null
                             } else {
-                                val activity = context.findActivity()
-                                if (activity == null) {
-                                    message = "Need an Activity to sign in."
-                                } else {
-                                    auth.signIn(activity) { message = it }
-                                }
+                                signedOutBanner = false
+                                auth.signIn(context.findActivity()) { authResult = it }
                             }
                         }
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                 )
             }
-            message?.let {
-                Text(it, style = WheregoType.meta, color = colors.coral)
+            if (signedOutBanner) {
+                Text(
+                    stringResource(R.string.auth_sign_out_done),
+                    style = WheregoType.meta,
+                    color = colors.coral,
+                )
+            } else {
+                authResult?.let { result ->
+                    Text(
+                        authBanner(result),
+                        style = WheregoType.meta,
+                        color = colors.coral,
+                    )
+                }
             }
             Spacer(Modifier.height(24.dp))
         }
     }
     when (sheet) {
         ProfileSheet.NONE -> Unit
-        ProfileSheet.TIMEZONE -> WheregoBottomSheet("Timezone", onDismiss = { sheet = ProfileSheet.NONE }) {
-            TimeZones.forEach { (id, label) ->
+        ProfileSheet.TIMEZONE -> WheregoBottomSheet(
+            stringResource(R.string.profile_sheet_timezone),
+            onDismiss = { sheet = ProfileSheet.NONE },
+        ) {
+            TimeZones.forEach { (id, labelRes) ->
                 ProfileChoiceRow(
-                    label = label,
+                    label = stringResource(labelRes),
                     selected = state.timeZoneId == id,
                     onClick = {
                         settings.onTimeZone(id)
@@ -219,11 +254,14 @@ fun ProfileScreen(
                 )
             }
         }
-        ProfileSheet.LOCALE -> WheregoBottomSheet("Locale", onDismiss = { sheet = ProfileSheet.NONE }) {
-            Locales.forEach { (tag, label) ->
+        ProfileSheet.LOCALE -> WheregoBottomSheet(
+            stringResource(R.string.profile_sheet_language),
+            onDismiss = { sheet = ProfileSheet.NONE },
+        ) {
+            Languages.forEach { (tag, labelRes) ->
                 ProfileChoiceRow(
-                    label = label,
-                    selected = state.localeTag == tag,
+                    label = stringResource(labelRes),
+                    selected = parsedLanguage == tag,
                     onClick = {
                         settings.onLocale(tag)
                         sheet = ProfileSheet.NONE
@@ -231,6 +269,15 @@ fun ProfileScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun authBanner(result: SignInResult): String = when (result) {
+    SignInResult.Ok -> stringResource(R.string.auth_ok_backup_on)
+    is SignInResult.Failed -> stringResource(result.messageRes)
+    is SignInResult.FailedRaw -> result.message.ifBlank {
+        stringResource(R.string.auth_err_sign_in_failed)
     }
 }
 
@@ -263,7 +310,7 @@ private fun NameField(value: String, onValueChange: (String) -> Unit) {
     val colors = WheregoTheme.colors
     val shape = RoundedCornerShape(16.dp)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("Name", style = WheregoType.settingLabel, color = colors.ink)
+        Text(stringResource(R.string.me_field_name), style = WheregoType.settingLabel, color = colors.ink)
         BasicTextField(
             value = value,
             onValueChange = { onValueChange(it.take(40)) },
@@ -284,7 +331,7 @@ private fun BackupChip(signedIn: Boolean) {
     val colors = WheregoTheme.colors
     val pill = RoundedCornerShape(99.dp)
     Text(
-        if (signedIn) "Synced" else "Local only",
+        if (signedIn) stringResource(R.string.me_pill_synced) else stringResource(R.string.profile_pill_local_only),
         style = WheregoType.leftPill,
         color = if (signedIn) colors.tealDeep else colors.muted,
         modifier = Modifier

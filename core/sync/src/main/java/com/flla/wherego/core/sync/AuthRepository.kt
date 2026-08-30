@@ -16,6 +16,17 @@ data class AuthState(
     }
 }
 
+enum class SignInFailure {
+    MISSING_CLIENT_ID,
+    NO_ID_TOKEN,
+    NO_USER,
+    CANCELLED,
+    NO_GOOGLE_ACCOUNT,
+    NOT_GOOGLE_CREDENTIAL,
+}
+
+class SignInException(val failure: SignInFailure) : Exception(failure.name)
+
 interface AuthRepository {
     val state: Flow<AuthState>
     suspend fun current(): AuthState

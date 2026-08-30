@@ -46,20 +46,23 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 
 private val DockShape = RoundedCornerShape(24.dp)
 
 enum class WheregoTab(
-    val label: String,
+    @StringRes val labelRes: Int,
     val outlined: ImageVector,
     val filled: ImageVector,
 ) {
-    Home("Home", Icons.Outlined.Home, Icons.Filled.Home),
-    Stories("Stories", Icons.AutoMirrored.Outlined.MenuBook, Icons.AutoMirrored.Filled.MenuBook),
-    Plan("Plan", Icons.Outlined.DateRange, Icons.Filled.DateRange),
-    Me("Me", Icons.Outlined.Person, Icons.Filled.Person),
+    Home(R.string.ds_tab_home, Icons.Outlined.Home, Icons.Filled.Home),
+    Stories(R.string.ds_tab_stories, Icons.AutoMirrored.Outlined.MenuBook, Icons.AutoMirrored.Filled.MenuBook),
+    Plan(R.string.ds_tab_plan, Icons.Outlined.DateRange, Icons.Filled.DateRange),
+    Me(R.string.ds_tab_me, Icons.Outlined.Person, Icons.Filled.Person),
 }
 
 @Composable
@@ -114,7 +117,7 @@ fun WheregoTabBar(
         ) {
             Icon(
                 Icons.Outlined.Add,
-                contentDescription = "Add",
+                contentDescription = stringResource(R.string.ds_cd_add),
                 tint = colors.white,
                 modifier = Modifier.size(30.dp),
             )
@@ -175,13 +178,13 @@ private fun TabItem(
         ) {
             Icon(
                 imageVector = if (active) tab.filled else tab.outlined,
-                contentDescription = tab.label,
+                contentDescription = stringResource(tab.labelRes),
                 modifier = Modifier.size(18.dp),
                 tint = iconTint,
             )
         }
         Text(
-            text = tab.label,
+            text = stringResource(tab.labelRes),
             style = WheregoType.streakNum.copy(fontSize = 11.sp),
             color = iconTint,
         )

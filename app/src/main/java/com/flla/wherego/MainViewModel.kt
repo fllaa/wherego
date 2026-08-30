@@ -6,6 +6,7 @@ import com.flla.wherego.core.database.LedgerStore
 import com.flla.wherego.core.database.UserProfileStore
 import com.flla.wherego.core.datastore.ThemePreferences
 import com.flla.wherego.core.model.ThemeMode
+import com.flla.wherego.core.model.AppLanguage
 import com.flla.wherego.core.sync.FxCacheScheduler
 import com.flla.wherego.core.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,6 +46,10 @@ class MainViewModel @Inject constructor(
     val onboardingDone: StateFlow<Boolean> = userProfileStore.profile
         .map { it?.onboardingDone == true }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val language: StateFlow<String> = userProfileStore.profile
+        .map { AppLanguage.parse(it?.localeTag) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppLanguage.SYSTEM)
 
     fun setWelcomeSeen(seen: Boolean) {
         viewModelScope.launch { themePreferences.setWelcomeSeen(seen) }

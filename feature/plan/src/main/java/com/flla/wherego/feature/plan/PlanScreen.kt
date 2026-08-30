@@ -32,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +50,9 @@ import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
 import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.monthLabel
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Recurrence
@@ -87,6 +92,7 @@ fun PlanScreen(
     var goalSheet by remember { mutableStateOf(false) }
     var monthSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
+    val monthText = monthLabel(state.month, state.currentMonth)
 
     Column(
         Modifier
@@ -98,12 +104,12 @@ fun PlanScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         WheregoPageHeader(
-            title = "Plan",
-            trailing = { WheregoMonthPill(label = state.monthLabel, onClick = { monthSheet = true }) },
+            title = stringResource(R.string.plan_title),
+            trailing = { WheregoMonthPill(label = monthText, onClick = { monthSheet = true }) },
         )
 
         WheregoCapCard(
-            label = "Spent in ${state.monthLabel}",
+            label = stringResource(R.string.plan_spent_in_month, monthText),
             amount = MoneyFormatter.format(state.monthSpentMinor, state.currency),
             fraction = state.capFraction,
             footLabel = capFootLabel(state),
@@ -111,25 +117,43 @@ fun PlanScreen(
         )
 
         WheregoSectionHeader(
-            title = "Budgets",
-            trailing = if (editing) "Done" else "Edit",
+            title = stringResource(R.string.plan_section_budgets),
+            trailing = if (editing) stringResource(R.string.plan_done) else stringResource(R.string.plan_edit),
             trailingColor = colors.teal,
             onTrailingClick = { editing = !editing },
         )
         if (state.budgets.isEmpty()) {
             Text(
-                "No budgets yet · set a cap for this month.",
+                stringResource(R.string.plan_empty_budgets),
                 style = WheregoType.meta,
                 color = colors.muted,
             )
         } else {
             state.budgets.forEach { budget ->
                 val strong = colors.teal
+                val displayName = budget.categoryId?.let { categoryDisplayName(it, budget.name) }
+                    ?: stringResource(R.string.plan_choice_overall)
+                val detail = stringResource(
+                    R.string.plan_budget_detail,
+                    MoneyFormatter.format(budget.spentMinor, state.currency),
+                    MoneyFormatter.number(budget.capMinor, state.currency),
+                )
+                val note = if (budget.over) {
+                    stringResource(
+                        R.string.money_over,
+                        MoneyFormatter.compact(budget.spentMinor - budget.capMinor, state.currency),
+                    )
+                } else {
+                    stringResource(
+                        R.string.money_left,
+                        MoneyFormatter.compact(budget.capMinor - budget.spentMinor, state.currency),
+                    )
+                }
                 WheregoMeterCard(
                     emoji = budget.emoji,
                     badgeFill = colors.tealSoft,
-                    name = budget.name,
-                    detail = budget.detail,
+                    name = displayName,
+                    detail = detail,
                     fraction = budget.fraction,
                     fillColor = if (budget.over) colors.coral else strong,
                 ) {
@@ -137,7 +161,7 @@ fun PlanScreen(
                         RemoveLink { onDeleteBudget(budget.id) }
                     } else {
                         Text(
-                            budget.note,
+                            note,
                             style = WheregoType.link,
                             color = if (budget.over) colors.coral else strong,
                         )
@@ -145,28 +169,40 @@ fun PlanScreen(
                 }
             }
         }
-        AddRow("Set a budget for another category") { budgetSheet = true }
+        AddRow(stringResource(R.string.plan_cta_add_budget)) { budgetSheet = true }
 
         WheregoSectionHeader(
-            title = "Set aside",
-            hint = "from the same pot",
+            title = stringResource(R.string.plan_section_set_aside),
+            hint = stringResource(R.string.plan_hint_same_pot),
             trailing = state.goalsTotalLabel,
         )
         if (state.goals.isEmpty()) {
             WheregoCard(cornerRadius = 22.dp, padding = 14.dp) {
                 Text(
-                    "Earmark a slice. Not another account.",
+                    stringResource(R.string.plan_empty_goals),
                     style = WheregoType.meta,
                     color = colors.muted,
                 )
             }
         } else {
             state.goals.forEach { goal ->
+                val detail = if (goal.targetMinor > 0L) {
+                    stringResource(
+                        R.string.plan_budget_detail,
+                        MoneyFormatter.format(goal.allocatedMinor, state.currency),
+                        MoneyFormatter.format(goal.targetMinor, state.currency),
+                    )
+                } else {
+                    stringResource(
+                        R.string.plan_goal_set_aside,
+                        MoneyFormatter.format(goal.allocatedMinor, state.currency),
+                    )
+                }
                 WheregoMeterCard(
                     emoji = goal.emoji,
                     badgeFill = colors.tealSoft,
                     name = goal.name,
-                    detail = goal.detail,
+                    detail = detail,
                     fraction = goal.fraction,
                     fillColor = colors.teal,
                     badgeSize = 36.dp,
@@ -188,15 +224,15 @@ fun PlanScreen(
                 }
             }
         }
-        AddRow("Set aside for something new") { goalSheet = true }
+        AddRow(stringResource(R.string.plan_cta_add_goal)) { goalSheet = true }
 
         // The design frame moved the recurring entry point to Me; the editing UI still lives here,
         // demoted below Set aside until it has another home.
-        WheregoSectionHeader(title = "Recurring")
+        WheregoSectionHeader(title = stringResource(R.string.plan_section_recurring))
         if (state.rules.isEmpty()) {
             WheregoCard(cornerRadius = 22.dp, padding = 14.dp) {
                 Text(
-                    "Wifi, rent, pulsa — log when they hit.",
+                    stringResource(R.string.plan_empty_recurring),
                     style = WheregoType.meta,
                     color = colors.muted,
                 )
@@ -208,21 +244,25 @@ fun PlanScreen(
                     rule = rule,
                     emoji = category?.emoji ?: "🔁",
                     softHex = category?.softColorHex,
-                    name = rule.note.ifBlank { category?.name ?: "Bill" },
+                    name = rule.note.ifBlank {
+                        category?.let { categoryDisplayName(it.id, it.name) }
+                            ?: stringResource(R.string.recurring_fallback_label)
+                    },
                     editing = editing,
                     onDelete = { onDeleteRule(rule.id) },
                 )
             }
         }
-        AddRow("Add a recurring bill") { ruleSheet = true }
+        AddRow(stringResource(R.string.plan_cta_add_recurring)) { ruleSheet = true }
     }
 
     if (budgetSheet) {
         AmountCategorySheet(
-            title = "Set a budget",
-            categories = listOf(null to "Overall") + state.categories.map { it.id to "${it.emoji} ${it.name}" },
+            title = stringResource(R.string.plan_sheet_set_budget),
+            categories = listOf(null to stringResource(R.string.plan_choice_overall)) +
+                state.categories.map { it.id to "${it.emoji} ${categoryDisplayName(it.id, it.name)}" },
             currency = state.currency,
-            confirmLabel = "Set it",
+            confirmLabel = stringResource(R.string.plan_cta_set_it),
             onDismiss = { budgetSheet = false },
             onConfirm = { catId, amount, _ ->
                 onAddBudget(catId, amount)
@@ -232,11 +272,11 @@ fun PlanScreen(
     }
     if (ruleSheet) {
         AmountCategorySheet(
-            title = "Add a bill",
-            categories = state.categories.map { it.id to "${it.emoji} ${it.name}" },
+            title = stringResource(R.string.plan_sheet_add_bill),
+            categories = state.categories.map { it.id to "${it.emoji} ${categoryDisplayName(it.id, it.name)}" },
             currency = state.currency,
             showNote = true,
-            confirmLabel = "Add it",
+            confirmLabel = stringResource(R.string.plan_cta_add_it),
             onDismiss = { ruleSheet = false },
             onConfirm = { catId, amount, note ->
                 if (catId != null) {
@@ -257,10 +297,10 @@ fun PlanScreen(
         )
     }
     if (monthSheet) {
-        WheregoBottomSheet(title = "Month", onDismiss = { monthSheet = false }) {
+        WheregoBottomSheet(title = stringResource(R.string.plan_sheet_month), onDismiss = { monthSheet = false }) {
             state.monthChoices.forEach { choice ->
                 MonthChoiceRow(
-                    label = choice.label,
+                    label = monthLabel(choice.yearMonth, state.currentMonth),
                     selected = choice.id == state.monthId,
                     onClick = {
                         onSelectMonth(choice.id)
@@ -272,22 +312,35 @@ fun PlanScreen(
     }
 }
 
+@Composable
 private fun capFootLabel(state: PlanUiState): String {
     val currency = state.currency
     val cap = MoneyFormatter.format(state.capTotalMinor, currency)
     return when {
-        state.capTotalMinor <= 0L -> "No caps set for ${state.monthLabel} yet"
-        state.capRemainingMinor >= 0L ->
-            "${MoneyFormatter.format(state.capRemainingMinor, currency)} left of $cap"
-        else -> "${MoneyFormatter.format(-state.capRemainingMinor, currency)} over $cap"
+        state.capTotalMinor <= 0L -> stringResource(
+            R.string.plan_cap_no_caps,
+            monthLabel(state.month, state.currentMonth),
+        )
+        state.capRemainingMinor >= 0L -> stringResource(
+            R.string.plan_cap_left_of,
+            MoneyFormatter.format(state.capRemainingMinor, currency),
+            cap,
+        )
+        else -> stringResource(
+            R.string.plan_cap_over_of,
+            MoneyFormatter.format(-state.capRemainingMinor, currency),
+            cap,
+        )
     }
 }
 
-private fun daysLeftLabel(daysLeft: Int): String = when {
-    daysLeft <= 0 -> "Last day"
-    daysLeft == 1 -> "1 day left"
-    else -> "$daysLeft days left"
-}
+@Composable
+private fun daysLeftLabel(daysLeft: Int): String =
+    if (daysLeft <= 0) {
+        stringResource(R.string.plan_days_last_day)
+    } else {
+        pluralStringResource(R.plurals.plan_days_left, daysLeft, daysLeft)
+    }
 
 @Composable
 private fun MonthChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
@@ -343,7 +396,7 @@ private fun AddRow(label: String, onClick: () -> Unit) {
 @Composable
 private fun RemoveLink(onClick: () -> Unit) {
     Text(
-        "Remove",
+        stringResource(R.string.plan_cta_remove),
         style = WheregoType.link,
         color = WheregoTheme.colors.coral,
         modifier = Modifier.clickable(onClick = onClick),
@@ -381,7 +434,7 @@ private fun RuleCard(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(name, style = WheregoType.txTitle, color = colors.ink)
             Text(
-                "${rule.freq.replaceFirstChar { it.uppercase() }} · next ${rule.nextOn}",
+                stringResource(R.string.plan_recurring_detail, freqLabel(rule.freq), rule.nextOn),
                 style = WheregoType.meterDetail,
                 color = colors.muted,
             )
@@ -415,7 +468,7 @@ private fun AmountCategorySheet(
     WheregoBottomSheet(title = title, onDismiss = onDismiss) {
         AmountReadout(amountMinor = amount, currency = currency)
         if (showNote) {
-            SheetField(label = "Note", value = note, onValueChange = { note = it.take(40) })
+            SheetField(label = stringResource(R.string.plan_field_note), value = note, onValueChange = { note = it.take(40) })
         }
         CategoryChipRow(
             categories = categories,
@@ -447,8 +500,8 @@ private fun GoalSheet(
     var field by remember { mutableStateOf(GoalAmount.NOW) }
     val now = DigitBuffer.amountMinor(nowDigits)
     val target = DigitBuffer.amountMinor(targetDigits)
-    WheregoBottomSheet(title = "Set aside", onDismiss = onDismiss) {
-        SheetField(label = "Name", value = name, onValueChange = { name = it.take(40) })
+    WheregoBottomSheet(title = stringResource(R.string.plan_sheet_set_aside), onDismiss = onDismiss) {
+        SheetField(label = stringResource(R.string.plan_field_name), value = name, onValueChange = { name = it.take(40) })
         GoalAmountToggle(selected = field, onSelect = { field = it })
         AmountReadout(
             amountMinor = if (field == GoalAmount.NOW) now else target,
@@ -471,7 +524,7 @@ private fun GoalSheet(
             },
         )
         WheregoPrimaryButton(
-            label = "Set it",
+            label = stringResource(R.string.plan_cta_set_it),
             onClick = { onConfirm(name.trim(), now, target) },
             enabled = name.isNotBlank(),
             icon = Icons.Outlined.Check,
@@ -492,7 +545,10 @@ private fun GoalAmountToggle(selected: GoalAmount, onSelect: (GoalAmount) -> Uni
             .background(colors.chipIdle)
             .padding(4.dp),
     ) {
-        listOf(GoalAmount.NOW to "Now", GoalAmount.TARGET to "Target").forEach { (value, label) ->
+        listOf(
+            GoalAmount.NOW to stringResource(R.string.plan_tab_now),
+            GoalAmount.TARGET to stringResource(R.string.plan_tab_target),
+        ).forEach { (value, label) ->
             val on = selected == value
             val tab = RoundedCornerShape(14.dp)
             Box(
@@ -579,3 +635,9 @@ private fun CategoryChipRow(
         }
     }
 }
+
+@Composable
+private fun freqLabel(freq: String): String =
+    stringResource(
+        if (freq == Recurrence.WEEKLY) R.string.freq_weekly else R.string.freq_monthly,
+    )

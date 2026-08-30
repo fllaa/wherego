@@ -17,6 +17,19 @@ data class CategorySpend(
     val percent: Int,
 )
 
+sealed interface StoryHeadline {
+    data object Empty : StoryHeadline
+    data class One(val name: String, val categoryId: String, val percent: Int) : StoryHeadline
+    data class Two(
+        val firstName: String,
+        val firstCategoryId: String,
+        val firstPercent: Int,
+        val secondName: String,
+        val secondCategoryId: String,
+        val secondPercent: Int,
+    ) : StoryHeadline
+}
+
 object MonthStory {
     fun aggregate(rows: List<SpendRow>): List<CategorySpend> {
         val total = rows.sumOf { it.amountMinor }
@@ -38,14 +51,13 @@ object MonthStory {
             .sortedByDescending { it.amountMinor }
     }
 
-    fun sentence(top: List<CategorySpend>): String {
-        if (top.isEmpty()) return "New page. Nothing parked this month."
-        val first = top[0]
-        if (top.size == 1) {
-            return "${first.name} ${first.percent}% · rest is quieter."
-        }
-        val second = top[1]
-        return "${first.name} ${first.percent}% · ${second.name} ${second.percent}% · rest is quieter."
+    fun headline(top: List<CategorySpend>): StoryHeadline = when {
+        top.isEmpty() -> StoryHeadline.Empty
+        top.size == 1 -> StoryHeadline.One(top[0].name, top[0].categoryId, top[0].percent)
+        else -> StoryHeadline.Two(
+            top[0].name, top[0].categoryId, top[0].percent,
+            top[1].name, top[1].categoryId, top[1].percent,
+        )
     }
 }
 

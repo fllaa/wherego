@@ -12,7 +12,7 @@ class UserProfileTest {
         assertEquals("01TESTID", profile.id)
         assertEquals(UserProfile.DEFAULT_CURRENCY, profile.baseCurrency)
         assertEquals("IDR", profile.baseCurrency)
-        assertEquals(UserProfile.DEFAULT_LOCALE, profile.localeTag)
+        assertEquals(UserProfile.DEFAULT_LANGUAGE, profile.localeTag)
         assertEquals(UserProfile.DEFAULT_ZONE, profile.timeZoneId)
         assertEquals("Asia/Jakarta", profile.timeZoneId)
         assertFalse(profile.onboardingDone)

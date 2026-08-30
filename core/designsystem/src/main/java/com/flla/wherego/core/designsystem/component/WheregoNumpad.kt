@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
@@ -78,7 +80,7 @@ private fun NumpadKey(
         if (label == "⌫") {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Backspace,
-                contentDescription = "Backspace",
+                contentDescription = stringResource(R.string.ds_cd_backspace),
                 tint = colors.ink,
             )
         } else {

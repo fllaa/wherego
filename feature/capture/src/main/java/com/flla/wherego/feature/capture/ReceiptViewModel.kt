@@ -1,6 +1,7 @@
 package com.flla.wherego.feature.capture
 
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flla.wherego.core.database.ReceiptStore
@@ -9,6 +10,7 @@ import com.flla.wherego.core.database.UserProfileStore
 import com.flla.wherego.core.model.OcrAmountParser
 import com.flla.wherego.core.model.UserProfile
 import com.flla.wherego.core.sync.ReceiptUploadScheduler
+import com.flla.wherego.core.i18n.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import javax.inject.Inject
@@ -24,7 +26,7 @@ data class ReceiptUiState(
     val busy: Boolean = false,
     val proposedAmount: Long? = null,
     val currency: String = UserProfile.DEFAULT_CURRENCY,
-    val error: String? = null,
+    @StringRes val error: Int? = null,
     val savedLocal: Boolean = false,
 )
 
@@ -49,7 +51,7 @@ class ReceiptViewModel @Inject constructor(
             _state.update { it.copy(busy = true, error = null, proposedAmount = null) }
             val row = receipts.ingest(txId, uri)
             if (row == null) {
-                _state.update { it.copy(busy = false, error = "Couldn't save the photo") }
+                _state.update { it.copy(busy = false, error = R.string.receipt_err_save_photo) }
                 return@launch
             }
             upload.enqueue(row.id)
@@ -63,7 +65,7 @@ class ReceiptViewModel @Inject constructor(
                     savedLocal = true,
                     proposedAmount = amount,
                     currency = currency,
-                    error = if (amount == null) "Saved the photo. Couldn't read an amount." else null,
+                    error = if (amount == null) R.string.receipt_err_no_amount else null,
                 )
             }
         }

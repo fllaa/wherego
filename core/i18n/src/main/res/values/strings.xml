@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Design system chrome -->
+    <string name="ds_cta_park_it">Park it</string>
+    <string name="ds_hero_spent_this_month">Spent this month</string>
+    <string name="ds_onboard_skip">Skip</string>
+    <string name="ds_cd_back">Back</string>
+    <string name="ds_cd_prev_month">Previous month</string>
+    <string name="ds_cd_next_month">Next month</string>
+    <string name="ds_cd_go">Go</string>
+    <string name="ds_cd_backspace">Backspace</string>
+    <string name="ds_cd_add">Add</string>
+    <string name="ds_tab_home">Home</string>
+    <string name="ds_tab_stories">Stories</string>
+    <string name="ds_tab_plan">Plan</string>
+    <string name="ds_tab_me">Me</string>
+
+    <!-- Shared -->
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="money_over">%1$s over</string>
+    <string name="money_left">%1$s left</string>
+    <string name="category_fallback_other">Other</string>
+    <string name="recurring_fallback_label">Bill</string>
+    <string name="freq_weekly">Weekly</string>
+    <string name="freq_monthly">Monthly</string>
+    <string name="kind_expense">Expense</string>
+    <string name="kind_income">Income</string>
+    <string name="kind_adjustment">Adjustment</string>
+    <string name="kind_both">Both</string>
+
+    <!-- Languages: endonyms, identical in every translation -->
+    <string name="lang_system">Follow device</string>
+    <string name="lang_en">English</string>
+    <string name="lang_id">Indonesia</string>
+
+    <!-- Currencies -->
+    <string name="currency_idr">Indonesian Rupiah</string>
+    <string name="currency_usd">US Dollar</string>
+    <string name="currency_sgd">Singapore Dollar</string>
+    <string name="currency_myr">Malaysian Ringgit</string>
+    <string name="currency_eur">Euro</string>
+
+    <!-- Preset categories -->
+    <string name="category_cat_food_out">Food out</string>
+    <string name="category_cat_groceries">Groceries</string>
+    <string name="category_cat_transport">Transport</string>
+    <string name="category_cat_rent">Rent &amp; bills</string>
+    <string name="category_cat_fun">Fun</string>
+    <string name="category_cat_shopping">Shopping</string>
+    <string name="category_cat_health">Health</string>
+    <string name="category_cat_gifts">Gifts</string>
+    <string name="category_cat_other">Other</string>
+    <string name="category_cat_bills">Bills</string>
+    <string name="category_cat_salary">Salary</string>
+    <string name="category_cat_side">Side hustle</string>
+    <string name="category_cat_refund">Refund</string>
+    <string name="category_cat_other_in">Other in</string>
+    <string name="pack_everyday_id">Everyday ID</string>
+    <string name="pack_minimal">Minimal</string>
+    <string name="pack_custom">Custom</string>
+
+    <!-- Welcome -->
+    <string name="welcome_tagline">See where your money went.\nLog a spend in seconds.</string>
+    <string name="welcome_try_first">Try it first, sign in later</string>
+    <string name="welcome_privacy">No bank connections. You type or snap.</string>
+    <string name="welcome_proof_caption">Parked. That one won\'t vanish.</string>
+    <string name="welcome_google_busy">Restoring…</string>
+    <string name="welcome_google_continue">Continue</string>
+    <string name="welcome_google_cta">Continue with Google</string>
+
+    <!-- Auth -->
+    <string name="auth_back_me">← Me</string>
+    <string name="auth_title">Backup</string>
+    <string name="auth_body">Sign in to backup. Capture never waits on this.</string>
+    <string name="auth_signed_in">Signed in</string>
+    <string name="auth_sign_out">Sign out</string>
+    <string name="auth_sign_out_done">Local stays. Cloud paused.</string>
+    <string name="auth_sign_in_google">Sign in with Google</string>
+    <string name="auth_ok_backup_on">Backup is on. Capture never waited.</string>
+    <string name="auth_err_need_activity">Need an Activity to sign in.</string>
+    <string name="auth_err_sign_in_failed">Sign-in didn\'t land.</string>
+    <string name="auth_err_restore_failed">Couldn\'t restore backup.</string>
+    <string name="auth_err_missing_client_id">Google Sign-In needs a web client ID. Re-download google-services.json after enabling Google Sign-In.</string>
+    <string name="auth_err_no_id_token">Google did not return an ID token.</string>
+    <string name="auth_err_no_user">Firebase Auth returned no user.</string>
+    <string name="auth_err_cancelled">Sign-in cancelled.</string>
+    <string name="auth_err_no_google_account">Add a Google account on this device, then try again.</string>
+    <string name="auth_err_not_google_credential">Credential is not a Google ID token.</string>
+
+    <!-- Onboarding -->
+    <string name="onb_welcome_title">You don’t need a spreadsheet. You need 20 seconds.</string>
+    <string name="onb_welcome_sub">Wherego is a pocket notebook, not a filing cabinet.</string>
+    <string name="onb_welcome_step1">Tap the big + the moment you pay.</string>
+    <string name="onb_welcome_step2">Type the amount. Tap a picture.</string>
+    <string name="onb_welcome_step3">That’s it. No forms, no folders.</string>
+    <string name="onb_cta_lets_go">Let’s go</string>
+    <string name="onb_cta_continue">Continue</string>
+    <string name="onb_currency_title">What are we counting?</string>
+    <string name="onb_currency_body">Roughly how much is in your pocket and bank, together?</string>
+    <string name="onb_currency_helper">A rough number is fine. Fix it anytime in Me → Adjust balance.</string>
+    <string name="onb_currency_skip">I don’t know — skip this</string>
+    <string name="onb_currency_no_decimals">no decimals</string>
+    <string name="onb_currency_meta">%1$s · %2$s · %3$s</string>
+    <string name="onb_cat_title">Pick your buckets</string>
+    <string name="onb_cat_sub">Six is plenty to start. Tap to add or drop any.</string>
+    <string name="onb_cat_helper">Rename, recolor or archive them anytime in Me → Categories.</string>
+    <string name="onb_first_title">One last thing.</string>
+    <string name="onb_first_sub">Log something from today. Even Rp 2.000 parking counts — the habit is the point, not the amount.</string>
+    <string name="onb_first_card_title">Log your first spend</string>
+    <string name="onb_first_card_helper">Takes about 20 seconds</string>
+    <string name="onb_cta_log_now">Log it now</string>
+    <string name="onb_cta_later">Take me to Home, I’ll log later</string>
+
+    <!-- Home -->
+    <string name="home_greeting">Hey %1$s 👋</string>
+    <string name="home_greeting_fallback">you</string>
+    <string name="home_section_due">Due</string>
+    <string name="home_cta_log_it">Log it</string>
+    <string name="home_section_today">Today</string>
+    <string name="home_empty_today">First one is the hardest. Tap +</string>
+    <string name="home_section_yesterday">Yesterday</string>
+    <string name="home_section_earlier_week">Earlier this week</string>
+    <string name="home_link_stories">Stories →</string>
+    <string name="home_link_plan">Plan →</string>
+    <string name="home_swipe_delete">Delete</string>
+    <string name="home_menu_same_again">Same again</string>
+    <string name="home_section_budget_check">Budget check</string>
+    <string name="home_empty_budget">No budgets yet · set them in Plan</string>
+    <string name="home_snack_removed">Removed</string>
+    <string name="home_snack_undo">Undo</string>
+    <string name="home_hero_income">of %1$s in</string>
+
+    <!-- Capture -->
+    <string name="capture_tab_expense">Expense</string>
+    <string name="capture_tab_income">Income</string>
+    <string name="capture_chip_today">Today</string>
+    <string name="capture_chip_yesterday">Yesterday</string>
+    <string name="capture_chip_pick">Pick</string>
+    <string name="capture_chip_note">note</string>
+    <string name="capture_chip_photo">photo</string>
+    <string name="capture_hint_note">note</string>
+    <string name="capture_hint_fx">rate to %1$s</string>
+    <string name="capture_cd_more_categories">More categories</string>
+
+    <!-- Receipt -->
+    <string name="receipt_reading_title">Reading receipt</string>
+    <string name="receipt_reading_body">Parked locally. Checking the numbers…</string>
+    <string name="receipt_confirm_title">Use this amount?</string>
+    <string name="receipt_confirm_body">Looks like %1$s. Never saved until you say so.</string>
+    <string name="receipt_use_it">Use it</string>
+    <string name="receipt_keep_mine">Keep mine</string>
+    <string name="receipt_parked_title">Receipt parked</string>
+    <string name="receipt_parked_body">Photo stays on this phone.</string>
+    <string name="receipt_attach_title">Attach a receipt?</string>
+    <string name="receipt_attach_body">Camera or gallery. Photo stays on this phone if backup isn\'t signed in.</string>
+    <string name="receipt_camera">Camera</string>
+    <string name="receipt_gallery">Gallery</string>
+    <string name="receipt_err_save_photo">Couldn\'t save the photo</string>
+    <string name="receipt_err_no_amount">Saved the photo. Couldn\'t read an amount.</string>
+
+    <!-- Plan -->
+    <string name="plan_title">Plan</string>
+    <string name="plan_spent_in_month">Spent in %1$s</string>
+    <string name="plan_section_budgets">Budgets</string>
+    <string name="plan_edit">Edit</string>
+    <string name="plan_done">Done</string>
+    <string name="plan_empty_budgets">No budgets yet · set a cap for this month.</string>
+    <string name="plan_cta_add_budget">Set a budget for another category</string>
+    <string name="plan_section_set_aside">Set aside</string>
+    <string name="plan_hint_same_pot">from the same pot</string>
+    <string name="plan_empty_goals">Earmark a slice. Not another account.</string>
+    <string name="plan_cta_add_goal">Set aside for something new</string>
+    <string name="plan_section_recurring">Recurring</string>
+    <string name="plan_empty_recurring">Wifi, rent, pulsa — log when they hit.</string>
+    <string name="plan_cta_add_recurring">Add a recurring bill</string>
+    <string name="plan_sheet_set_budget">Set a budget</string>
+    <string name="plan_choice_overall">Overall</string>
+    <string name="plan_cta_set_it">Set it</string>
+    <string name="plan_sheet_add_bill">Add a bill</string>
+    <string name="plan_cta_add_it">Add it</string>
+    <string name="plan_sheet_month">Month</string>
+    <string name="plan_cap_no_caps">No caps set for %1$s yet</string>
+    <string name="plan_cap_left_of">%1$s left of %2$s</string>
+    <string name="plan_cap_over_of">%1$s over %2$s</string>
+    <string name="plan_days_last_day">Last day</string>
+    <string name="plan_cta_remove">Remove</string>
+    <string name="plan_recurring_detail">%1$s · next %2$s</string>
+    <string name="plan_field_note">Note</string>
+    <string name="plan_sheet_set_aside">Set aside</string>
+    <string name="plan_field_name">Name</string>
+    <string name="plan_tab_now">Now</string>
+    <string name="plan_tab_target">Target</string>
+    <string name="plan_budget_detail">%1$s of %2$s</string>
+    <string name="plan_goal_set_aside">%1$s set aside</string>
+
+    <!-- Stories -->
+    <string name="stories_title">Stories</string>
+    <string name="stories_than_prev">than %1$s</string>
+    <string name="stories_delta_less">%1$s less</string>
+    <string name="stories_delta_more">%1$s more</string>
+    <string name="stories_section_where">Where it went</string>
+    <string name="stories_empty_bars">No category bars yet.</string>
+    <string name="stories_empty_month">Nothing logged this month yet.</string>
+    <string name="stories_empty_filter_all">No logs this month.</string>
+    <string name="stories_empty_filter_expense">No expense logs this month.</string>
+    <string name="stories_empty_filter_income">No income logs this month.</string>
+    <string name="stories_section_balance">Balance</string>
+    <string name="stories_cd_filter">Filter logs</string>
+    <string name="filter_all">All</string>
+    <string name="filter_expense">Expense</string>
+    <string name="filter_income">Income</string>
+    <string name="story_headline_empty">New page. Nothing parked this month.</string>
+    <string name="story_headline_one">%1$s %2$d%% · rest is quieter.</string>
+    <string name="story_headline_two">%1$s %2$d%% · %3$s %4$d%% · rest is quieter.</string>
+
+    <!-- Me -->
+    <string name="me_title">Me</string>
+    <string name="me_stat_day_streak">day streak</string>
+    <string name="me_stat_logs_in">logs in %1$s</string>
+    <string name="me_stat_days_logged">days logged</string>
+    <string name="me_section_your_money">YOUR MONEY</string>
+    <string name="me_row_categories">Categories</string>
+    <string name="me_row_recurring">Recurring</string>
+    <string name="me_row_adjust_balance">Adjust balance</string>
+    <string name="me_row_currency">Currency</string>
+    <string name="me_section_app">APP</string>
+    <string name="me_row_appearance">Appearance</string>
+    <string name="me_row_reminders">Reminders</string>
+    <string name="me_value_on">On</string>
+    <string name="me_value_off">Off</string>
+    <string name="me_section_data">DATA</string>
+    <string name="me_row_export_csv">Export CSV</string>
+    <string name="me_row_import_csv">Import CSV</string>
+    <string name="me_row_month_pdf">Month report PDF</string>
+    <string name="me_sheet_appearance">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="me_sheet_currency">Currency</string>
+    <string name="me_sheet_adjust_balance">Adjust balance</string>
+    <string name="me_sheet_recurring">Recurring</string>
+    <string name="me_empty_recurring">Nothing repeating yet. Add rules in Plan.</string>
+    <string name="me_recurring_plan_owns">Plan owns editing — open Plan to change a rule.</string>
+    <string name="me_recurring_next">next %1$s</string>
+    <string name="me_sheet_reminders">Reminders</string>
+    <string name="me_reminders_on_body">On. Wherego pings you the morning a recurring bill is due.</string>
+    <string name="me_reminders_body_2">Every rule you add in Plan schedules its own reminder.</string>
+    <string name="me_greeting_fallback">Hey you</string>
+    <string name="me_pill_synced">Synced</string>
+    <string name="me_pill_offline">Offline</string>
+    <string name="me_sign_out">Sign out</string>
+    <string name="me_sign_in">Sign in</string>
+    <string name="me_balance_now">Now %1$s</string>
+    <string name="me_categories_back">← Categories</string>
+    <string name="me_category_archived">Archived</string>
+    <string name="me_category_edit_title">Edit category</string>
+    <string name="me_field_name">Name</string>
+    <string name="me_field_emoji">Emoji</string>
+    <string name="me_save">Save</string>
+    <string name="me_unarchive">Unarchive</string>
+    <string name="me_archive">Archive</string>
+    <string name="me_close">Close</string>
+    <string name="me_share_subject">Wherego export</string>
+    <string name="me_share_csv_title">Export CSV</string>
+    <string name="me_share_month_title">Share month</string>
+    <string name="settings_account_guest">Guest · offline</string>
+    <string name="settings_account_signed_in">Signed in</string>
+
+    <!-- Profile -->
+    <string name="profile_sub_backup_on">Backup is on</string>
+    <string name="profile_sub_local">Local notebook</string>
+    <string name="profile_row_timezone">Timezone</string>
+    <string name="profile_row_language">Language</string>
+    <string name="profile_sheet_timezone">Timezone</string>
+    <string name="profile_sheet_language">Language</string>
+    <string name="profile_section_backup">BACKUP</string>
+    <string name="profile_backup_google">Google</string>
+    <string name="profile_backup_not_signed_in">Not signed in</string>
+    <string name="profile_backup_body">Capture never waits on this.</string>
+    <string name="profile_pill_local_only">Local only</string>
+    <string name="tz_jakarta">Jakarta (WIB)</string>
+    <string name="tz_makassar">Makassar (WITA)</string>
+    <string name="tz_jayapura">Jayapura (WIT)</string>
+    <string name="tz_singapore">Singapore</string>
+    <string name="tz_kuala_lumpur">Kuala Lumpur</string>
+    <string name="tz_new_york">New York</string>
+    <string name="tz_berlin">Berlin</string>
+
+    <!-- CSV import -->
+    <string name="csv_back_to_me">Back to Me</string>
+    <string name="csv_title_pick">Bring a CSV</string>
+    <string name="csv_sub_pick">Park rows from a spreadsheet. Dates YYYY-MM-DD. Amounts as whole units.</string>
+    <string name="csv_empty_no_file">No file yet</string>
+    <string name="csv_helper_export">A Wherego export already has the right columns.</string>
+    <string name="csv_cta_pick_file">Pick a file</string>
+    <string name="csv_cta_pick_different">Pick a different file</string>
+    <string name="csv_title_map">Match columns</string>
+    <string name="csv_sub_map">We guessed from the header. Tap a chip if that\'s wrong.</string>
+    <string name="csv_fallback_title">CSV</string>
+    <string name="csv_toggle_headers">First row is headers</string>
+    <string name="csv_col_date">Date</string>
+    <string name="csv_col_kind">Kind</string>
+    <string name="csv_col_amount">Amount</string>
+    <string name="csv_col_currency">Currency</string>
+    <string name="csv_col_category">Category</string>
+    <string name="csv_col_note">Note</string>
+    <string name="csv_column_n">Column %1$d</string>
+    <string name="csv_title_preview">Looks right?</string>
+    <string name="csv_sub_preview">Unknown categories go to Other.</string>
+    <string name="csv_empty_no_match">No rows match this mapping.</string>
+    <string name="csv_helper_no_match">Check date and amount columns, then go back.</string>
+    <string name="csv_showing_of">Showing %1$d of %2$d</string>
+    <string name="csv_cta_park_them">Park them</string>
+    <string name="csv_cta_parking">Parking...</string>
+    <string name="csv_success_title">Parked.</string>
+    <string name="csv_success_sub">They\'re in Today and Stories now.</string>
+    <string name="csv_success_helper">in the notebook</string>
+    <string name="csv_err_read_file">Couldn\'t read that file.</string>
+    <string name="csv_err_no_rows">That file has no rows we can read.</string>
+    <string name="csv_err_commit_format">Couldn\'t park these. Dates need YYYY-MM-DD, amounts whole numbers.</string>
+    <string name="csv_err_commit_retry">Couldn\'t park these. Try the file again.</string>
+
+    <!-- Notification -->
+    <string name="notif_channel_due">Due reminders</string>
+    <string name="notif_due_title">Wherego</string>
+    <string name="notif_due_body">%1$s usually hits today. Log it?</string>
+
+    <!-- PDF export -->
+    <string name="pdf_title">Wherego · %1$s</string>
+    <string name="pdf_spent">Spent %1$s</string>
+    <string name="pdf_no_bars">No category bars.</string>
+    <string name="pdf_no_transactions">No transactions.</string>
+
+    <plurals name="home_sub_logged_week">
+        <item quantity="one">%d logged this week</item>
+        <item quantity="other">%d logged this week</item>
+    </plurals>
+    <plurals name="plan_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <plurals name="stories_log_count">
+        <item quantity="one">%d log</item>
+        <item quantity="other">%d logs</item>
+    </plurals>
+    <plurals name="me_value_active">
+        <item quantity="one">%d active</item>
+        <item quantity="other">%d active</item>
+    </plurals>
+    <plurals name="csv_rows_ready">
+        <item quantity="one">%d row ready</item>
+        <item quantity="other">%d rows ready</item>
+    </plurals>
+    <plurals name="csv_success_rows">
+        <item quantity="one">%d row</item>
+        <item quantity="other">%d rows</item>
+    </plurals>
+    <plurals name="onb_currency_decimals">
+        <item quantity="one">%d decimal</item>
+        <item quantity="other">%d decimals</item>
+    </plurals>
+</resources>

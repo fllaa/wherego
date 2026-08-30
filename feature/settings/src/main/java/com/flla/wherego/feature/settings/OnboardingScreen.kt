@@ -1,5 +1,6 @@
 package com.flla.wherego.feature.settings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
@@ -50,6 +53,8 @@ import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
+import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.model.CategoryPack
 import com.flla.wherego.core.model.CurrencyScale
 import com.flla.wherego.core.model.DigitBuffer
@@ -59,14 +64,18 @@ import com.flla.wherego.core.model.UserProfile
 
 private const val STEP_COUNT = 4
 
-private data class CurrencyOption(val code: String, val label: String, val symbol: String)
+private data class CurrencyOption(
+    val code: String,
+    @StringRes val labelRes: Int,
+    val symbol: String,
+)
 
 private val CURRENCIES = listOf(
-    CurrencyOption("IDR", "Indonesian Rupiah", "Rp"),
-    CurrencyOption("USD", "US Dollar", "$"),
-    CurrencyOption("SGD", "Singapore Dollar", "S$"),
-    CurrencyOption("MYR", "Malaysian Ringgit", "RM"),
-    CurrencyOption("EUR", "Euro", "€"),
+    CurrencyOption("IDR", R.string.currency_idr, "Rp"),
+    CurrencyOption("USD", R.string.currency_usd, "$"),
+    CurrencyOption("SGD", R.string.currency_sgd, "S$"),
+    CurrencyOption("MYR", R.string.currency_myr, "RM"),
+    CurrencyOption("EUR", R.string.currency_eur, "€"),
 )
 
 @Composable
@@ -161,22 +170,31 @@ fun OnboardingScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 when (step) {
-                    0 -> WheregoPrimaryButton("Let’s go", onClick = { step = 1 })
+                    0 -> WheregoPrimaryButton(
+                        stringResource(R.string.onb_cta_lets_go),
+                        onClick = { step = 1 },
+                    )
                     1 -> {
-                        WheregoPrimaryButton("Continue", onClick = { step = 2 })
-                        SubtleAction("I don’t know — skip this") {
+                        WheregoPrimaryButton(
+                            stringResource(R.string.onb_cta_continue),
+                            onClick = { step = 2 },
+                        )
+                        SubtleAction(stringResource(R.string.onb_currency_skip)) {
                             digits = ""
                             step = 2
                         }
                     }
                     2 -> WheregoPrimaryButton(
-                        "Continue",
+                        stringResource(R.string.onb_cta_continue),
                         onClick = { step = 3 },
                         enabled = categoriesReady && kept.isNotEmpty(),
                     )
                     else -> {
-                        WheregoPrimaryButton("Log it now", onClick = { finish(true) })
-                        SubtleAction("Take me to Home, I’ll log later") { finish(false) }
+                        WheregoPrimaryButton(
+                            stringResource(R.string.onb_cta_log_now),
+                            onClick = { finish(true) },
+                        )
+                        SubtleAction(stringResource(R.string.onb_cta_later)) { finish(false) }
                     }
                 }
             }
@@ -213,20 +231,20 @@ private fun WelcomeStep() {
             Text("🪙", fontSize = 32.sp, color = colors.ink)
         }
         Text(
-            "You don’t need a spreadsheet. You need 20 seconds.",
+            stringResource(R.string.onb_welcome_title),
             style = WheregoType.onboardTitleLarge,
             color = colors.ink,
         )
         Text(
-            "Wherego is a pocket notebook, not a filing cabinet.",
+            stringResource(R.string.onb_welcome_sub),
             style = WheregoType.onboardSub,
             color = colors.muted,
         )
         WheregoCard(gap = 14.dp) {
             val steps = listOf(
-                "Tap the big + the moment you pay.",
-                "Type the amount. Tap a picture.",
-                "That’s it. No forms, no folders.",
+                stringResource(R.string.onb_welcome_step1),
+                stringResource(R.string.onb_welcome_step2),
+                stringResource(R.string.onb_welcome_step3),
             )
             steps.forEachIndexed { index, line ->
                 Row(
@@ -259,7 +277,11 @@ private fun CurrencyStep(
     val colors = WheregoTheme.colors
     val selected = CURRENCIES.firstOrNull { it.code == currency } ?: CURRENCIES.first()
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("What are we counting?", style = WheregoType.onboardTitle, color = colors.ink)
+        Text(
+            stringResource(R.string.onb_currency_title),
+            style = WheregoType.onboardTitle,
+            color = colors.ink,
+        )
         WheregoCard(cornerRadius = 24.dp, padding = 14.dp, gap = 0.dp) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -279,7 +301,11 @@ private fun CurrencyStep(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
-                    Text(selected.label, style = WheregoType.txTitle, color = colors.ink)
+                    Text(
+                        stringResource(selected.labelRes),
+                        style = WheregoType.txTitle,
+                        color = colors.ink,
+                    )
                     Text(
                         currencyMeta(selected.code),
                         style = WheregoType.helper,
@@ -325,7 +351,7 @@ private fun CurrencyStep(
             modifier = Modifier.padding(top = 10.dp),
         ) {
             Text(
-                "Roughly how much is in your pocket and bank, together?",
+                stringResource(R.string.onb_currency_body),
                 style = WheregoType.stepText,
                 color = colors.muted,
             )
@@ -336,7 +362,7 @@ private fun CurrencyStep(
                 onDigits = onDigits,
             )
             Text(
-                "A rough number is fine. Fix it anytime in Me → Adjust balance.",
+                stringResource(R.string.onb_currency_helper),
                 style = WheregoType.helper,
                 color = colors.muted,
             )
@@ -344,11 +370,16 @@ private fun CurrencyStep(
     }
 }
 
+@Composable
 private fun currencyMeta(code: String): String {
     val scale = CurrencyScale.scale(code)
-    val decimals = if (scale == 0) "no decimals" else "$scale decimals"
+    val decimals = if (scale == 0) {
+        stringResource(R.string.onb_currency_no_decimals)
+    } else {
+        pluralStringResource(R.plurals.onb_currency_decimals, scale, scale)
+    }
     val example = MoneyFormatter.number(if (scale == 0) 1_250_000L else 125_000L, code)
-    return "$code · $decimals · $example"
+    return stringResource(R.string.onb_currency_meta, code, decimals, example)
 }
 
 /**
@@ -415,9 +446,13 @@ private fun CategoriesStep(
 ) {
     val colors = WheregoTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Pick your buckets", style = WheregoType.onboardTitle, color = colors.ink)
         Text(
-            "Six is plenty to start. Tap to add or drop any.",
+            stringResource(R.string.onb_cat_title),
+            style = WheregoType.onboardTitle,
+            color = colors.ink,
+        )
+        Text(
+            stringResource(R.string.onb_cat_sub),
             style = WheregoType.stepText.copy(fontWeight = WheregoType.onboardSub.fontWeight),
             color = colors.muted,
         )
@@ -431,14 +466,14 @@ private fun CategoriesStep(
         ) {
             PresetCategories.packs.forEach { pack ->
                 PackTab(
-                    label = pack.label,
+                    label = packLabel(pack.id),
                     selected = packId == pack.id,
                     modifier = Modifier.weight(1f),
                     onClick = { onPack(pack) },
                 )
             }
             PackTab(
-                label = PresetCategories.CUSTOM_PACK_LABEL,
+                label = stringResource(R.string.pack_custom),
                 selected = packId == PresetCategories.CUSTOM_PACK_ID,
                 modifier = Modifier.weight(1f),
                 onClick = onCustom,
@@ -452,7 +487,7 @@ private fun CategoriesStep(
             PresetCategories.expense.forEach { preset ->
                 CategoryChip(
                     emoji = preset.emoji,
-                    label = preset.name,
+                    label = categoryDisplayName(preset.id, preset.name),
                     softHex = preset.softColorHex,
                     selected = preset.id in kept,
                     onClick = { onToggle(preset.id) },
@@ -460,11 +495,18 @@ private fun CategoriesStep(
             }
         }
         Text(
-            "Rename, recolor or archive them anytime in Me → Categories.",
+            stringResource(R.string.onb_cat_helper),
             style = WheregoType.helper,
             color = colors.muted,
         )
     }
+}
+
+@Composable
+private fun packLabel(id: String): String = when (id) {
+    "everyday_id" -> stringResource(R.string.pack_everyday_id)
+    "minimal" -> stringResource(R.string.pack_minimal)
+    else -> stringResource(R.string.pack_custom)
 }
 
 @Composable
@@ -532,9 +574,13 @@ private fun FirstLogStep() {
     val colors = WheregoTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("One last thing.", style = WheregoType.onboardTitle, color = colors.ink)
             Text(
-                "Log something from today. Even Rp 2.000 parking counts — the habit is the point, not the amount.",
+                stringResource(R.string.onb_first_title),
+                style = WheregoType.onboardTitle,
+                color = colors.ink,
+            )
+            Text(
+                stringResource(R.string.onb_first_sub),
                 style = WheregoType.onboardSub,
                 color = colors.muted,
             )
@@ -562,8 +608,16 @@ private fun FirstLogStep() {
                     modifier = Modifier.size(34.dp),
                 )
             }
-            Text("Log your first spend", style = WheregoType.buttonLabel, color = colors.ink)
-            Text("Takes about 20 seconds", style = WheregoType.link, color = colors.muted)
+            Text(
+                stringResource(R.string.onb_first_card_title),
+                style = WheregoType.buttonLabel,
+                color = colors.ink,
+            )
+            Text(
+                stringResource(R.string.onb_first_card_helper),
+                style = WheregoType.link,
+                color = colors.muted,
+            )
         }
     }
 }

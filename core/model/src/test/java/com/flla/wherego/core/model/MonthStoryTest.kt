@@ -8,7 +8,7 @@ class MonthStoryTest {
     @Test
     fun emptyMonth() {
         assertEquals(emptyList<CategorySpend>(), MonthStory.aggregate(emptyList()))
-        assertEquals("New page. Nothing parked this month.", MonthStory.sentence(emptyList()))
+        assertEquals(StoryHeadline.Empty, MonthStory.headline(emptyList()))
     }
 
     @Test
@@ -23,8 +23,8 @@ class MonthStoryTest {
         assertEquals(90, agg[0].percent)
         assertEquals(10, agg[1].percent)
         assertEquals(
-            "Food out 90% · Transport 10% · rest is quieter.",
-            MonthStory.sentence(agg),
+            StoryHeadline.Two("Food out", "cat_food_out", 90, "Transport", "cat_transport", 10),
+            MonthStory.headline(agg),
         )
     }
 
@@ -33,7 +33,7 @@ class MonthStoryTest {
         val agg = MonthStory.aggregate(
             listOf(SpendRow("cat_rent", "Rent/Kos", "🏠", "#E07A5F", 1_000_000)),
         )
-        assertEquals("Rent/Kos 100% · rest is quieter.", MonthStory.sentence(agg))
+        assertEquals(StoryHeadline.One("Rent/Kos", "cat_rent", 100), MonthStory.headline(agg))
     }
 
     @Test

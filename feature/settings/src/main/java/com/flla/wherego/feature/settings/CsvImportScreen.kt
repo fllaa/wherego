@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.component.WheregoCard
@@ -50,6 +53,7 @@ import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.model.CsvImport
 import com.flla.wherego.core.model.CsvMapping
 import com.flla.wherego.core.model.CsvRow
@@ -75,8 +79,8 @@ fun CsvImportScreen(
     var fileName by remember { mutableStateOf("") }
     var mapping by remember { mutableStateOf(CsvMapping()) }
     var skipHeader by remember { mutableStateOf(true) }
-    var pickError by remember { mutableStateOf("") }
-    var commitError by remember { mutableStateOf("") }
+    var pickError by remember { mutableStateOf<Int?>(null) }
+    var commitError by remember { mutableStateOf<Int?>(null) }
     var committing by remember { mutableStateOf(false) }
     var parkedCount by remember { mutableStateOf<Int?>(null) }
     val parked = parkedCount
@@ -89,20 +93,20 @@ fun CsvImportScreen(
         if (uri == null) return@rememberLauncherForActivityResult
         val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
         if (text.isNullOrBlank()) {
-            pickError = "Couldn't read that file."
+            pickError = R.string.csv_err_read_file
             return@rememberLauncherForActivityResult
         }
         val rows = CsvImport.parse(text)
         if (rows.isEmpty()) {
-            pickError = "That file has no rows we can read."
+            pickError = R.string.csv_err_no_rows
             return@rememberLauncherForActivityResult
         }
         raw = text
         fileName = csvDisplayName(context, uri)
         mapping = CsvImport.guessMapping(rows.first())
         skipHeader = looksLikeHeader(rows.first())
-        pickError = ""
-        commitError = ""
+        pickError = null
+        commitError = null
         parkedCount = null
         step = 1
     }
@@ -112,8 +116,8 @@ fun CsvImportScreen(
         fileName = ""
         mapping = CsvMapping()
         skipHeader = true
-        pickError = ""
-        commitError = ""
+        pickError = null
+        commitError = null
         parkedCount = null
         step = 0
     }
@@ -147,7 +151,7 @@ fun CsvImportScreen(
             ) {
                 when {
                     parked != null -> SuccessStep(count = parked)
-                    step == 0 -> PickStep(fileName = fileName, error = pickError)
+                    step == 0 -> PickStep(fileName = fileName, errorRes = pickError)
                     step == 1 -> MapStep(
                         fileName = fileName,
                         parsed = parsed,
@@ -160,7 +164,7 @@ fun CsvImportScreen(
                     else -> PreviewStep(
                         preview = preview,
                         total = readyRows.size,
-                        error = commitError,
+                        errorRes = commitError,
                     )
                 }
             }
@@ -173,48 +177,54 @@ fun CsvImportScreen(
             ) {
                 when {
                     parked != null -> {
-                        WheregoPrimaryButton("Back to Me", onClick = onBack)
+                        WheregoPrimaryButton(stringResource(R.string.csv_back_to_me), onClick = onBack)
                     }
                     step == 0 -> {
                         if (parsed.isEmpty()) {
                             WheregoPrimaryButton(
-                                label = "Pick a file",
+                                label = stringResource(R.string.csv_cta_pick_file),
                                 onClick = { pick.launch("*/*") },
                                 icon = Icons.Outlined.Upload,
                             )
                         } else {
-                            WheregoPrimaryButton("Continue", onClick = { step = 1 })
-                            SubtleAction("Pick a different file") { resetFile() }
+                            WheregoPrimaryButton(
+                                stringResource(R.string.onb_cta_continue),
+                                onClick = { step = 1 },
+                            )
+                            SubtleAction(stringResource(R.string.csv_cta_pick_different)) { resetFile() }
                         }
                     }
                     step == 1 -> {
                         WheregoPrimaryButton(
-                            label = "Continue",
+                            label = stringResource(R.string.onb_cta_continue),
                             onClick = { step = 2 },
                             enabled = readyRows.isNotEmpty(),
                         )
-                        SubtleAction("Pick a different file") { resetFile() }
+                        SubtleAction(stringResource(R.string.csv_cta_pick_different)) { resetFile() }
                     }
                     else -> {
                         WheregoPrimaryButton(
-                            label = if (committing) "Parking..." else "Park them",
+                            label = if (committing) {
+                                stringResource(R.string.csv_cta_parking)
+                            } else {
+                                stringResource(R.string.csv_cta_park_them)
+                            },
                             onClick = {
                                 committing = true
-                                commitError = ""
+                                commitError = null
                                 scope.launch {
                                     val result = runCatching { onCommit(raw, mapping, skipHeader) }
                                     committing = false
                                     result.fold(
                                         onSuccess = { n ->
                                             if (n == 0) {
-                                                commitError =
-                                                    "Couldn't park these. Dates need YYYY-MM-DD, amounts whole numbers."
+                                                commitError = R.string.csv_err_commit_format
                                             } else {
                                                 parkedCount = n
                                             }
                                         },
                                         onFailure = {
-                                            commitError = "Couldn't park these. Try the file again."
+                                            commitError = R.string.csv_err_commit_retry
                                         },
                                     )
                                 }
@@ -230,12 +240,12 @@ fun CsvImportScreen(
 }
 
 @Composable
-private fun PickStep(fileName: String, error: String) {
+private fun PickStep(fileName: String, @StringRes errorRes: Int?) {
     val colors = WheregoTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Bring a CSV", style = WheregoType.onboardTitle, color = colors.ink)
+        Text(stringResource(R.string.csv_title_pick), style = WheregoType.onboardTitle, color = colors.ink)
         Text(
-            "Park rows from a spreadsheet. Dates YYYY-MM-DD. Amounts as whole units.",
+            stringResource(R.string.csv_sub_pick),
             style = WheregoType.onboardSub,
             color = colors.muted,
         )
@@ -261,12 +271,12 @@ private fun PickStep(fileName: String, error: String) {
                 )
             }
             Text(
-                fileName.ifBlank { "No file yet" },
+                fileName.ifBlank { stringResource(R.string.csv_empty_no_file) },
                 style = WheregoType.buttonLabel,
                 color = colors.ink,
             )
             Text(
-                "A Wherego export already has the right columns.",
+                stringResource(R.string.csv_helper_export),
                 style = WheregoType.link,
                 color = colors.muted,
             )
@@ -289,8 +299,8 @@ private fun PickStep(fileName: String, error: String) {
                 }
             }
         }
-        if (error.isNotEmpty()) {
-            Text(error, style = WheregoType.meta, color = colors.coral)
+        if (errorRes != null) {
+            Text(stringResource(errorRes), style = WheregoType.meta, color = colors.coral)
         }
     }
 }
@@ -309,64 +319,76 @@ private fun MapStep(
     val columnCount = parsed.maxOfOrNull { it.size } ?: 0
     val headers = parsed.firstOrNull().orEmpty()
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Match columns", style = WheregoType.onboardTitle, color = colors.ink)
+        Text(stringResource(R.string.csv_title_map), style = WheregoType.onboardTitle, color = colors.ink)
         Text(
-            "We guessed from the header. Tap a chip if that's wrong.",
+            stringResource(R.string.csv_sub_map),
             style = WheregoType.onboardSub,
             color = colors.muted,
         )
         WheregoCard(cornerRadius = 22.dp, padding = 14.dp, gap = 8.dp) {
-            Text(fileName.ifBlank { "CSV" }, style = WheregoType.txTitle, color = colors.ink)
             Text(
-                "$readyCount rows ready",
+                fileName.ifBlank { stringResource(R.string.csv_fallback_title) },
+                style = WheregoType.txTitle,
+                color = colors.ink,
+            )
+            Text(
+                pluralStringResource(R.plurals.csv_rows_ready, readyCount, readyCount),
                 style = WheregoType.helper,
                 color = colors.muted,
             )
         }
         HeaderToggle(selected = skipHeader, onClick = { onSkipHeader(!skipHeader) })
-        MapField("Date", mapping.date, columnCount, headers, skipHeader) {
+        MapField(stringResource(R.string.csv_col_date), mapping.date, columnCount, headers, skipHeader) {
             onMapping(mapping.copy(date = it))
         }
-        MapField("Kind", mapping.kind, columnCount, headers, skipHeader) {
+        MapField(stringResource(R.string.csv_col_kind), mapping.kind, columnCount, headers, skipHeader) {
             onMapping(mapping.copy(kind = it))
         }
-        MapField("Amount", mapping.amount, columnCount, headers, skipHeader) {
+        MapField(stringResource(R.string.csv_col_amount), mapping.amount, columnCount, headers, skipHeader) {
             onMapping(mapping.copy(amount = it))
         }
-        MapField("Currency", mapping.currency, columnCount, headers, skipHeader) {
+        MapField(stringResource(R.string.csv_col_currency), mapping.currency, columnCount, headers, skipHeader) {
             onMapping(mapping.copy(currency = it))
         }
-        MapField("Category", mapping.category, columnCount, headers, skipHeader) {
+        MapField(stringResource(R.string.csv_col_category), mapping.category, columnCount, headers, skipHeader) {
             onMapping(mapping.copy(category = it))
         }
-        MapField("Note", mapping.note, columnCount, headers, skipHeader) {
+        MapField(stringResource(R.string.csv_col_note), mapping.note, columnCount, headers, skipHeader) {
             onMapping(mapping.copy(note = it))
         }
     }
 }
 
 @Composable
-private fun PreviewStep(preview: List<CsvRow>, total: Int, error: String) {
+private fun PreviewStep(preview: List<CsvRow>, total: Int, @StringRes errorRes: Int?) {
     val colors = WheregoTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Looks right?", style = WheregoType.onboardTitle, color = colors.ink)
+        Text(stringResource(R.string.csv_title_preview), style = WheregoType.onboardTitle, color = colors.ink)
         Text(
-            "Unknown categories go to Other.",
+            stringResource(R.string.csv_sub_preview),
             style = WheregoType.onboardSub,
             color = colors.muted,
         )
         if (preview.isEmpty()) {
             WheregoCard(cornerRadius = 22.dp, padding = 16.dp) {
-                Text("No rows match this mapping.", style = WheregoType.settingLabel, color = colors.ink)
                 Text(
-                    "Check date and amount columns, then go back.",
+                    stringResource(R.string.csv_empty_no_match),
+                    style = WheregoType.settingLabel,
+                    color = colors.ink,
+                )
+                Text(
+                    stringResource(R.string.csv_helper_no_match),
                     style = WheregoType.helper,
                     color = colors.muted,
                 )
             }
         } else {
             if (total > preview.size) {
-                Text("Showing ${preview.size} of $total", style = WheregoType.helper, color = colors.muted)
+                Text(
+                    stringResource(R.string.csv_showing_of, preview.size, total),
+                    style = WheregoType.helper,
+                    color = colors.muted,
+                )
             }
             preview.forEach { row ->
                 WheregoTxRow(
@@ -378,8 +400,8 @@ private fun PreviewStep(preview: List<CsvRow>, total: Int, error: String) {
                 )
             }
         }
-        if (error.isNotEmpty()) {
-            Text(error, style = WheregoType.meta, color = colors.coral)
+        if (errorRes != null) {
+            Text(stringResource(errorRes), style = WheregoType.meta, color = colors.coral)
         }
     }
 }
@@ -388,9 +410,9 @@ private fun PreviewStep(preview: List<CsvRow>, total: Int, error: String) {
 private fun SuccessStep(count: Int) {
     val colors = WheregoTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Parked.", style = WheregoType.onboardTitle, color = colors.ink)
+        Text(stringResource(R.string.csv_success_title), style = WheregoType.onboardTitle, color = colors.ink)
         Text(
-            "They're in Today and Stories now.",
+            stringResource(R.string.csv_success_sub),
             style = WheregoType.onboardSub,
             color = colors.muted,
         )
@@ -410,8 +432,16 @@ private fun SuccessStep(count: Int) {
             ) {
                 Text("🪙", fontSize = 32.sp)
             }
-            Text("$count rows", style = WheregoType.statValue, color = colors.ink)
-            Text("in the notebook", style = WheregoType.helper, color = colors.muted)
+            Text(
+                pluralStringResource(R.plurals.csv_success_rows, count, count),
+                style = WheregoType.statValue,
+                color = colors.ink,
+            )
+            Text(
+                stringResource(R.string.csv_success_helper),
+                style = WheregoType.helper,
+                color = colors.muted,
+            )
         }
     }
 }
@@ -430,7 +460,11 @@ private fun HeaderToggle(selected: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("First row is headers", style = WheregoType.settingLabel, color = colors.ink)
+        Text(
+            stringResource(R.string.csv_toggle_headers),
+            style = WheregoType.settingLabel,
+            color = colors.ink,
+        )
         if (selected) {
             Icon(
                 Icons.Outlined.Check,
@@ -501,15 +535,17 @@ private fun SubtleAction(label: String, onClick: () -> Unit) {
 private fun looksLikeHeader(row: List<String>): Boolean =
     row.any { it.trim().lowercase() in HeaderNames }
 
+@Composable
 private fun columnLabel(headers: List<String>, index: Int, skipHeader: Boolean): String {
     val raw = if (skipHeader) headers.getOrNull(index)?.trim().orEmpty() else ""
-    return raw.ifBlank { "Column ${index + 1}" }
+    return raw.ifBlank { stringResource(R.string.csv_column_n, index + 1) }
 }
 
+@Composable
 private fun kindLabel(kind: String): String = when (kind.trim().lowercase()) {
-    TransactionKind.INCOME -> "Income"
-    TransactionKind.ADJUSTMENT -> "Adjustment"
-    else -> "Expense"
+    TransactionKind.INCOME -> stringResource(R.string.kind_income)
+    TransactionKind.ADJUSTMENT -> stringResource(R.string.kind_adjustment)
+    else -> stringResource(R.string.kind_expense)
 }
 
 private fun previewEmoji(kind: String): String =

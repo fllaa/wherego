@@ -18,7 +18,7 @@ data class UserProfile(
 ) {
     companion object {
         const val DEFAULT_CURRENCY = "IDR"
-        const val DEFAULT_LOCALE = "id-ID"
+        const val DEFAULT_LANGUAGE = AppLanguage.SYSTEM
         const val DEFAULT_ZONE = "Asia/Jakarta"
 
         fun guest(id: String, nowMillis: Long): UserProfile = UserProfile(
@@ -28,7 +28,7 @@ data class UserProfile(
             displayName = null,
             photoUrl = null,
             baseCurrency = DEFAULT_CURRENCY,
-            localeTag = DEFAULT_LOCALE,
+            localeTag = DEFAULT_LANGUAGE,
             timeZoneId = DEFAULT_ZONE,
             onboardingDone = false,
             startingBalanceMinor = 0L,

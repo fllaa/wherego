@@ -20,7 +20,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -44,8 +43,6 @@ data class PlanBudgetRow(
     val spentMinor: Long,
     val capMinor: Long,
     val over: Boolean,
-    val detail: String,
-    val note: String,
     val fraction: Float,
 )
 
@@ -59,22 +56,19 @@ data class PlanGoalRow(
     val name: String,
     val allocatedMinor: Long,
     val targetMinor: Long,
-    val detail: String,
     val percentLabel: String,
     val fraction: Float,
 )
 
-private val MonthName = DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH)
-private val MonthYear = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
-
 data class PlanMonthChoice(
     val id: String,
-    val label: String,
+    val yearMonth: YearMonth,
 )
 
 data class PlanUiState(
     val monthId: String = YearMonth.now().toString(),
-    val monthLabel: String = YearMonth.now().format(MonthName),
+    val month: YearMonth = YearMonth.now(),
+    val currentMonth: YearMonth = YearMonth.now(),
     val monthChoices: List<PlanMonthChoice> = emptyList(),
     val monthSpentMinor: Long = 0L,
     val capTotalMinor: Long = 0L,
@@ -124,7 +118,8 @@ class PlanViewModel @Inject constructor(
             val goalsTotal = goals.sumOf { it.allocatedMinor }
             PlanUiState(
                 monthId = ym.toString(),
-                monthLabel = monthLabel(ym, current),
+                month = ym,
+                currentMonth = current,
                 monthChoices = monthChoices(current),
                 monthSpentMinor = monthSpent,
                 capTotalMinor = capTotal,
@@ -144,7 +139,7 @@ class PlanViewModel @Inject constructor(
                         id = budget.id,
                         categoryId = budget.categoryId,
                         emoji = cat?.emoji ?: "📦",
-                        name = cat?.name ?: "Overall",
+                        name = cat?.name.orEmpty(),
                         softHex = cat?.softColorHex
                             ?: budget.categoryId?.let { PresetCategories.softHex(it) }
                             ?: PresetCategories.ACCENT_SOFT_HEX,
@@ -154,31 +149,18 @@ class PlanViewModel @Inject constructor(
                         spentMinor = spent,
                         capMinor = cap,
                         over = over,
-                        detail = "${MoneyFormatter.format(spent, cur)} of ${MoneyFormatter.number(cap, cur)}",
-                        note = if (over) {
-                            "${MoneyFormatter.compact(spent - cap, cur)} over"
-                        } else {
-                            "${MoneyFormatter.compact(cap - spent, cur)} left"
-                        },
                         fraction = fraction(spent, cap),
                     )
                 },
                 rules = rules,
                 goals = goals.map { goal ->
-                    val hasTarget = goal.targetMinor > 0L
                     PlanGoalRow(
                         id = goal.id,
                         emoji = goalEmoji(goal.name),
                         name = goal.name,
                         allocatedMinor = goal.allocatedMinor,
                         targetMinor = goal.targetMinor,
-                        detail = if (hasTarget) {
-                            "${MoneyFormatter.format(goal.allocatedMinor, cur)} of " +
-                                MoneyFormatter.format(goal.targetMinor, cur)
-                        } else {
-                            "${MoneyFormatter.format(goal.allocatedMinor, cur)} set aside"
-                        },
-                        percentLabel = if (hasTarget) "${goal.percent}%" else "—",
+                        percentLabel = if (goal.targetMinor > 0L) "${goal.percent}%" else "—",
                         fraction = goal.fraction,
                     )
                 },
@@ -240,13 +222,10 @@ class PlanViewModel @Inject constructor(
     }
 }
 
-private fun monthLabel(ym: YearMonth, current: YearMonth): String =
-    if (ym.year == current.year) ym.format(MonthName) else ym.format(MonthYear)
-
 private fun monthChoices(current: YearMonth): List<PlanMonthChoice> =
     (0..11).map { offset ->
         val ym = current.minusMonths(offset.toLong())
-        PlanMonthChoice(id = ym.toString(), label = monthLabel(ym, current))
+        PlanMonthChoice(id = ym.toString(), yearMonth = ym)
     }
 
 private fun monthSpend(txs: List<Transaction>, month: YearMonth): Map<String, Long> {

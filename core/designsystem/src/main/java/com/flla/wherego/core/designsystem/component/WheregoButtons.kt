@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 
@@ -45,7 +47,7 @@ fun ParkItButton(
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
     ) {
-        Text("Park it", style = WheregoType.cta)
+        Text(stringResource(R.string.ds_cta_park_it), style = WheregoType.cta)
         Spacer(Modifier.width(8.dp))
         Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(21.dp))
     }

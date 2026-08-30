@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import com.flla.wherego.core.i18n.R
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -23,6 +25,7 @@ fun WheregoGoAvatar(
     modifier: Modifier = Modifier,
     mood: GoMood = GoMood.Idle,
 ) {
+    val goCd = stringResource(R.string.ds_cd_go)
     val colors = WheregoTheme.colors
     val fill = when (mood) {
         GoMood.Idle -> colors.mascotFill
@@ -40,7 +43,7 @@ fun WheregoGoAvatar(
             .border(2.5.dp, colors.ink, CircleShape)
             .clip(CircleShape)
             .background(fill)
-            .semantics { contentDescription = "Go" },
+            .semantics { contentDescription = goCd },
         contentAlignment = Alignment.Center,
     ) {
         Text(face, fontSize = 26.sp)

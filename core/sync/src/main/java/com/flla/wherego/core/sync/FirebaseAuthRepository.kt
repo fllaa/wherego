@@ -53,27 +53,21 @@ class FirebaseAuthRepository @Inject constructor(
 
     override suspend fun signIn(activity: Activity): Result<AuthState> {
         val webClientId = webClientId()
-            ?: return Result.failure(
-                IllegalStateException(
-                    "Google Sign-In needs a web client ID. Re-download google-services.json after enabling Google Sign-In.",
-                ),
-            )
+            ?: return Result.failure(SignInException(SignInFailure.MISSING_CLIENT_ID))
         return try {
             val idToken = requestIdToken(activity, webClientId)
-                ?: return Result.failure(IllegalStateException("Google did not return an ID token."))
+                ?: return Result.failure(SignInException(SignInFailure.NO_ID_TOKEN))
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             val user = auth.signInWithCredential(credential).await().user
-                ?: return Result.failure(IllegalStateException("Firebase Auth returned no user."))
+                ?: return Result.failure(SignInException(SignInFailure.NO_USER))
             link(user)
             val next = user.toState()
             _state.value = next
             Result.success(next)
         } catch (_: GetCredentialCancellationException) {
-            Result.failure(IllegalStateException("Sign-in cancelled."))
+            Result.failure(SignInException(SignInFailure.CANCELLED))
         } catch (_: NoCredentialException) {
-            Result.failure(
-                IllegalStateException("Add a Google account on this device, then try again."),
-            )
+            Result.failure(SignInException(SignInFailure.NO_GOOGLE_ACCOUNT))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -135,7 +129,7 @@ class FirebaseAuthRepository @Inject constructor(
         ) {
             return GoogleIdTokenCredential.createFrom(credential.data).idToken
         }
-        error("Credential is not a Google ID token.")
+        throw SignInException(SignInFailure.NOT_GOOGLE_CREDENTIAL)
     }
 
     private suspend fun link(user: FirebaseUser) {
