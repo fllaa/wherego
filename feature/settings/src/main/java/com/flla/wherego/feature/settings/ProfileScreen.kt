@@ -51,6 +51,7 @@ import coil.compose.AsyncImage
 import com.flla.wherego.core.designsystem.component.WheregoBottomSheet
 import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.WheregoSectionLabel
+import com.flla.wherego.core.designsystem.component.WheregoWaypointMark
 import com.flla.wherego.core.designsystem.component.WheregoSettingDivider
 import com.flla.wherego.core.designsystem.component.WheregoSettingRow
 import com.flla.wherego.core.designsystem.component.WheregoSettingsCard
@@ -393,7 +394,7 @@ private fun ProfileAvatar(photoUrl: String?, signedIn: Boolean) {
             .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text("🪙", fontSize = 40.sp)
+        WheregoWaypointMark(modifier = Modifier.size(62.dp))
         if (signedIn && !photoUrl.isNullOrBlank()) {
             AsyncImage(
                 model = photoUrl,

@@ -139,7 +139,7 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 
 - Lucide-style stroke icons at 15–22dp, tinted ink / teal / muted / coral
 - Categories = emoji, not vector sets
-- Go mascot in this mockup = coin emoji `🪙` inside the 54dp circle. Keep that until custom art exists.
+- Go mascot mark = Waypoint Coin (minted token with 45° directional compass rose & coral pivot pin).
 - Flame in streak pill is coral `#E24B4B`
 
 ---
@@ -149,7 +149,7 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 ### 8.1 Go avatar
 
 - 54×54, fill `mascotFill`, stroke 2.5 ink, circle
-- Content: `🪙` 26sp
+- Content: `WheregoWaypointMark` (or `😄` reaction for 800ms after save)
 - After successful save: swap to a grin emoji for 800ms then back (happy state). No Lottie required in S1.
 
 ### 8.2 Streak pill

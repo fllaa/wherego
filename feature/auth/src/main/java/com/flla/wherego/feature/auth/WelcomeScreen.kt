@@ -42,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
+import com.flla.wherego.core.designsystem.component.WheregoWaypointMark
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
@@ -100,7 +101,7 @@ fun WelcomeScreen(
                     .border(BorderStroke(3.dp, colors.ink), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("🪙", fontSize = 46.sp, color = colors.ink)
+                WheregoWaypointMark(modifier = Modifier.size(80.dp), baseFillColor = colors.paper)
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -192,7 +193,7 @@ private fun ProofCard() {
                     .border(BorderStroke(2.dp, colors.ink), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("🪙", fontSize = 18.sp, color = colors.ink)
+                WheregoWaypointMark(modifier = Modifier.size(28.dp))
             }
             Text(stringResource(R.string.welcome_proof_caption), style = WheregoType.stepText, color = colors.ink)
         }

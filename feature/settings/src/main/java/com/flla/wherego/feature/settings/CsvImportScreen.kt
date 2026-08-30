@@ -51,6 +51,7 @@ import com.flla.wherego.core.designsystem.component.WheregoOnboardTopBar
 import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
+import com.flla.wherego.core.designsystem.component.WheregoWaypointMark
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
@@ -430,7 +431,7 @@ private fun SuccessStep(count: Int) {
                     .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("🪙", fontSize = 32.sp)
+                WheregoWaypointMark(modifier = Modifier.size(56.dp), baseFillColor = colors.paper)
             }
             Text(
                 pluralStringResource(R.plurals.csv_success_rows, count, count),

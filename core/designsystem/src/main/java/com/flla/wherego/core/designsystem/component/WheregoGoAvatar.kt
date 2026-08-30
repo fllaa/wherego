@@ -32,11 +32,6 @@ fun WheregoGoAvatar(
         GoMood.Happy -> colors.tealSoft
         GoMood.Sleepy -> colors.track
     }
-    val face = when (mood) {
-        GoMood.Idle -> "🪙"
-        GoMood.Happy -> "😄"
-        GoMood.Sleepy -> "😴"
-    }
     Box(
         modifier
             .size(54.dp)
@@ -46,6 +41,16 @@ fun WheregoGoAvatar(
             .semantics { contentDescription = goCd },
         contentAlignment = Alignment.Center,
     ) {
-        Text(face, fontSize = 26.sp)
+        when (mood) {
+            GoMood.Idle -> {
+                WheregoWaypointMark(modifier = Modifier.size(38.dp))
+            }
+            GoMood.Happy -> {
+                Text("😄", fontSize = 26.sp)
+            }
+            GoMood.Sleepy -> {
+                Text("😴", fontSize = 26.sp)
+            }
+        }
     }
 }

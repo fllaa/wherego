@@ -44,6 +44,7 @@ import com.flla.wherego.core.designsystem.component.WheregoMonthStepper
 import com.flla.wherego.core.designsystem.component.WheregoPageHeader
 import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
+import com.flla.wherego.core.designsystem.component.WheregoWaypointMark
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
@@ -209,7 +210,7 @@ fun StoriesScreen(
                 cornerRadius = 20.dp,
                 strokeColor = colors.ink,
             ) {
-                Text("🪙", fontSize = 20.sp)
+                WheregoWaypointMark(modifier = Modifier.size(30.dp))
             }
             Text(
                 headlineText(state.headline),

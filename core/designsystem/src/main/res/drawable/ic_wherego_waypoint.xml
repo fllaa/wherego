@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wherego Brand Asset: The Waypoint Coin -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    
+    <!-- Outer Base Coin Disc (r=41) -->
+    <path
+        android:fillColor="#F2F4F8"
+        android:strokeColor="#121826"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M50,9a41,41 0,1 1,0 82a41,41 0,1 1,0 -82z" />
+        
+    <!-- Inner Mint Ridge / Ledger Track (r=33.5) -->
+    <path
+        android:fillColor="#E2EAF8"
+        android:strokeColor="#121826"
+        android:strokeWidth="2.5"
+        android:pathData="M50,16.5a33.5,33.5 0,1 1,0 67a33.5,33.5 0,1 1,0 -67z" />
+
+    <!-- North-East Pointer (Cobalt) -->
+    <path
+        android:fillColor="#2157C7"
+        android:strokeColor="#121826"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M50,50 L71,29 L52,34 Z" />
+        
+    <!-- North-East Shaded Facet (Deep Cobalt) -->
+    <path
+        android:fillColor="#163A8A"
+        android:strokeColor="#121826"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M50,50 L66,48 L71,29 Z" />
+
+    <!-- South-West Anchor (Ink) -->
+    <path
+        android:fillColor="#121826"
+        android:strokeColor="#121826"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M50,50 L29,71 L48,66 Z" />
+        
+    <!-- South-West Shaded Facet (Muted Slate) -->
+    <path
+        android:fillColor="#5A6A80"
+        android:strokeColor="#121826"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M50,50 L34,52 L29,71 Z" />
+
+    <!-- Secondary Waypoint Pips -->
+    <path
+        android:fillColor="#D7E3F8"
+        android:strokeColor="#121826"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M50,50 L36,36 L46,41 Z" />
+    <path
+        android:fillColor="#D7E3F8"
+        android:strokeColor="#121826"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M50,50 L64,64 L54,59 Z" />
+
+    <!-- Center Axis Pivot Pin (Coral) -->
+    <path
+        android:fillColor="#E24B4B"
+        android:strokeColor="#121826"
+        android:strokeWidth="2.5"
+        android:pathData="M50,43.5a6.5,6.5 0,1 1,0 13a6.5,6.5 0,1 1,0 -13z" />
+        
+    <!-- Center Highlight Pip -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,48a2,2 0,1 1,0 4a2,2 0,1 1,0 -4z" />
+</vector>
