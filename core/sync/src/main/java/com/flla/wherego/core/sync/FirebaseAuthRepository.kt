@@ -10,6 +10,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import com.flla.wherego.core.database.UserProfileStore
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -67,8 +68,12 @@ class FirebaseAuthRepository @Inject constructor(
             val next = user.toState()
             _state.value = next
             Result.success(next)
-        } catch (e: GetCredentialCancellationException) {
-            Result.failure(e)
+        } catch (_: GetCredentialCancellationException) {
+            Result.failure(IllegalStateException("Sign-in cancelled."))
+        } catch (_: NoCredentialException) {
+            Result.failure(
+                IllegalStateException("Add a Google account on this device, then try again."),
+            )
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -84,15 +89,19 @@ class FirebaseAuthRepository @Inject constructor(
         _state.value = AuthState.Guest
     }
 
-    private suspend fun requestIdToken(activity: Activity, webClientId: String): String? {
+    private suspend fun requestIdToken(activity: Activity, webClientId: String): String {
         return try {
-            requestIdToken(activity, webClientId, filterAuthorized = true)
+            requestGoogleId(activity, webClientId, filterAuthorized = true)
         } catch (_: NoCredentialException) {
-            requestIdToken(activity, webClientId, filterAuthorized = false)
+            try {
+                requestGoogleId(activity, webClientId, filterAuthorized = false)
+            } catch (_: NoCredentialException) {
+                requestSignInButton(activity, webClientId)
+            }
         }
     }
 
-    private suspend fun requestIdToken(
+    private suspend fun requestGoogleId(
         activity: Activity,
         webClientId: String,
         filterAuthorized: Boolean,
@@ -102,6 +111,18 @@ class FirebaseAuthRepository @Inject constructor(
             .setFilterByAuthorizedAccounts(filterAuthorized)
             .setAutoSelectEnabled(filterAuthorized)
             .build()
+        return getIdToken(activity, option)
+    }
+
+    private suspend fun requestSignInButton(activity: Activity, webClientId: String): String {
+        val option = GetSignInWithGoogleOption.Builder(webClientId).build()
+        return getIdToken(activity, option)
+    }
+
+    private suspend fun getIdToken(
+        activity: Activity,
+        option: androidx.credentials.CredentialOption,
+    ): String {
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(option)
             .build()

@@ -140,3 +140,23 @@
 - Not done / deferred: Play closed test (H4); 20s feel (H5)
 - Blocked: none
 
+## 2026-08-30  T0318  slice=S3
+- Goal: confirm Google Sign-In client after human re-download of `google-services.json`
+- Files changed: none in git (`google-services.json` stays gitignored)
+- Commands:
+  - `./gradlew :app:processDebugGoogleServices` → SUCCESS
+  - generated `default_web_client_id` (type 3) present
+- Decisions: no code change; `FirebaseAuthRepository.webClientId()` reads that string
+- Not done / deferred: Play (H4); 20s feel (H5)
+- Blocked: none
+
+
+## 2026-08-30  T0324  slice=S3
+- Goal: fix Google Sign-In `No credentials available` on first tap
+- Files changed: `FirebaseAuthRepository` — one-tap then `GetSignInWithGoogleOption` account picker
+- Commands:
+  - `./gradlew :core:sync:compileDebugKotlin :app:assembleDebug` → SUCCESS
+- Decisions: button path needs Sign in with Google picker; one-tap only sees previously authorized accounts
+- Not done / deferred: Play (H4); 20s feel (H5)
+- Blocked: none
+
