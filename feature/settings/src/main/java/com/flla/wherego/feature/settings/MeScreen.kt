@@ -34,13 +34,10 @@ import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.common.MonthPdfWriter
 import com.flla.wherego.core.designsystem.component.ParkItButton
 import com.flla.wherego.core.designsystem.component.WheregoBadge
+import com.flla.wherego.core.designsystem.component.WheregoBottomSheet
 import com.flla.wherego.core.designsystem.component.WheregoNumpad
 import com.flla.wherego.core.designsystem.component.WheregoSectionLabel
 import com.flla.wherego.core.designsystem.component.WheregoSettingDivider
@@ -473,40 +471,13 @@ private fun AccountRow(signedIn: Boolean, onSignOut: () -> Unit, onSignIn: () ->
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MeBottomSheet(
     title: String,
     onDismiss: () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val colors = WheregoTheme.colors
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = colors.sheet,
-        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp),
-        dragHandle = {
-            Box(Modifier.fillMaxWidth().padding(top = 12.dp), contentAlignment = Alignment.Center) {
-                Box(
-                    Modifier
-                        .size(width = 44.dp, height = 5.dp)
-                        .clip(RoundedCornerShape(99.dp))
-                        .background(colors.track),
-                )
-            }
-        },
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(title, style = WheregoType.cardTitle, color = colors.ink)
-            content()
-        }
-    }
+    WheregoBottomSheet(title = title, onDismiss = onDismiss, content = content)
 }
 
 @Composable

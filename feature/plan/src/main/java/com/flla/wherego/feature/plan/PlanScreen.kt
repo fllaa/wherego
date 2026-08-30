@@ -4,7 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,14 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,11 +37,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.designsystem.component.WheregoBadge
+import com.flla.wherego.core.designsystem.component.WheregoBottomSheet
 import com.flla.wherego.core.designsystem.component.WheregoCapCard
 import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.WheregoMeterCard
 import com.flla.wherego.core.designsystem.component.WheregoMonthPill
+import com.flla.wherego.core.designsystem.component.WheregoNumpad
 import com.flla.wherego.core.designsystem.component.WheregoPageHeader
+import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
 import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
@@ -76,9 +80,9 @@ fun PlanScreen(
     onDeleteGoal: (String) -> Unit,
 ) {
     val colors = WheregoTheme.colors
-    var budgetDialog by remember { mutableStateOf(false) }
-    var ruleDialog by remember { mutableStateOf(false) }
-    var goalDialog by remember { mutableStateOf(false) }
+    var budgetSheet by remember { mutableStateOf(false) }
+    var ruleSheet by remember { mutableStateOf(false) }
+    var goalSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
 
     Column(
@@ -139,7 +143,7 @@ fun PlanScreen(
                 }
             }
         }
-        AddRow("Set a budget for another category") { budgetDialog = true }
+        AddRow("Set a budget for another category") { budgetSheet = true }
 
         WheregoSectionHeader(
             title = "Set aside",
@@ -182,7 +186,7 @@ fun PlanScreen(
                 }
             }
         }
-        AddRow("Set aside for something new") { goalDialog = true }
+        AddRow("Set aside for something new") { goalSheet = true }
 
         // The design frame moved the recurring entry point to Me; the editing UI still lives here,
         // demoted below Set aside until it has another home.
@@ -208,43 +212,45 @@ fun PlanScreen(
                 )
             }
         }
-        AddRow("Add a recurring bill") { ruleDialog = true }
+        AddRow("Add a recurring bill") { ruleSheet = true }
     }
 
-    if (budgetDialog) {
-        AmountCategoryDialog(
-            title = "New budget",
+    if (budgetSheet) {
+        AmountCategorySheet(
+            title = "Set a budget",
             categories = listOf(null to "Overall") + state.categories.map { it.id to "${it.emoji} ${it.name}" },
             currency = state.currency,
-            onDismiss = { budgetDialog = false },
+            confirmLabel = "Set it",
+            onDismiss = { budgetSheet = false },
             onConfirm = { catId, amount, _ ->
                 onAddBudget(catId, amount)
-                budgetDialog = false
+                budgetSheet = false
             },
         )
     }
-    if (ruleDialog) {
-        AmountCategoryDialog(
-            title = "New recurring",
+    if (ruleSheet) {
+        AmountCategorySheet(
+            title = "Add a bill",
             categories = state.categories.map { it.id to "${it.emoji} ${it.name}" },
             currency = state.currency,
             showNote = true,
-            onDismiss = { ruleDialog = false },
+            confirmLabel = "Add it",
+            onDismiss = { ruleSheet = false },
             onConfirm = { catId, amount, note ->
                 if (catId != null) {
                     onAddRule(amount, catId, note, Recurrence.MONTHLY, 1)
                 }
-                ruleDialog = false
+                ruleSheet = false
             },
         )
     }
-    if (goalDialog) {
-        GoalDialog(
+    if (goalSheet) {
+        GoalSheet(
             currency = state.currency,
-            onDismiss = { goalDialog = false },
+            onDismiss = { goalSheet = false },
             onConfirm = { name, amount, target ->
                 onAddGoal(name, amount, target)
-                goalDialog = false
+                goalSheet = false
             },
         )
     }
@@ -351,112 +357,183 @@ private fun RuleCard(
 }
 
 @Composable
-private fun AmountCategoryDialog(
+private fun AmountCategorySheet(
     title: String,
     categories: List<Pair<String?, String>>,
     currency: String,
     showNote: Boolean = false,
+    confirmLabel: String,
     onDismiss: () -> Unit,
     onConfirm: (String?, Long, String) -> Unit,
 ) {
     var digits by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(categories.firstOrNull()?.first) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(MoneyFormatter.format(DigitBuffer.amountMinor(digits), currency))
-                OutlinedTextField(
-                    value = digits,
-                    onValueChange = { digits = it.filter { ch -> ch.isDigit() }.take(12) },
-                    singleLine = true,
-                    label = { Text("Amount") },
-                )
-                if (showNote) {
-                    OutlinedTextField(
-                        value = note,
-                        onValueChange = { note = it.take(40) },
-                        singleLine = true,
-                        label = { Text("Note") },
-                    )
-                }
-                categories.take(8).forEach { pair ->
-                    val id = pair.first
-                    val label = pair.second
-                    val on = selected == id
-                    Text(
-                        text = label,
-                        color = if (on) WheregoTheme.colors.tealDeep else WheregoTheme.colors.ink,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { selected = id }
-                            .padding(6.dp),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(selected, DigitBuffer.amountMinor(digits), note) }) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        },
-    )
+    val amount = DigitBuffer.amountMinor(digits)
+    WheregoBottomSheet(title = title, onDismiss = onDismiss) {
+        AmountReadout(amountMinor = amount, currency = currency)
+        if (showNote) {
+            SheetField(label = "Note", value = note, onValueChange = { note = it.take(40) })
+        }
+        CategoryChipRow(
+            categories = categories,
+            selected = selected,
+            onSelect = { selected = it },
+        )
+        WheregoNumpad(
+            onDigit = { digits = DigitBuffer.append(digits, it) },
+            onBackspace = { digits = DigitBuffer.backspace(digits) },
+        )
+        WheregoPrimaryButton(
+            label = confirmLabel,
+            onClick = { onConfirm(selected, amount, note) },
+            enabled = amount > 0L && (!showNote || selected != null),
+            icon = Icons.Outlined.Check,
+        )
+    }
 }
 
 @Composable
-private fun GoalDialog(
+private fun GoalSheet(
     currency: String,
     onDismiss: () -> Unit,
     onConfirm: (String, Long, Long) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
-    var digits by remember { mutableStateOf("") }
+    var nowDigits by remember { mutableStateOf("") }
     var targetDigits by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New goal") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it.take(40) },
-                    singleLine = true,
-                    label = { Text("Name") },
-                )
-                Text(MoneyFormatter.format(DigitBuffer.amountMinor(digits), currency))
-                OutlinedTextField(
-                    value = digits,
-                    onValueChange = { digits = it.filter { ch -> ch.isDigit() }.take(12) },
-                    singleLine = true,
-                    label = { Text("Set aside now") },
-                )
-                Text(MoneyFormatter.format(DigitBuffer.amountMinor(targetDigits), currency))
-                OutlinedTextField(
-                    value = targetDigits,
-                    onValueChange = { targetDigits = it.filter { ch -> ch.isDigit() }.take(12) },
-                    singleLine = true,
-                    label = { Text("Target (optional)") },
+    var field by remember { mutableStateOf(GoalAmount.NOW) }
+    val now = DigitBuffer.amountMinor(nowDigits)
+    val target = DigitBuffer.amountMinor(targetDigits)
+    WheregoBottomSheet(title = "Set aside", onDismiss = onDismiss) {
+        SheetField(label = "Name", value = name, onValueChange = { name = it.take(40) })
+        GoalAmountToggle(selected = field, onSelect = { field = it })
+        AmountReadout(
+            amountMinor = if (field == GoalAmount.NOW) now else target,
+            currency = currency,
+        )
+        WheregoNumpad(
+            onDigit = { chunk ->
+                if (field == GoalAmount.NOW) {
+                    nowDigits = DigitBuffer.append(nowDigits, chunk)
+                } else {
+                    targetDigits = DigitBuffer.append(targetDigits, chunk)
+                }
+            },
+            onBackspace = {
+                if (field == GoalAmount.NOW) {
+                    nowDigits = DigitBuffer.backspace(nowDigits)
+                } else {
+                    targetDigits = DigitBuffer.backspace(targetDigits)
+                }
+            },
+        )
+        WheregoPrimaryButton(
+            label = "Set it",
+            onClick = { onConfirm(name.trim(), now, target) },
+            enabled = name.isNotBlank(),
+            icon = Icons.Outlined.Check,
+        )
+    }
+}
+
+private enum class GoalAmount { NOW, TARGET }
+
+@Composable
+private fun GoalAmountToggle(selected: GoalAmount, onSelect: (GoalAmount) -> Unit) {
+    val colors = WheregoTheme.colors
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(colors.chipIdle)
+            .padding(4.dp),
+    ) {
+        listOf(GoalAmount.NOW to "Now", GoalAmount.TARGET to "Target").forEach { (value, label) ->
+            val on = selected == value
+            val tab = RoundedCornerShape(14.dp)
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(tab)
+                    .background(if (on) colors.teal else colors.sheet)
+                    .then(if (on) Modifier.border(BorderStroke(2.5.dp, colors.ink), tab) else Modifier)
+                    .clickable { onSelect(value) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style = WheregoType.kindTab,
+                    color = if (on) colors.white else colors.ink,
                 )
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(
-                        name,
-                        DigitBuffer.amountMinor(digits),
-                        DigitBuffer.amountMinor(targetDigits),
-                    )
-                },
-            ) { Text("Save") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        },
+        }
+    }
+}
+
+@Composable
+private fun AmountReadout(amountMinor: Long, currency: String) {
+    Text(
+        MoneyFormatter.format(amountMinor, currency),
+        style = WheregoType.heroAmount.copy(fontSize = 34.sp, lineHeight = 42.sp),
+        color = WheregoTheme.colors.ink,
     )
+}
+
+@Composable
+private fun SheetField(label: String, value: String, onValueChange: (String) -> Unit) {
+    val colors = WheregoTheme.colors
+    val shape = RoundedCornerShape(16.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = WheregoType.settingLabel, color = colors.ink)
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = WheregoType.settingLabel.copy(color = colors.ink),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(colors.chipIdle)
+                .border(BorderStroke(2.dp, colors.track), shape)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        )
+    }
+}
+
+@Composable
+private fun CategoryChipRow(
+    categories: List<Pair<String?, String>>,
+    selected: String?,
+    onSelect: (String?) -> Unit,
+) {
+    val colors = WheregoTheme.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        categories.forEach { (id, label) ->
+            val on = selected == id
+            val pill = RoundedCornerShape(99.dp)
+            Text(
+                label,
+                style = WheregoType.chip,
+                color = if (on) colors.white else colors.ink,
+                modifier = Modifier
+                    .clip(pill)
+                    .background(if (on) colors.teal else colors.tealSoft)
+                    .border(
+                        BorderStroke(if (on) 2.5.dp else 2.dp, if (on) colors.ink else colors.tealSoft),
+                        pill,
+                    )
+                    .clickable { onSelect(id) }
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+            )
+        }
+    }
 }
