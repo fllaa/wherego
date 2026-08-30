@@ -1,5 +1,7 @@
 package com.flla.wherego.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,6 +92,10 @@ fun WheregoNavHost(
                 navController = navController,
                 startDestination = Routes.Home,
                 modifier = Modifier.weight(1f),
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
             ) {
                 composable(Routes.Home) {
                     HomeRoute(

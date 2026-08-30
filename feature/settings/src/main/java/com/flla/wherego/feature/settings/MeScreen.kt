@@ -1,6 +1,16 @@
 package com.flla.wherego.feature.settings
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,60 +107,88 @@ fun MeScreen(
     var showCats by remember { mutableStateOf(false) }
     var showAuth by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
-    when {
-        showAuth -> ProfileScreen(onBack = { showAuth = false })
-        showCats -> CategoryManagerScreen(
-            categories = state.categories,
-            onBack = { showCats = false },
-            onSave = viewModel::updateCategory,
-            onArchive = viewModel::archiveCategory,
-        )
-        showImport -> CsvImportScreen(
-            onBack = { showImport = false },
-            onCommit = { text, mapping, skip -> viewModel.importCsv(text, mapping, skip) },
-        )
-        else -> SettingsScreen(
-            state = state,
-            balanceMinor = balance,
-            onDisplayName = viewModel::onDisplayName,
-            onTheme = viewModel::onTheme,
-            onCurrency = viewModel::onCurrency,
-            onBalanceDigit = viewModel::onBalanceDigits,
-            onBalanceBackspace = viewModel::onBalanceBackspace,
-            onSetBalance = viewModel::setBalanceTo,
-            onCategories = { showCats = true },
-            onAccount = { showAuth = true },
-            onSignOut = viewModel::signOut,
-            onExport = {
-                scope.launch {
-                    val csv = viewModel.exportCsv()
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/csv"
-                        putExtra(Intent.EXTRA_TEXT, csv)
-                        putExtra(Intent.EXTRA_SUBJECT, "Wherego export")
+    val page = when {
+        showAuth -> MePage.Profile
+        showCats -> MePage.Categories
+        showImport -> MePage.Import
+        else -> MePage.Root
+    }
+    AnimatedContent(
+        targetState = page,
+        modifier = Modifier.fillMaxSize(),
+        transitionSpec = {
+            val deeper = initialState == MePage.Root && targetState != MePage.Root
+            val back = initialState != MePage.Root && targetState == MePage.Root
+            val spec = tween<IntOffset>(220, easing = FastOutSlowInEasing)
+            when {
+                deeper ->
+                    slideInHorizontally(spec) { it } togetherWith
+                        slideOutHorizontally(spec) { -it / 4 }
+                back ->
+                    slideInHorizontally(spec) { -it / 4 } togetherWith
+                        slideOutHorizontally(spec) { it }
+                else -> EnterTransition.None togetherWith ExitTransition.None
+            }.using(SizeTransform(clip = true))
+        },
+        label = "mePush",
+    ) { current ->
+        when (current) {
+            MePage.Profile -> ProfileScreen(onBack = { showAuth = false })
+            MePage.Categories -> CategoryManagerScreen(
+                categories = state.categories,
+                onBack = { showCats = false },
+                onSave = viewModel::updateCategory,
+                onArchive = viewModel::archiveCategory,
+            )
+            MePage.Import -> CsvImportScreen(
+                onBack = { showImport = false },
+                onCommit = { text, mapping, skip -> viewModel.importCsv(text, mapping, skip) },
+            )
+            MePage.Root -> SettingsScreen(
+                state = state,
+                balanceMinor = balance,
+                onDisplayName = viewModel::onDisplayName,
+                onTheme = viewModel::onTheme,
+                onCurrency = viewModel::onCurrency,
+                onBalanceDigit = viewModel::onBalanceDigits,
+                onBalanceBackspace = viewModel::onBalanceBackspace,
+                onSetBalance = viewModel::setBalanceTo,
+                onCategories = { showCats = true },
+                onAccount = { showAuth = true },
+                onSignOut = viewModel::signOut,
+                onExport = {
+                    scope.launch {
+                        val csv = viewModel.exportCsv()
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/csv"
+                            putExtra(Intent.EXTRA_TEXT, csv)
+                            putExtra(Intent.EXTRA_SUBJECT, "Wherego export")
+                        }
+                        context.startActivity(Intent.createChooser(send, "Export CSV"))
                     }
-                    context.startActivity(Intent.createChooser(send, "Export CSV"))
-                }
-            },
-            onImport = { showImport = true },
-            onMonthPdf = {
-                scope.launch {
-                    val uri = MonthPdfWriter.write(
-                        context,
-                        "wherego-${state.yearMonth}.pdf",
-                        viewModel.monthPdfLines(),
-                    )
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "application/pdf"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                },
+                onImport = { showImport = true },
+                onMonthPdf = {
+                    scope.launch {
+                        val uri = MonthPdfWriter.write(
+                            context,
+                            "wherego-${state.yearMonth}.pdf",
+                            viewModel.monthPdfLines(),
+                        )
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/pdf"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(Intent.createChooser(send, "Share month"))
                     }
-                    context.startActivity(Intent.createChooser(send, "Share month"))
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
+
+private enum class MePage { Root, Profile, Categories, Import }
 
 /** Which demoted control is currently open in a sheet. */
 private enum class MeSheet { NONE, APPEARANCE, BALANCE, CURRENCY, RECURRING, REMINDERS }
