@@ -126,21 +126,35 @@ fun SettingsScreen(
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Me", style = WheregoType.cardTitle, color = colors.ink)
-        Text(state.accountLine, style = WheregoType.meta, color = colors.muted)
-        if (state.signedIn) {
+        Text("Me", style = WheregoType.greeting, color = colors.ink)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(colors.white)
+                .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            com.flla.wherego.core.designsystem.component.WheregoGoAvatar()
+            Column(Modifier.weight(1f)) {
+                Text(
+                    state.displayName.ifBlank { "Hey you" },
+                    style = WheregoType.cardTitle,
+                    color = colors.ink,
+                )
+                Text(state.accountLine, style = WheregoType.meta, color = colors.muted)
+            }
             Text(
-                "Sign out",
-                style = WheregoType.cta,
+                if (state.signedIn) "Sign out" else "Sign in",
+                style = WheregoType.leftPill,
                 color = colors.tealDeep,
-                modifier = Modifier.clickable(onClick = onSignOut),
-            )
-        } else {
-            Text(
-                "Sign in to backup",
-                style = WheregoType.cta,
-                color = colors.tealDeep,
-                modifier = Modifier.clickable(onClick = onSignIn),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(99.dp))
+                    .background(colors.tealSoft)
+                    .clickable(onClick = if (state.signedIn) onSignOut else onSignIn)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
         OutlinedTextField(

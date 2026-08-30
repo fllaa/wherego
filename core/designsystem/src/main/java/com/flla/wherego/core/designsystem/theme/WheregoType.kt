@@ -2,14 +2,22 @@ package com.flla.wherego.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.flla.wherego.core.designsystem.R
 
 object WheregoType {
-    // S0: platform sans. Fredoka + Nunito Sans bundle in S2 with mascot art.
-    private val display = FontFamily.SansSerif
-    private val ui = FontFamily.SansSerif
+    private val display = FontFamily(
+        Font(R.font.fredoka_medium, FontWeight.Medium),
+        Font(R.font.fredoka_semibold, FontWeight.SemiBold),
+    )
+    private val ui = FontFamily(
+        Font(R.font.nunito_sans_semibold, FontWeight.SemiBold),
+        Font(R.font.nunito_sans_bold, FontWeight.Bold),
+        Font(R.font.nunito_sans_extrabold, FontWeight.ExtraBold),
+    )
 
     val greeting = TextStyle(
         fontFamily = display,
@@ -39,9 +47,14 @@ object WheregoType {
         fontSize = 17.sp,
     )
     val tabLabel = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp,
+    )
+    val kindTab = TextStyle(
         fontFamily = display,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
+        fontSize = 15.sp,
     )
     val amountHuge = TextStyle(
         fontFamily = display,
@@ -78,13 +91,28 @@ object WheregoType {
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
     )
+    val link = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 13.sp,
+    )
+    val leftPill = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 12.sp,
+    )
+    val streakNum = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+    )
 
     fun typography(): Typography = Typography(
         headlineLarge = heroAmount,
         headlineSmall = greeting,
         titleLarge = cardTitle,
         bodyMedium = meta,
-        labelLarge = tabLabel,
+        labelLarge = kindTab,
         labelMedium = eyebrow,
     )
 }

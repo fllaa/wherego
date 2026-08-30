@@ -49,6 +49,10 @@ data class TxRowUi(
 
 data class HomeUiState(
     val greetingName: String = "you",
+    val weekdayLabel: String = "",
+    val weekLoggedCount: Int = 0,
+    val incomeLabel: String? = null,
+    val leftLabel: String? = null,
     val monthSpentLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
     val todayTotalLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
     val today: List<TxRowUi> = emptyList(),
@@ -84,8 +88,9 @@ class HomeViewModel @Inject constructor(
         lastZone = zone
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
         val greeting = profile?.displayName?.substringBefore(" ")?.takeIf { it.isNotBlank() } ?: "you"
-        val today = LocalDate.now(zone).toString()
-        val ym = YearMonth.from(LocalDate.now(zone)).toString()
+        val todayDate = LocalDate.now(zone)
+        val today = todayDate.toString()
+        val ym = YearMonth.from(todayDate).toString()
         combine(
             ledger.observeHome(zone),
             plan.observeBars(ym, zone),
@@ -93,6 +98,14 @@ class HomeViewModel @Inject constructor(
         ) { home, bars, due ->
             HomeUiState(
                 greetingName = greeting,
+                weekdayLabel = todayDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH),
+                weekLoggedCount = home.weekLoggedCount,
+                incomeLabel = home.monthIncomeMinor.takeIf { it > 0L }?.let {
+                    "of ${MoneyFormatter.format(it, currency)} in"
+                },
+                leftLabel = home.monthIncomeMinor.takeIf { it > 0L }?.let {
+                    "${MoneyFormatter.format(it - home.monthSpentMinor, currency)} left"
+                },
                 monthSpentLabel = MoneyFormatter.format(home.monthSpentMinor, currency),
                 todayTotalLabel = MoneyFormatter.format(home.todayExpenseMinor, currency),
                 today = home.today.map { it.toRow(zone, currency) },

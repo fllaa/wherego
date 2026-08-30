@@ -1,12 +1,14 @@
 package com.flla.wherego.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +22,8 @@ import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.designsystem.theme.parseHexColor
 
+private val CardShape = RoundedCornerShape(24.dp)
+
 @Composable
 fun WheregoTxRow(
     emoji: String,
@@ -31,7 +35,11 @@ fun WheregoTxRow(
 ) {
     val colors = WheregoTheme.colors
     Row(
-        modifier.fillMaxWidth(),
+        modifier
+            .fillMaxWidth()
+            .border(2.5.dp, colors.ink, CardShape)
+            .background(colors.white, CardShape)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -40,12 +48,12 @@ fun WheregoTxRow(
                 .background(parseHexColor(badgeSoftHex), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(emoji, fontSize = 20.sp)
+            Text(emoji, fontSize = 19.sp)
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, style = WheregoType.txTitle, color = colors.ink)
-            Text(subtitle, style = WheregoType.meta, color = colors.muted)
+            Text(subtitle, style = WheregoType.meta.copy(fontSize = 12.sp), color = colors.muted)
         }
         Text(amountLabel, style = WheregoType.txAmount, color = colors.ink)
     }

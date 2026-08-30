@@ -36,13 +36,13 @@ fun WheregoGoAvatar(
     }
     Box(
         modifier
-            .size(40.dp)
+            .size(54.dp)
             .border(2.5.dp, colors.ink, CircleShape)
             .clip(CircleShape)
             .background(fill)
             .semantics { contentDescription = "Go" },
         contentAlignment = Alignment.Center,
     ) {
-        Text(face, fontSize = 18.sp)
+        Text(face, fontSize = 26.sp)
     }
 }

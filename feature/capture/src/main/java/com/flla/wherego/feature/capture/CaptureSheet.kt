@@ -268,7 +268,7 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
             ) {
                 Text(
                     text = label,
-                    style = WheregoType.cta.copy(fontSize = WheregoType.tabLabel.fontSize),
+                    style = WheregoType.kindTab,
                     color = if (selected) colors.white else colors.ink,
                 )
             }
@@ -279,8 +279,19 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
 @Composable
 private fun AmountDisplay(state: CaptureUiState) {
     val colors = WheregoTheme.colors
+    val raw = state.amountLabel
+    val prefix = if (raw.startsWith("Rp ")) "Rp" else raw.substringBefore(" ", missingDelimiterValue = "")
+    val digits = if (raw.startsWith("Rp ")) raw.removePrefix("Rp ") else raw.substringAfter(" ", raw)
     Row(verticalAlignment = Alignment.Bottom) {
-        Text(state.amountLabel, style = WheregoType.amountHuge, color = colors.ink)
+        if (prefix.isNotEmpty()) {
+            Text(
+                prefix,
+                style = WheregoType.currencyPrefix,
+                color = colors.muted,
+                modifier = Modifier.padding(bottom = 6.dp, end = 6.dp),
+            )
+        }
+        Text(digits, style = WheregoType.amountHuge, color = colors.ink)
         Spacer(Modifier.width(4.dp))
         Box(
             Modifier

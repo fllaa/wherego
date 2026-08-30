@@ -22,12 +22,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -41,7 +38,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,26 +52,28 @@ import com.flla.wherego.core.designsystem.component.WheregoStreakPill
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-import com.flla.wherego.feature.capture.CaptureSheet
-import com.flla.wherego.feature.capture.ReceiptAttachDialog
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.sync.CloudDot
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun HomeRoute(
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenPlan: () -> Unit = {},
+    onOpenStories: () -> Unit = {},
+    onOpenCapture: (Transaction?) -> Unit = {},
+    goMood: GoMood = GoMood.Idle,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     HomeScreen(
         state = state,
+        goMood = goMood,
         onDelete = viewModel::delete,
         onUndo = viewModel::undoDelete,
         onDuplicate = viewModel::duplicateNow,
         onConfirmDue = viewModel::confirmDue,
         onOpenPlan = onOpenPlan,
+        onOpenStories = onOpenStories,
+        onOpenCapture = onOpenCapture,
     )
 }
 
@@ -83,23 +81,23 @@ fun HomeRoute(
 @Composable
 fun HomeScreen(
     state: HomeUiState,
+    goMood: GoMood,
     onDelete: (String) -> Unit,
     onUndo: () -> Unit,
     onDuplicate: (String) -> Unit,
     onConfirmDue: (com.flla.wherego.core.database.DueItem) -> Unit,
     onOpenPlan: () -> Unit,
+    onOpenStories: () -> Unit,
+    onOpenCapture: (Transaction?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = WheregoTheme.colors
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    var captureOpen by remember { mutableStateOf(false) }
-    var receiptTxId by remember { mutableStateOf<String?>(null) }
-    var editing by remember { mutableStateOf<Transaction?>(null) }
-    var goMood by remember { mutableStateOf(GoMood.Idle) }
-    LaunchedEffect(state.hasTxToday) {
+    var mood by remember { mutableStateOf(goMood) }
+    LaunchedEffect(goMood) { mood = goMood }
+    LaunchedEffect(state.hasTxToday, goMood) {
         if (goMood != GoMood.Happy) {
-            goMood = if (state.hasTxToday) GoMood.Idle else GoMood.Sleepy
+            mood = if (state.hasTxToday) GoMood.Idle else GoMood.Sleepy
         }
     }
 
@@ -125,19 +123,28 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    WheregoGoAvatar(mood = goMood)
+                    WheregoGoAvatar(mood = mood)
                     Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = "Hey ${state.greetingName} 👋",
-                        style = WheregoType.greeting,
-                        color = colors.ink,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = "Hey ${state.greetingName} 👋",
+                            style = WheregoType.greeting,
+                            color = colors.ink,
+                        )
+                        Text(
+                            text = listOfNotNull(
+                                state.weekdayLabel.takeIf { it.isNotBlank() },
+                                "${state.weekLoggedCount} logged this week",
+                            ).joinToString(" · "),
+                            style = WheregoType.meta,
+                            color = colors.muted,
+                        )
+                    }
                     Box(
                         Modifier
                             .padding(end = 8.dp)
@@ -155,12 +162,14 @@ fun HomeScreen(
                 }
             }
             item {
-                WheregoHero(amountLabel = state.monthSpentLabel)
+                WheregoHero(
+                    amountLabel = state.monthSpentLabel,
+                    incomeLabel = state.incomeLabel,
+                    leftLabel = state.leftLabel,
+                )
             }
-            if (state.budgetBars.isNotEmpty()) {
-                item {
-                    BudgetCard(bars = state.budgetBars, currency = state.currency, onPlan = onOpenPlan)
-                }
+            item {
+                BudgetCard(bars = state.budgetBars, currency = state.currency, onPlan = onOpenPlan)
             }
             if (state.due.isNotEmpty()) {
                 item {
@@ -182,7 +191,7 @@ fun HomeScreen(
                         Text(
                             "Log it",
                             color = colors.tealDeep,
-                            style = WheregoType.cta,
+                            style = WheregoType.link,
                             modifier = Modifier.clickable { onConfirmDue(item) },
                         )
                     }
@@ -195,7 +204,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     Text("Today", style = WheregoType.cardTitle, color = colors.ink)
-                    Text(state.todayTotalLabel, style = WheregoType.meta, color = colors.muted)
+                    Text(state.todayTotalLabel, style = WheregoType.streakNum, color = colors.muted)
                 }
             }
             if (state.today.isEmpty()) {
@@ -210,26 +219,34 @@ fun HomeScreen(
                 items(state.today, key = { it.id }) { row ->
                     TxItem(
                         row = row,
-                        onClick = {
-                            editing = row.transaction
-                            captureOpen = true
-                        },
+                        onClick = { onOpenCapture(row.transaction) },
                         onDelete = { onDelete(row.id) },
                         onDuplicate = { onDuplicate(row.id) },
                     )
                 }
             }
             if (state.earlierThisWeek.isNotEmpty()) {
+                val earlierDates = state.earlierThisWeek.map { it.transaction.occurredOn }.distinct()
+                val earlierTitle = if (earlierDates.size == 1) "Yesterday" else "Earlier this week"
                 item {
-                    Text("Earlier this week", style = WheregoType.cardTitle, color = colors.ink)
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        Text(earlierTitle, style = WheregoType.cardTitle, color = colors.ink)
+                        Text(
+                            "Stories →",
+                            style = WheregoType.link,
+                            color = colors.teal,
+                            modifier = Modifier.clickable(onClick = onOpenStories),
+                        )
+                    }
                 }
                 items(state.earlierThisWeek, key = { it.id }) { row ->
                     TxItem(
                         row = row,
-                        onClick = {
-                            editing = row.transaction
-                            captureOpen = true
-                        },
+                        onClick = { onOpenCapture(row.transaction) },
                         onDelete = { onDelete(row.id) },
                         onDuplicate = { onDuplicate(row.id) },
                     )
@@ -237,58 +254,11 @@ fun HomeScreen(
             }
         }
 
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 18.dp, bottom = 12.dp)
-                .size(64.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(colors.teal)
-                .border(2.5.dp, colors.ink, RoundedCornerShape(20.dp))
-                .clickable {
-                    editing = null
-                    captureOpen = true
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Outlined.Add,
-                contentDescription = "Add",
-                tint = colors.white,
-                modifier = Modifier.size(28.dp),
-            )
-        }
-
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 84.dp),
-        )
-    }
-
-    if (captureOpen) {
-        CaptureSheet(
-            editing = editing,
-            onDismiss = {
-                captureOpen = false
-                editing = null
-            },
-            onParked = { parked ->
-                goMood = GoMood.Happy
-                receiptTxId = parked.id
-                scope.launch {
-                    delay(800)
-                    goMood = GoMood.Idle
-                }
-            },
-        )
-    }
-    val pendingReceipt = receiptTxId
-    if (pendingReceipt != null) {
-        ReceiptAttachDialog(
-            transactionId = pendingReceipt,
-            onFinished = { receiptTxId = null },
+                .padding(bottom = 12.dp),
         )
     }
 }
@@ -320,7 +290,7 @@ private fun TxItem(
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(24.dp))
                         .background(colors.coral)
                         .padding(end = 18.dp),
                     contentAlignment = Alignment.CenterEnd,
@@ -372,38 +342,46 @@ private fun BudgetCard(
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Budget check", style = WheregoType.cardTitle, color = colors.ink)
-            Text("Plan →", style = WheregoType.meta, color = colors.teal, modifier = Modifier.clickable(onClick = onPlan))
+            Text(
+                "Plan →",
+                style = WheregoType.link,
+                color = colors.teal,
+                modifier = Modifier.clickable(onClick = onPlan),
+            )
         }
-        bars.forEach { bar ->
-            val fraction = if (bar.capMinor <= 0L) 0f else (bar.spentMinor.toFloat() / bar.capMinor).coerceIn(0f, 1f)
-            val fill = if (bar.over) colors.coral else com.flla.wherego.core.designsystem.theme.parseHexColor(bar.colorHex)
-            val label = if (bar.over) {
-                "${com.flla.wherego.core.model.MoneyFormatter.compact(-bar.remainingMinor, currency)} over"
-            } else {
-                "${com.flla.wherego.core.model.MoneyFormatter.compact(bar.remainingMinor, currency)} left"
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("${bar.emoji}  ${bar.name}", style = WheregoType.chip, color = colors.ink)
-                    Text(label, style = WheregoType.meta, color = if (bar.over) colors.coral else colors.tealDeep)
+        if (bars.isEmpty()) {
+            Text("No budgets yet · set them in Plan", style = WheregoType.meta, color = colors.muted)
+        } else {
+            bars.forEach { bar ->
+                val fraction = if (bar.capMinor <= 0L) 0f else (bar.spentMinor.toFloat() / bar.capMinor).coerceIn(0f, 1f)
+                val fill = if (bar.over) colors.coral else com.flla.wherego.core.designsystem.theme.parseHexColor(bar.colorHex)
+                val label = if (bar.over) {
+                    "${com.flla.wherego.core.model.MoneyFormatter.compact(-bar.remainingMinor, currency)} over"
+                } else {
+                    "${com.flla.wherego.core.model.MoneyFormatter.compact(bar.remainingMinor, currency)} left"
                 }
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(13.dp)
-                        .clip(RoundedCornerShape(99.dp))
-                        .background(colors.track),
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("${bar.emoji}  ${bar.name}", style = WheregoType.chip, color = colors.ink)
+                        Text(label, style = WheregoType.meta, color = if (bar.over) colors.coral else colors.tealDeep)
+                    }
                     Box(
                         Modifier
-                            .fillMaxWidth(if (bar.over) 1f else fraction)
+                            .fillMaxWidth()
                             .height(13.dp)
                             .clip(RoundedCornerShape(99.dp))
-                            .background(fill),
-                    )
+                            .background(colors.track),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth(if (bar.over) 1f else fraction)
+                                .height(13.dp)
+                                .clip(RoundedCornerShape(99.dp))
+                                .background(fill),
+                        )
+                    }
                 }
             }
         }
     }
 }
-

@@ -2,6 +2,7 @@ package com.flla.wherego.feature.stories
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,25 +75,36 @@ fun StoriesScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(
-                Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-                contentDescription = "Previous month",
-                tint = colors.ink,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(99.dp))
-                    .clickable(onClick = onPrev)
-                    .padding(8.dp),
-            )
-            Text(state.title, style = WheregoType.cardTitle, color = colors.ink)
-            Icon(
-                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = "Next month",
-                tint = if (state.canGoNext) colors.ink else colors.muted,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(99.dp))
-                    .clickable(enabled = state.canGoNext, onClick = onNext)
-                    .padding(8.dp),
-            )
+            Text("Stories", style = WheregoType.greeting, color = colors.ink)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                    contentDescription = "Previous month",
+                    tint = colors.ink,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(99.dp))
+                        .clickable(onClick = onPrev)
+                        .padding(8.dp),
+                )
+                Text(
+                    state.title,
+                    style = WheregoType.link,
+                    color = colors.ink,
+                    modifier = Modifier
+                        .border(2.dp, colors.ink, RoundedCornerShape(99.dp))
+                        .background(colors.white, RoundedCornerShape(99.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                )
+                Icon(
+                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = "Next month",
+                    tint = if (state.canGoNext) colors.ink else colors.muted,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(99.dp))
+                        .clickable(enabled = state.canGoNext, onClick = onNext)
+                        .padding(8.dp),
+                )
+            }
         }
         Text("Spent this month", style = WheregoType.eyebrow, color = colors.muted)
         Text(state.totalLabel, style = WheregoType.heroAmount, color = colors.ink)
@@ -123,11 +135,21 @@ fun StoriesScreen(
                 context.startActivity(Intent.createChooser(send, "Share month"))
             },
         )
-        if (state.bars.isEmpty()) {
-            Text("No category bars yet.", style = WheregoType.meta, color = colors.muted)
-        } else {
-            state.bars.forEach { bar ->
-                CategoryBar(bar)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+                .background(colors.white, RoundedCornerShape(28.dp))
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text("Where it went", style = WheregoType.cardTitle, color = colors.ink)
+            if (state.bars.isEmpty()) {
+                Text("No category bars yet.", style = WheregoType.meta, color = colors.muted)
+            } else {
+                state.bars.forEach { bar ->
+                    CategoryBar(bar)
+                }
             }
         }
     }

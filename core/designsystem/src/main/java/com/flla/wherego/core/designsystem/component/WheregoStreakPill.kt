@@ -32,7 +32,7 @@ fun WheregoStreakPill(
         Text("🔥", fontSize = 14.sp, color = colors.coral)
         Text(
             text = days.toString(),
-            style = WheregoType.greeting.copy(fontSize = 15.sp),
+            style = WheregoType.streakNum,
             color = colors.ink,
         )
     }

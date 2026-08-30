@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.map
 
 data class HomeLedger(
     val monthSpentMinor: Long,
+    val monthIncomeMinor: Long,
+    val weekLoggedCount: Int,
     val todayExpenseMinor: Long,
     val today: List<HomeTx>,
     val earlierThisWeek: List<HomeTx>,
@@ -363,6 +365,11 @@ class LedgerStore @Inject constructor(
             .filter { it.kind == TransactionKind.EXPENSE }
             .filter { it.occurredOn >= monthStart && it.occurredOn <= monthEnd }
             .sumOf { it.amountBaseMinor }
+        val monthIncome = txs
+            .filter { it.kind == TransactionKind.INCOME }
+            .filter { it.occurredOn >= monthStart && it.occurredOn <= monthEnd }
+            .sumOf { it.amountBaseMinor }
+        val weekLogged = txs.count { it.occurredOn >= weekStartOn && it.occurredOn <= todayOn }
 
         val todayTxs = txs.filter { it.occurredOn == todayOn }
             .sortedWith(compareByDescending<Transaction> { it.occurredAt ?: 0L }.thenByDescending { it.createdAt })
@@ -379,6 +386,8 @@ class LedgerStore @Inject constructor(
 
         return HomeLedger(
             monthSpentMinor = monthSpent,
+            monthIncomeMinor = monthIncome,
+            weekLoggedCount = weekLogged,
             todayExpenseMinor = todayExpense,
             today = todayTxs.map(::wrap),
             earlierThisWeek = earlier.map(::wrap),

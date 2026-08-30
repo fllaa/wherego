@@ -1,6 +1,7 @@
 package com.flla.wherego.feature.plan
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -75,38 +76,68 @@ fun PlanScreen(
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Plan", style = WheregoType.cardTitle, color = colors.ink)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Budgets · ${state.yearMonth}", style = WheregoType.chip, color = colors.ink)
-            Text("Add", color = colors.tealDeep, style = WheregoType.cta, modifier = Modifier.clickable { budgetDialog = true })
-        }
-        if (state.budgets.isEmpty()) {
-            Text("No budgets yet · set a cap for this month.", style = WheregoType.meta, color = colors.muted)
-        } else {
-            state.budgets.forEach { budget ->
-                BudgetRow(budget, state.categories, state.currency, onDelete = { onDeleteBudget(budget.id) })
+        Text("Plan", style = WheregoType.greeting, color = colors.ink)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(colors.white)
+                .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Budgets", style = WheregoType.cardTitle, color = colors.ink)
+                Text("Add", color = colors.teal, style = WheregoType.link, modifier = Modifier.clickable { budgetDialog = true })
+            }
+            if (state.budgets.isEmpty()) {
+                Text("No budgets yet · set a cap for this month.", style = WheregoType.meta, color = colors.muted)
+            } else {
+                state.budgets.forEach { budget ->
+                    BudgetRow(budget, state.categories, state.currency, onDelete = { onDeleteBudget(budget.id) })
+                }
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Recurring", style = WheregoType.chip, color = colors.ink)
-            Text("Add", color = colors.tealDeep, style = WheregoType.cta, modifier = Modifier.clickable { ruleDialog = true })
-        }
-        if (state.rules.isEmpty()) {
-            Text("Wifi, rent, pulsa — log when they hit.", style = WheregoType.meta, color = colors.muted)
-        } else {
-            state.rules.forEach { rule ->
-                RuleRow(rule, state.categories, onDelete = { onDeleteRule(rule.id) })
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(colors.white)
+                .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Recurring", style = WheregoType.cardTitle, color = colors.ink)
+                Text("Add", color = colors.teal, style = WheregoType.link, modifier = Modifier.clickable { ruleDialog = true })
+            }
+            if (state.rules.isEmpty()) {
+                Text("Wifi, rent, pulsa — log when they hit.", style = WheregoType.meta, color = colors.muted)
+            } else {
+                state.rules.forEach { rule ->
+                    RuleRow(rule, state.categories, onDelete = { onDeleteRule(rule.id) })
+                }
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Goals", style = WheregoType.chip, color = colors.ink)
-            Text("Add", color = colors.tealDeep, style = WheregoType.cta, modifier = Modifier.clickable { goalDialog = true })
-        }
-        if (state.goals.isEmpty()) {
-            Text("Earmark a slice. Not another account.", style = WheregoType.meta, color = colors.muted)
-        } else {
-            state.goals.forEach { goal ->
-                GoalRow(goal, onDelete = { onDeleteGoal(goal.id) })
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(colors.white)
+                .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Set aside", style = WheregoType.cardTitle, color = colors.ink)
+                Text("Add", color = colors.teal, style = WheregoType.link, modifier = Modifier.clickable { goalDialog = true })
+            }
+            if (state.goals.isEmpty()) {
+                Text("Earmark a slice. Not another account.", style = WheregoType.meta, color = colors.muted)
+            } else {
+                state.goals.forEach { goal ->
+                    GoalRow(goal, onDelete = { onDeleteGoal(goal.id) })
+                }
             }
         }
     }

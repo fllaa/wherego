@@ -160,3 +160,13 @@
 - Not done / deferred: Play (H4); 20s feel (H5)
 - Blocked: none
 
+
+## 2026-08-30  T0348  visual
+- Goal: match Pencil Home/Capture/Stories/Plan/Me (`pencil-new.pen`)
+- Files changed: Fredoka+Nunito Sans in `:core:designsystem`; Go 54dp; coral center FAB; outlined tx/budget cards; hero leftover pill; capture Rp prefix; Stories/Plan/Me card chrome
+- Commands:
+  - `./gradlew :app:assembleDebug :core:database:testDebugUnitTest :core:model:testDebugUnitTest :app:testDebugUnitTest` → SUCCESS
+- Decisions: follow design-system + Pencil over playbook 40dp Go; FAB lives on tab bar on every tab
+- Not done / deferred: pixel-perfect Plan leftover hero / Me stats grid (no extra product fields)
+- Blocked: none
+
