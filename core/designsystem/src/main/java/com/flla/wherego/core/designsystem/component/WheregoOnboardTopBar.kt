@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,16 +29,17 @@ import com.flla.wherego.core.designsystem.theme.WheregoType
 
 /**
  * Onboarding chrome from `pencil-new.pen` → `Onboarding N · … / Top Bar`:
- * a 38dp ink-outlined back circle, a 4-dot progress rail whose active dot is a
- * 24x9 ink pill, and a muted "Skip" affordance.
+ * a 38dp ink-outlined back circle, a progress rail whose active dot is a
+ * 24x9 ink pill, and an optional muted "Skip" affordance. When skip is omitted,
+ * a 38dp spacer keeps the rail centered against the back circle.
  */
 @Composable
 fun WheregoOnboardTopBar(
     stepIndex: Int,
     stepCount: Int,
     onBack: () -> Unit,
-    onSkip: () -> Unit,
     modifier: Modifier = Modifier,
+    onSkip: (() -> Unit)? = null,
 ) {
     val colors = WheregoTheme.colors
     Row(
@@ -76,11 +78,15 @@ fun WheregoOnboardTopBar(
                 )
             }
         }
-        Text(
-            "Skip",
-            style = WheregoType.chip,
-            color = colors.muted,
-            modifier = Modifier.clickable(onClick = onSkip),
-        )
+        if (onSkip != null) {
+            Text(
+                "Skip",
+                style = WheregoType.chip,
+                color = colors.muted,
+                modifier = Modifier.clickable(onClick = onSkip),
+            )
+        } else {
+            Spacer(Modifier.size(38.dp))
+        }
     }
 }
