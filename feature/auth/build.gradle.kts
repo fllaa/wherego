@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.feature.auth"
+    namespace = "com.flla.wherego.feature.auth"
     compileSdk = 35
     defaultConfig {
         minSdk = 26

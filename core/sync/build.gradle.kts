@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.core.sync"
+    namespace = "com.flla.wherego.core.sync"
     compileSdk = 35
     defaultConfig {
         minSdk = 26
@@ -37,5 +37,14 @@ dependencies {
     api(libs.androidx.work.runtime)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.junit)
 }

@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.feature.capture"
+    namespace = "com.flla.wherego.feature.capture"
     compileSdk = 35
     defaultConfig {
         minSdk = 26

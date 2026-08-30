@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.feature.settings"
+    namespace = "com.flla.wherego.feature.settings"
     compileSdk = 35
     defaultConfig {
         minSdk = 26

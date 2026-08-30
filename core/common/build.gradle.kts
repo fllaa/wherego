@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.core.common"
+    namespace = "com.flla.wherego.core.common"
     compileSdk = 35
     defaultConfig {
         minSdk = 26

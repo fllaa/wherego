@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.core.datastore"
+    namespace = "com.flla.wherego.core.datastore"
     compileSdk = 35
     defaultConfig {
         minSdk = 26

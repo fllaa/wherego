@@ -123,3 +123,20 @@
 - Blocked: none for S6; H1–H3 still in `BLOCKED.md`
 
 
+
+## 2026-08-30  T0305  slice=S3
+- Goal: H1–H3 closed — real Firebase Auth/Firestore/Crashlytics/Storage; package `com.flla.wherego`
+- Files changed: package root `app.wherego` → `com.flla.wherego` (applicationId, namespaces, source trees); freeze list + H1 + README; `FirebaseAuthRepository` (Credential Manager + Google ID token); `FirestoreCloudDataSource`; `FirebaseReceiptUploader`; Crashlytics plugin; Room v7 `user_profile.firebaseUid`; Me signed-in/out; deleted `BLOCKED.md`
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS (`app/processDebugGoogleServices` ran)
+  - `./gradlew :core:sync:testDebugUnitTest :core:database:testDebugUnitTest :core:model:testDebugUnitTest :app:testDebugUnitTest` → 42 passed, 0 failed
+- Decisions:
+  - applicationId/package locked to `com.flla.wherego` to match `google-services.json`
+  - Keep local ULID profile PK; store `firebaseUid` on the row; cloud docs keyed by Firebase uid
+  - Firestore paths: `users/{uid}/transactions/{id}`, `users/{uid}/categories/{id}`, `users/{uid}/profile/profile` (matches pasted rules `{document=**}`)
+  - No snapshot listeners; still pull on start + after save + 15 min WorkManager
+  - Feature modules still only see `AuthRepository` / `CloudDataSource`
+  - `google-services.json` `oauth_client` is empty, so `default_web_client_id` was not generated. Sign-in code is live; Google picker needs a re-download of the json after the Web OAuth client exists (Authentication → Google)
+- Not done / deferred: Play closed test (H4); 20s feel (H5)
+- Blocked: none
+

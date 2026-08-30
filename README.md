@@ -2,7 +2,7 @@
 
 Android money tracker. Kotlin, Jetpack Compose, Room. Offline-first. One pot.
 
-ApplicationId: `app.wherego`
+ApplicationId: `com.flla.wherego`
 
 ## Open in Android Studio
 
@@ -26,4 +26,4 @@ First launch writes a local `UserProfile` row (ULID id, currency `IDR`, zone `As
 
 ## Slices
 
-Work is sequenced in `docs/agent-loop-playbook.md`. Current spine is **S0** (tabs + theme + guest profile). Do not expect capture until S1.
+Work is sequenced in `docs/agent-loop-playbook.md`. S0–S6 are in tree. S3 talks to Firebase (`com.flla.wherego`). Capture still works as a guest.

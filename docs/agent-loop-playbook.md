@@ -63,8 +63,8 @@ Attach: this playbook, `Wherego_Money_Tracker_Plan.md` (intent only), and the re
 The agent must treat these as constants.
 
 - App working name: `Wherego`
-- ApplicationId: `app.wherego`
-- Package root: `app.wherego`
+- ApplicationId: `com.flla.wherego`
+- Package root: `com.flla.wherego`
 - Platform: Android only
 - Language: Kotlin
 - UI: Jetpack Compose + Material 3
@@ -101,7 +101,7 @@ Create `BLOCKED.md` with what the human must do. Do not fake these.
 | Gate ID | Needed before | Human does |
 |---|---|---|
 | H0 | Slice S0 | Install Android Studio / JDK 17, accept SDK licenses |
-| H1 | Slice S3 | Create Firebase project, add Android app `app.wherego`, download `google-services.json` |
+| H1 | Slice S3 | Create Firebase project, add Android app `com.flla.wherego`, download `google-services.json` |
 | H2 | Slice S3 | Add SHA-1 / SHA-256 debug keystore to Firebase, enable Google Sign-In |
 | H3 | Slice S3 | Paste Firestore rules from this playbook into console |
 | H4 | Closed test | Play Console account, $25, privacy policy URL |
@@ -139,7 +139,7 @@ Wherego/
   app/
     build.gradle.kts
     src/main/AndroidManifest.xml
-    src/main/java/app/wherego/
+    src/main/java/com/flla/wherego/
       WheregoApp.kt
       MainActivity.kt
       navigation/

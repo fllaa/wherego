@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "app.wherego.feature.stories"
+    namespace = "com.flla.wherego.feature.stories"
     compileSdk = 35
     defaultConfig {
         minSdk = 26

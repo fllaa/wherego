@@ -4,13 +4,15 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
-    namespace = "app.wherego"
+    namespace = "com.flla.wherego"
     compileSdk = 35
     defaultConfig {
-        applicationId = "app.wherego"
+        applicationId = "com.flla.wherego"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -80,6 +82,10 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
 
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
 
     testImplementation(libs.junit)
 }
