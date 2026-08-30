@@ -70,7 +70,6 @@ import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.ThemeMode
-import com.flla.wherego.feature.auth.AuthScreen
 import kotlinx.coroutines.launch
 
 private val Palette = listOf(
@@ -99,7 +98,7 @@ fun MeScreen(
     var showAuth by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
     when {
-        showAuth -> AuthScreen(onBack = { showAuth = false })
+        showAuth -> ProfileScreen(onBack = { showAuth = false })
         showCats -> CategoryManagerScreen(
             categories = state.categories,
             onBack = { showCats = false },
@@ -296,7 +295,6 @@ fun SettingsScreen(
             BalanceSheetBody(
                 state = state,
                 balanceMinor = balanceMinor,
-                onDisplayName = onDisplayName,
                 onBalanceDigit = onBalanceDigit,
                 onBalanceBackspace = onBalanceBackspace,
                 onSetBalance = {
@@ -517,18 +515,16 @@ private fun ChoiceRow(
     }
 }
 
-/** The `Set balance to` keypad plus the display-name field, demoted off the main page. */
+/** The `Set balance to` keypad, demoted off the main page. */
 @Composable
 private fun BalanceSheetBody(
     state: SettingsUiState,
     balanceMinor: Long,
-    onDisplayName: (String) -> Unit,
     onBalanceDigit: (String) -> Unit,
     onBalanceBackspace: () -> Unit,
     onSetBalance: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
-    var name by remember(state.displayName) { mutableStateOf(state.displayName) }
     Text(
         "Now ${MoneyFormatter.format(balanceMinor, state.currency)}",
         style = WheregoType.helper,
@@ -541,16 +537,6 @@ private fun BalanceSheetBody(
     )
     WheregoNumpad(onDigit = onBalanceDigit, onBackspace = onBalanceBackspace)
     ParkItButton(enabled = state.balanceDigits.isNotBlank(), onClick = onSetBalance)
-    OutlinedTextField(
-        value = name,
-        onValueChange = {
-            name = it.take(40)
-            onDisplayName(name)
-        },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        label = { Text("Display name") },
-    )
 }
 
 @Composable

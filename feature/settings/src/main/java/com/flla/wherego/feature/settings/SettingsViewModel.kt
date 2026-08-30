@@ -47,6 +47,9 @@ data class SettingsUiState(
     val displayName: String = "",
     val themeMode: String = ThemeMode.SYSTEM,
     val currency: String = UserProfile.DEFAULT_CURRENCY,
+    val localeTag: String = UserProfile.DEFAULT_LOCALE,
+    val timeZoneId: String = UserProfile.DEFAULT_ZONE,
+    val photoUrl: String? = null,
     val balanceLabel: String = MoneyFormatter.format(0L, UserProfile.DEFAULT_CURRENCY),
     val balanceDigits: String = "",
     val categories: List<Category> = emptyList(),
@@ -130,9 +133,12 @@ class SettingsViewModel @Inject constructor(
             endOn == null || endOn >= todayIso
         }
         SettingsUiState(
-            displayName = profile?.displayName.orEmpty(),
+            displayName = name.orEmpty(),
             themeMode = acc.theme,
             currency = currency,
+            localeTag = profile?.localeTag ?: UserProfile.DEFAULT_LOCALE,
+            timeZoneId = profile?.timeZoneId ?: UserProfile.DEFAULT_ZONE,
+            photoUrl = acc.auth.photoUrl ?: profile?.photoUrl,
             balanceLabel = MoneyFormatter.format(0L, currency),
             balanceDigits = acc.digits,
             categories = acc.categories,
@@ -184,6 +190,14 @@ class SettingsViewModel @Inject constructor(
 
     fun onDisplayName(name: String) {
         viewModelScope.launch { profiles.updateDisplayName(name) }
+    }
+
+    fun onLocale(tag: String) {
+        viewModelScope.launch { profiles.updateLocale(tag) }
+    }
+
+    fun onTimeZone(id: String) {
+        viewModelScope.launch { profiles.updateTimeZone(id) }
     }
 
     fun onTheme(mode: String) {

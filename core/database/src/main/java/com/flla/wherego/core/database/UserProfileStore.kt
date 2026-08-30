@@ -55,6 +55,19 @@ class UserProfileStore @Inject constructor(
         )
     }
 
+    suspend fun updateLocale(tag: String) {
+        val existing = dao.get() ?: return
+        if (existing.localeTag == tag) return
+        dao.update(existing.copy(localeTag = tag, updatedAt = clock.millis()))
+    }
+
+    suspend fun updateTimeZone(id: String) {
+        val existing = dao.get() ?: return
+        if (existing.timeZoneId == id) return
+        ZoneId.of(id)
+        dao.update(existing.copy(timeZoneId = id, updatedAt = clock.millis()))
+    }
+
     suspend fun linkGoogle(
         firebaseUid: String,
         googleSub: String?,

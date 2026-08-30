@@ -48,4 +48,5 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.coil.compose)
 }
