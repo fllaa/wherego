@@ -1,5 +1,6 @@
 package com.flla.wherego.feature.settings
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flla.wherego.core.database.LedgerStore
@@ -20,7 +21,10 @@ import com.flla.wherego.core.model.ThemeMode
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.UserProfile
 import com.flla.wherego.core.sync.AuthRepository
+import com.flla.wherego.core.sync.AccountEraser
 import com.flla.wherego.core.sync.AuthState
+import com.flla.wherego.core.sync.SignInException
+import com.flla.wherego.core.sync.SignInFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -28,6 +32,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -74,6 +79,13 @@ data class SettingsUiState(
     val remindersOn: Boolean = true,
 )
 
+sealed interface EraseState {
+    data object Idle : EraseState
+    data object Busy : EraseState
+    /** [cancelled] distinguishes a dismissed Google re-auth sheet from a real failure. */
+    data class Failed(val cancelled: Boolean) : EraseState
+}
+
 /** The five flows that only describe the profile/theme/account half of `Me`. */
 private data class Account(
     val profile: UserProfile?,
@@ -90,6 +102,7 @@ class SettingsViewModel @Inject constructor(
     private val plan: PlanStore,
     private val themePreferences: ThemePreferences,
     private val auth: AuthRepository,
+    private val eraser: AccountEraser,
 ) : ViewModel() {
     private val balanceDigits = MutableStateFlow("")
 
@@ -182,6 +195,26 @@ class SettingsViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch { auth.signOut() }
+    }
+
+    private val _erase = MutableStateFlow<EraseState>(EraseState.Idle)
+    val erase: StateFlow<EraseState> = _erase.asStateFlow()
+
+    fun eraseAccount(activity: Activity?) {
+        if (_erase.value == EraseState.Busy) return
+        if (activity == null) {
+            _erase.value = EraseState.Failed(cancelled = false)
+            return
+        }
+        viewModelScope.launch {
+            _erase.value = EraseState.Busy
+            eraser.erase(activity)
+                .onSuccess { _erase.value = EraseState.Idle }
+                .onFailure { e ->
+                    val failure = (e as? SignInException)?.failure
+                    _erase.value = EraseState.Failed(failure == SignInFailure.CANCELLED)
+                }
+        }
     }
 
     fun onDisplayName(name: String) {

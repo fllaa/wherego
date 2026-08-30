@@ -19,4 +19,16 @@ class FirebaseReceiptUploader @Inject constructor() : ReceiptUploader {
             null
         }
     }
+
+    override suspend fun deleteAll(uid: String) {
+        try {
+            FirebaseStorage.getInstance().reference
+                .child("users/$uid/receipts")
+                .listAll()
+                .await()
+                .items
+                .forEach { it.delete().await() }
+        } catch (_: Exception) {
+        }
+    }
 }

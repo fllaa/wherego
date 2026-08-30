@@ -54,6 +54,18 @@ class FirestoreCloudDataSource @Inject constructor() : CloudDataSource {
         return profile.takeIf { it.updatedAt > sinceEpoch }
     }
 
+    override suspend fun deleteAll(uid: String) {
+        listOf("transactions", "categories", "profile").forEach { name ->
+            while (true) {
+                val docs = col(uid, name).limit(BATCH.toLong()).get().await().documents
+                if (docs.isEmpty()) break
+                val batch = db.batch()
+                docs.forEach { batch.delete(it.reference) }
+                batch.commit().await()
+            }
+        }
+    }
+
     private suspend fun pull(uid: String, collection: String, sinceEpoch: Long) =
         col(uid, collection)
             .whereGreaterThan("updatedAt", sinceEpoch)

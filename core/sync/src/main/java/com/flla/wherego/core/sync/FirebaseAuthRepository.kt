@@ -13,6 +13,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -81,6 +82,26 @@ class FirebaseAuthRepository @Inject constructor(
             // Local session already cleared.
         }
         _state.value = AuthState.Guest
+    }
+
+    override suspend fun deleteAccount(activity: Activity): Result<Unit> {
+        val user = auth.currentUser ?: return Result.success(Unit)
+        return try {
+            try {
+                user.delete().await()
+            } catch (_: FirebaseAuthRecentLoginRequiredException) {
+                val webClientId = webClientId()
+                    ?: return Result.failure(SignInException(SignInFailure.MISSING_CLIENT_ID))
+                val idToken = requestIdToken(activity, webClientId)
+                user.reauthenticate(GoogleAuthProvider.getCredential(idToken, null)).await()
+                user.delete().await()
+            }
+            Result.success(Unit)
+        } catch (_: GetCredentialCancellationException) {
+            Result.failure(SignInException(SignInFailure.CANCELLED))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     private suspend fun requestIdToken(activity: Activity, webClientId: String): String {

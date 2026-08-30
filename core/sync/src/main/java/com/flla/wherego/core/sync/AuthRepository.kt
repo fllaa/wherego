@@ -32,4 +32,10 @@ interface AuthRepository {
     suspend fun current(): AuthState
     suspend fun signIn(activity: Activity): Result<AuthState>
     suspend fun signOut()
+
+    /**
+     * Deletes the Firebase user. Re-authenticates with Google and retries once when the
+     * session is too old for a delete. Does not sign out — the caller owns that.
+     */
+    suspend fun deleteAccount(activity: Activity): Result<Unit>
 }

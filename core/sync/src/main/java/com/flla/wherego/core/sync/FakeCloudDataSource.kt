@@ -42,6 +42,10 @@ class FakeCloudDataSource @Inject constructor(
         return profile.takeIf { it.updatedAt > sinceEpoch }
     }
 
+    override suspend fun deleteAll(uid: String) {
+        File(root, uid).deleteRecursively()
+    }
+
     private fun dir(uid: String, collection: String): File =
         File(root, "$uid/$collection").also { it.mkdirs() }
 

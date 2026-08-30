@@ -67,12 +67,15 @@ class FxCacheScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     fun enqueueWeekly() {
-        val request = PeriodicWorkRequestBuilder<FxCacheWorker>(7, TimeUnit.DAYS).build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            UNIQUE,
-            ExistingPeriodicWorkPolicy.KEEP,
-            request,
-        )
+        try {
+            val request = PeriodicWorkRequestBuilder<FxCacheWorker>(7, TimeUnit.DAYS).build()
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                UNIQUE,
+                ExistingPeriodicWorkPolicy.KEEP,
+                request,
+            )
+        } catch (_: Exception) {
+        }
     }
 
     private companion object {

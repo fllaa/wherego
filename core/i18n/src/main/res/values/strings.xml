@@ -296,6 +296,23 @@
     <string name="profile_backup_not_signed_in">Not signed in</string>
     <string name="profile_backup_body">Capture never waits on this.</string>
     <string name="profile_pill_local_only">Local only</string>
+
+    <!-- Danger zone -->
+    <string name="danger_section">DANGER ZONE</string>
+    <string name="danger_title_signed_in">Delete account</string>
+    <string name="danger_title_guest">Erase all data</string>
+    <string name="danger_body_signed_in">Removes the cloud copy, unlinks Google, and wipes this phone.</string>
+    <string name="danger_body_guest">Wipes this phone. There is no cloud copy to remove.</string>
+    <string name="danger_cta">Erase everything</string>
+    <string name="danger_dialog_title">Erase everything?</string>
+    <string name="danger_dialog_body">Transactions, categories, budgets, goals, receipts and your profile go for good. Wherego restarts at the welcome screen. This cannot be undone.</string>
+    <string name="danger_dialog_prompt">Type %1$s to confirm</string>
+    <string name="danger_confirm_word">DELETE</string>
+    <string name="danger_dialog_confirm">Erase</string>
+    <string name="danger_dialog_cancel">Keep my data</string>
+    <string name="danger_busy">Erasing…</string>
+    <string name="danger_err_failed">Couldn\'t erase. Nothing was deleted — try again.</string>
+    <string name="danger_err_cancelled">Cancelled. Nothing was deleted.</string>
     <string name="tz_jakarta">Jakarta (WIB)</string>
     <string name="tz_makassar">Makassar (WITA)</string>
     <string name="tz_jayapura">Jayapura (WIT)</string>

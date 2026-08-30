@@ -118,6 +118,7 @@ private class FixedAuth(uid: String) : AuthRepository {
     override suspend fun current(): AuthState = snap
     override suspend fun signIn(activity: Activity): Result<AuthState> = Result.success(snap)
     override suspend fun signOut() = Unit
+    override suspend fun deleteAccount(activity: Activity): Result<Unit> = Result.success(Unit)
 }
 
 private class MemCloud(
@@ -135,6 +136,7 @@ private class MemCloud(
     }
     override suspend fun pullProfile(uid: String, sinceEpoch: Long): UserProfile? =
         profile?.takeIf { it.updatedAt > sinceEpoch }
+    override suspend fun deleteAll(uid: String) { profile = null }
 }
 
 private class MemProfiles(var row: UserProfileEntity?) : UserProfileDao {

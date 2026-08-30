@@ -20,4 +20,6 @@ class FakeAuthRepository @Inject constructor() : AuthRepository {
     override suspend fun signOut() {
         _state.value = AuthState.Guest
     }
+
+    override suspend fun deleteAccount(activity: Activity): Result<Unit> = Result.success(Unit)
 }

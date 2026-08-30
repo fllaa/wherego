@@ -18,6 +18,7 @@ android {
     }
     testOptions {
         unitTests {
+            isIncludeAndroidResources = true
             isReturnDefaultValues = true
         }
     }
@@ -33,6 +34,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:i18n"))
     implementation(project(":core:database"))
+    implementation(project(":core:datastore"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     api(libs.androidx.work.runtime)
@@ -48,4 +50,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

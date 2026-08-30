@@ -296,6 +296,23 @@
     <string name="profile_backup_not_signed_in">Belum masuk</string>
     <string name="profile_backup_body">Nyatet nggak perlu nunggu ini.</string>
     <string name="profile_pill_local_only">Cuma di HP</string>
+
+    <!-- Danger zone -->
+    <string name="danger_section">ZONA BAHAYA</string>
+    <string name="danger_title_signed_in">Hapus akun</string>
+    <string name="danger_title_guest">Hapus semua data</string>
+    <string name="danger_body_signed_in">Ngapus salinan di cloud, lepas tautan Google, dan bersihin HP ini.</string>
+    <string name="danger_body_guest">Bersihin HP ini. Nggak ada salinan di cloud.</string>
+    <string name="danger_cta">Hapus semuanya</string>
+    <string name="danger_dialog_title">Hapus semuanya?</string>
+    <string name="danger_dialog_body">Transaksi, kategori, budget, target, struk, dan profilmu hilang permanen. Wherego balik ke layar awal. Nggak bisa dibalikin.</string>
+    <string name="danger_dialog_prompt">Ketik %1$s buat lanjut</string>
+    <string name="danger_confirm_word">HAPUS</string>
+    <string name="danger_dialog_confirm">Hapus</string>
+    <string name="danger_dialog_cancel">Simpan aja</string>
+    <string name="danger_busy">Ngapus…</string>
+    <string name="danger_err_failed">Gagal ngapus. Nggak ada yang kehapus — coba lagi.</string>
+    <string name="danger_err_cancelled">Dibatalin. Nggak ada yang kehapus.</string>
     <string name="tz_jakarta">Jakarta (WIB)</string>
     <string name="tz_makassar">Makassar (WITA)</string>
     <string name="tz_jayapura">Jayapura (WIT)</string>

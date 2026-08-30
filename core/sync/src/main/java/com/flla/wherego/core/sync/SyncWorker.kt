@@ -62,6 +62,14 @@ class SyncScheduler @Inject constructor(
         }
     }
 
+    /** Cancels every queued Wherego worker — sync, FX, receipt upload, due reminders. */
+    fun cancelAllWork() {
+        try {
+            WorkManager.getInstance(context).cancelAllWork()
+        } catch (_: Exception) {
+        }
+    }
+
     private companion object {
         const val UNIQUE_NOW = "wherego-sync-now"
         const val UNIQUE_PERIODIC = "wherego-sync-periodic"

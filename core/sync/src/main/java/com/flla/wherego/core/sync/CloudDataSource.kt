@@ -15,4 +15,7 @@ interface CloudDataSource {
 
     suspend fun pushProfile(uid: String, profile: UserProfile)
     suspend fun pullProfile(uid: String, sinceEpoch: Long): UserProfile?
+
+    /** Removes every document under `users/{uid}/`. */
+    suspend fun deleteAll(uid: String)
 }

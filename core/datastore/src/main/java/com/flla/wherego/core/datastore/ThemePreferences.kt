@@ -38,4 +38,9 @@ class ThemePreferences @Inject constructor(
     suspend fun setWelcomeSeen(seen: Boolean) {
         store.edit { it[welcomeKey] = seen }
     }
+
+    /** Wipes every device preference — theme and `welcome_seen` — for a full reset. */
+    suspend fun clear() {
+        store.edit { it.clear() }
+    }
 }

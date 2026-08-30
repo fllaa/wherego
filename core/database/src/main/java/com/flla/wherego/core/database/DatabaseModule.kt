@@ -54,4 +54,8 @@ object DatabaseModule {
 
     @Provides
     fun provideFxRateDao(db: WheregoDatabase): FxRateDao = db.fxRateDao()
+
+    @Provides
+    @Singleton
+    fun provideLocalDataEraser(impl: RoomLocalDataEraser): LocalDataEraser = impl
 }

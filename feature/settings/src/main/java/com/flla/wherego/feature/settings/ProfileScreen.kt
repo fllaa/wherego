@@ -28,8 +28,10 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +92,9 @@ fun ProfileScreen(
     var sheet by remember { mutableStateOf(ProfileSheet.NONE) }
     var signedOutBanner by remember { mutableStateOf(false) }
     var authResult by remember { mutableStateOf<SignInResult?>(null) }
+    var confirmOpen by remember { mutableStateOf(false) }
+    var typed by remember { mutableStateOf("") }
+    val eraseState by settings.erase.collectAsStateWithLifecycle()
     val heading = state.displayName.ifBlank { stringResource(R.string.me_greeting_fallback) }
     val parsedLanguage = AppLanguage.parse(state.localeTag)
     val zoneLabel = TimeZones.firstOrNull { it.first == state.timeZoneId }
@@ -219,6 +224,59 @@ fun ProfileScreen(
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                 )
             }
+            WheregoSectionLabel(stringResource(R.string.danger_section))
+            WheregoCard(
+                cornerRadius = 22.dp,
+                padding = 16.dp,
+                gap = 10.dp,
+                strokeColor = colors.coral,
+            ) {
+                Text(
+                    stringResource(
+                        if (state.signedIn) R.string.danger_title_signed_in
+                        else R.string.danger_title_guest,
+                    ),
+                    style = WheregoType.txTitle,
+                    color = colors.ink,
+                )
+                Text(
+                    stringResource(
+                        if (state.signedIn) R.string.danger_body_signed_in
+                        else R.string.danger_body_guest,
+                    ),
+                    style = WheregoType.helper,
+                    color = colors.muted,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    stringResource(R.string.danger_cta),
+                    style = WheregoType.chip,
+                    color = colors.coral,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(99.dp))
+                        .clickable(enabled = eraseState != EraseState.Busy) {
+                            typed = ""
+                            confirmOpen = true
+                        }
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                )
+                when (val current = eraseState) {
+                    EraseState.Idle -> Unit
+                    EraseState.Busy -> Text(
+                        stringResource(R.string.danger_busy),
+                        style = WheregoType.meta,
+                        color = colors.muted,
+                    )
+                    is EraseState.Failed -> Text(
+                        stringResource(
+                            if (current.cancelled) R.string.danger_err_cancelled
+                            else R.string.danger_err_failed,
+                        ),
+                        style = WheregoType.meta,
+                        color = colors.coral,
+                    )
+                }
+            }
             if (signedOutBanner) {
                 Text(
                     stringResource(R.string.auth_sign_out_done),
@@ -269,6 +327,48 @@ fun ProfileScreen(
                 )
             }
         }
+    }
+    if (confirmOpen) {
+        val word = stringResource(R.string.danger_confirm_word)
+        val shape = RoundedCornerShape(16.dp)
+        AlertDialog(
+            onDismissRequest = { confirmOpen = false },
+            title = { Text(stringResource(R.string.danger_dialog_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.danger_dialog_body))
+                    Text(stringResource(R.string.danger_dialog_prompt, word))
+                    BasicTextField(
+                        value = typed,
+                        onValueChange = { typed = it.take(16) },
+                        singleLine = true,
+                        textStyle = WheregoType.settingLabel.copy(color = colors.ink),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(shape)
+                            .background(colors.chipIdle)
+                            .border(BorderStroke(2.dp, colors.coral), shape)
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = typed.trim().equals(word, ignoreCase = true),
+                    onClick = {
+                        confirmOpen = false
+                        settings.eraseAccount(context.findActivity())
+                    },
+                ) {
+                    Text(stringResource(R.string.danger_dialog_confirm), color = colors.coral)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmOpen = false }) {
+                    Text(stringResource(R.string.danger_dialog_cancel), color = colors.muted)
+                }
+            },
+        )
     }
 }
 

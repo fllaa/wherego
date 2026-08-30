@@ -59,6 +59,9 @@ class MainActivity : ComponentActivity() {
                     val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
                     var openCaptureOnStart by remember { mutableStateOf(false) }
                     var skipOnboarding by remember { mutableStateOf(false) }
+                    LaunchedEffect(welcomeSeen) {
+                        if (welcomeSeen == false) skipOnboarding = false
+                    }
                     when {
                         !ready || welcomeSeen == null -> GuestSplash()
                         welcomeSeen == false -> WelcomeScreen(
