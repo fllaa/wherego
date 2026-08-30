@@ -25,6 +25,7 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -64,9 +65,17 @@ data class PlanGoalRow(
 )
 
 private val MonthName = DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH)
+private val MonthYear = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
+
+data class PlanMonthChoice(
+    val id: String,
+    val label: String,
+)
 
 data class PlanUiState(
+    val monthId: String = YearMonth.now().toString(),
     val monthLabel: String = YearMonth.now().format(MonthName),
+    val monthChoices: List<PlanMonthChoice> = emptyList(),
     val monthSpentMinor: Long = 0L,
     val capTotalMinor: Long = 0L,
     val capRemainingMinor: Long = 0L,
@@ -90,32 +99,38 @@ class PlanViewModel @Inject constructor(
 ) : ViewModel() {
     @Volatile private var zone: ZoneId = ZoneId.of(UserProfile.DEFAULT_ZONE)
     @Volatile private var currency: String = UserProfile.DEFAULT_CURRENCY
+    private val month = MutableStateFlow<YearMonth?>(null)
 
-    val state: StateFlow<PlanUiState> = profiles.profile.flatMapLatest { profile ->
+    val state: StateFlow<PlanUiState> = combine(profiles.profile, month) { profile, picked ->
         zone = zoneOf(profile)
         currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
         val today = LocalDate.now(zone)
-        val month = YearMonth.from(today)
+        val current = YearMonth.from(today)
+        Triple(profile, picked ?: current, current)
+    }.flatMapLatest { (_, ym, current) ->
+        val today = LocalDate.now(zone)
         val cur = currency
         combine(
-            plan.observeBudgets(month.toString()),
+            plan.observeBudgets(ym.toString()),
             plan.observeRules(),
             plan.observeGoals(),
             ledger.categories,
             ledger.observeActive(),
         ) { budgets, rules, goals, cats, txs ->
             val catMap = cats.associateBy { it.id }
-            val spentByCategory = monthSpend(txs, month)
+            val spentByCategory = monthSpend(txs, ym)
             val monthSpent = spentByCategory.values.sum()
             val capTotal = budgets.sumOf { it.amountMinor }
             val goalsTotal = goals.sumOf { it.allocatedMinor }
             PlanUiState(
-                monthLabel = month.format(MonthName),
+                monthId = ym.toString(),
+                monthLabel = monthLabel(ym, current),
+                monthChoices = monthChoices(current),
                 monthSpentMinor = monthSpent,
                 capTotalMinor = capTotal,
                 capRemainingMinor = capTotal - monthSpent,
                 capFraction = fraction(monthSpent, capTotal),
-                daysLeft = month.lengthOfMonth() - today.dayOfMonth,
+                daysLeft = if (ym == current) ym.lengthOfMonth() - today.dayOfMonth else -1,
                 budgets = budgets.map { budget ->
                     val cat = budget.categoryId?.let { catMap[it] }
                     val spent = if (budget.categoryId == null) {
@@ -174,9 +189,13 @@ class PlanViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanUiState())
 
+    fun selectMonth(id: String) {
+        month.value = YearMonth.parse(id)
+    }
+
     fun addBudget(categoryId: String?, amountMinor: Long) {
         viewModelScope.launch {
-            val ym = YearMonth.from(LocalDate.now(zone)).toString()
+            val ym = (month.value ?: YearMonth.from(LocalDate.now(zone))).toString()
             plan.upsertBudget(categoryId, amountMinor, currency, ym)
         }
     }
@@ -220,6 +239,15 @@ class PlanViewModel @Inject constructor(
         viewModelScope.launch { plan.deleteGoal(id) }
     }
 }
+
+private fun monthLabel(ym: YearMonth, current: YearMonth): String =
+    if (ym.year == current.year) ym.format(MonthName) else ym.format(MonthYear)
+
+private fun monthChoices(current: YearMonth): List<PlanMonthChoice> =
+    (0..11).map { offset ->
+        val ym = current.minusMonths(offset.toLong())
+        PlanMonthChoice(id = ym.toString(), label = monthLabel(ym, current))
+    }
 
 private fun monthSpend(txs: List<Transaction>, month: YearMonth): Map<String, Long> {
     val start = month.atDay(1).toString()

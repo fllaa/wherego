@@ -60,6 +60,7 @@ fun PlanRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     PlanScreen(
         state = state,
+        onSelectMonth = viewModel::selectMonth,
         onAddBudget = viewModel::addBudget,
         onDeleteBudget = viewModel::deleteBudget,
         onAddRule = viewModel::addRule,
@@ -72,6 +73,7 @@ fun PlanRoute(
 @Composable
 fun PlanScreen(
     state: PlanUiState,
+    onSelectMonth: (String) -> Unit,
     onAddBudget: (String?, Long) -> Unit,
     onDeleteBudget: (String) -> Unit,
     onAddRule: (Long, String, String, String, Int?) -> Unit,
@@ -83,6 +85,7 @@ fun PlanScreen(
     var budgetSheet by remember { mutableStateOf(false) }
     var ruleSheet by remember { mutableStateOf(false) }
     var goalSheet by remember { mutableStateOf(false) }
+    var monthSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
 
     Column(
@@ -96,8 +99,7 @@ fun PlanScreen(
     ) {
         WheregoPageHeader(
             title = "Plan",
-            // The plan always describes the running month; the pill states which one.
-            trailing = { WheregoMonthPill(label = state.monthLabel, onClick = {}) },
+            trailing = { WheregoMonthPill(label = state.monthLabel, onClick = { monthSheet = true }) },
         )
 
         WheregoCapCard(
@@ -105,7 +107,7 @@ fun PlanScreen(
             amount = MoneyFormatter.format(state.monthSpentMinor, state.currency),
             fraction = state.capFraction,
             footLabel = capFootLabel(state),
-            pillLabel = daysLeftLabel(state.daysLeft),
+            pillLabel = if (state.daysLeft < 0) null else daysLeftLabel(state.daysLeft),
         )
 
         WheregoSectionHeader(
@@ -254,6 +256,20 @@ fun PlanScreen(
             },
         )
     }
+    if (monthSheet) {
+        WheregoBottomSheet(title = "Month", onDismiss = { monthSheet = false }) {
+            state.monthChoices.forEach { choice ->
+                MonthChoiceRow(
+                    label = choice.label,
+                    selected = choice.id == state.monthId,
+                    onClick = {
+                        onSelectMonth(choice.id)
+                        monthSheet = false
+                    },
+                )
+            }
+        }
+    }
 }
 
 private fun capFootLabel(state: PlanUiState): String {
@@ -271,6 +287,32 @@ private fun daysLeftLabel(daysLeft: Int): String = when {
     daysLeft <= 0 -> "Last day"
     daysLeft == 1 -> "1 day left"
     else -> "$daysLeft days left"
+}
+
+@Composable
+private fun MonthChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = WheregoTheme.colors
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(if (selected) colors.tealSoft else colors.chipIdle)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, style = WheregoType.settingLabel, color = colors.ink)
+        if (selected) {
+            Icon(
+                Icons.Outlined.Check,
+                contentDescription = null,
+                tint = colors.tealDeep,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
 }
 
 /** `Plan / Add Budget` — the outlined-only call to action that opens an editor. */
