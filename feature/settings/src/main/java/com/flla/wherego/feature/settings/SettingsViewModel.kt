@@ -235,8 +235,16 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun updateCategory(id: String, name: String, emoji: String, colorHex: String) {
-        viewModelScope.launch { ledger.updateCategory(id, name, emoji, colorHex) }
+    fun updateCategory(id: String, name: String, emoji: String, colorHex: String, kind: String? = null) {
+        viewModelScope.launch { ledger.updateCategory(id, name, emoji, colorHex, kind) }
+    }
+
+    fun createCategory(name: String, emoji: String, colorHex: String, kind: String) {
+        viewModelScope.launch { ledger.createCategory(name, emoji, colorHex, kind) }
+    }
+
+    fun pinCategory(id: String) {
+        viewModelScope.launch { ledger.pinCategoryToTop(id) }
     }
 
     fun archiveCategory(id: String, archived: Boolean) {

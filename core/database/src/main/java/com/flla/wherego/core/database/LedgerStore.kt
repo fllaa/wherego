@@ -322,13 +322,58 @@ class LedgerStore @Inject constructor(
         )
     }
 
-    suspend fun updateCategory(id: String, name: String, emoji: String, colorHex: String) {
+    suspend fun createCategory(
+        name: String,
+        emoji: String,
+        colorHex: String,
+        kind: String = TransactionKind.EXPENSE,
+    ): String {
+        val id = "cat_custom_${ulid.next()}"
+        val now = clock.millis()
+        val all = categoryDao.listAll()
+        val nextOrder = (all.maxOfOrNull { it.sortOrder } ?: 0) + 1
+        val entity = CategoryEntity(
+            id = id,
+            name = name.trim().ifBlank { "Custom" },
+            emoji = emoji.trim().ifBlank { "✨" },
+            colorHex = colorHex.ifBlank { PresetCategories.ACCENT_HEX },
+            kind = kind,
+            isPreset = false,
+            archived = false,
+            sortOrder = nextOrder,
+            updatedAt = now,
+            deletedAt = null,
+        )
+        categoryDao.upsert(entity)
+        return id
+    }
+
+    suspend fun pinCategoryToTop(id: String) {
+        val target = categoryDao.get(id) ?: return
+        val allActive = categoryDao.listActive().filter { it.kind == target.kind || it.kind == "both" }
+        val minOrder = allActive.minOfOrNull { it.sortOrder } ?: 0
+        categoryDao.update(
+            target.copy(
+                sortOrder = minOrder - 1,
+                updatedAt = clock.millis(),
+            ),
+        )
+    }
+
+    suspend fun updateCategory(
+        id: String,
+        name: String,
+        emoji: String,
+        colorHex: String,
+        kind: String? = null,
+    ) {
         val existing = categoryDao.get(id) ?: return
         categoryDao.update(
             existing.copy(
                 name = name.trim().ifBlank { existing.name },
                 emoji = emoji.trim().ifBlank { existing.emoji },
-                colorHex = colorHex,
+                colorHex = colorHex.ifBlank { existing.colorHex },
+                kind = kind ?: existing.kind,
                 updatedAt = clock.millis(),
             ),
         )

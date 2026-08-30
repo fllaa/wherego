@@ -99,4 +99,44 @@ class LedgerStoreTest {
         assertEquals(true, copy.dirty)
         assertEquals(44_000L, store.monthSpent(YearMonth.of(2026, 8)))
     }
+
+    @Test
+    fun createPinAndArchiveCategory() = runBlocking {
+        store.seedCategoriesIfEmpty()
+        val initialCount = db.categoryDao().count()
+
+        // 1. Create custom category
+        val customId = store.createCategory(
+            name = "Coffee",
+            emoji = "☕",
+            colorHex = "#F59E0B",
+            kind = TransactionKind.EXPENSE,
+        )
+        assertEquals(initialCount + 1, db.categoryDao().count())
+        val created = db.categoryDao().get(customId)
+        assertNotNull(created)
+        assertEquals("Coffee", created?.name)
+        assertEquals("☕", created?.emoji)
+        assertEquals("#F59E0B", created?.colorHex)
+        assertEquals(false, created?.archived)
+
+        // 2. Pin category to top
+        store.pinCategoryToTop(customId)
+        val active = db.categoryDao().listActive().filter { it.kind == TransactionKind.EXPENSE }
+        assertEquals(customId, active.first().id)
+
+        // 3. Update category
+        store.updateCategory(customId, name = "Kopi Susu", emoji = "🧋", colorHex = "#2157C7")
+        val updated = db.categoryDao().get(customId)
+        assertEquals("Kopi Susu", updated?.name)
+        assertEquals("🧋", updated?.emoji)
+        assertEquals("#2157C7", updated?.colorHex)
+
+        // 4. Archive category
+        store.archiveCategory(customId, archived = true)
+        val archived = db.categoryDao().get(customId)
+        assertEquals(true, archived?.archived)
+        val activeAfterArchive = db.categoryDao().listActive().map { it.id }
+        assertEquals(false, customId in activeAfterArchive)
+    }
 }

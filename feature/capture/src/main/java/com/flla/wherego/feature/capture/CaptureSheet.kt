@@ -1,9 +1,19 @@
 package com.flla.wherego.feature.capture
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,15 +21,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.ui.graphics.graphicsLayer
+import com.flla.wherego.core.designsystem.component.wheregoHardShadow
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +45,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -229,7 +247,11 @@ private fun CaptureSheetBody(
             onCategory = onCategory,
             onMore = onToggleMore,
         )
-        if (state.showAllCategories) {
+        AnimatedVisibility(
+            visible = state.showAllCategories,
+            enter = expandVertically(spring()) + fadeIn(),
+            exit = shrinkVertically(spring()) + fadeOut(),
+        ) {
             CategoryGrid(
                 categories = state.matchingCategories,
                 selectedId = state.categoryId,
@@ -384,11 +406,16 @@ private fun CategoryRow(
                 .height(40.dp)
                 .width(44.dp)
                 .clip(RoundedCornerShape(99.dp))
-                .border(2.dp, colors.track, RoundedCornerShape(99.dp))
+                .background(colors.white)
+                .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(99.dp))
                 .clickable(onClick = onMore),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.capture_cd_more_categories), tint = colors.ink)
+            Icon(
+                Icons.Outlined.MoreHoriz,
+                contentDescription = stringResource(R.string.capture_cd_more_categories),
+                tint = colors.ink,
+            )
         }
     }
 }
@@ -399,15 +426,42 @@ private fun CategoryGrid(
     selectedId: String?,
     onCategory: (String) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        categories.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { cat ->
-                    CategoryChip(
-                        cat = cat,
-                        selected = cat.id == selectedId,
-                        onClick = { onCategory(cat.id) },
-                    )
+    val colors = WheregoTheme.colors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wheregoHardShadow(cornerRadius = 20.dp, offsetY = 3.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(colors.paper)
+            .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(20.dp))
+            .padding(10.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 160.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            categories.chunked(3).forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    row.forEach { cat ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            CategoryChip(
+                                cat = cat,
+                                selected = cat.id == selectedId,
+                                onClick = { onCategory(cat.id) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                    // Fill remaining slots in row if less than 3
+                    repeat(3 - row.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -419,25 +473,52 @@ private fun CategoryChip(
     cat: Category,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colors = WheregoTheme.colors
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.93f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
+        label = "chipScale",
+    )
+
     val fill = if (selected) colors.teal else colors.tealSoft
     val labelColor = if (selected) colors.white else colors.ink
+
     Row(
-        Modifier
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .height(40.dp)
             .clip(RoundedCornerShape(99.dp))
             .background(fill)
             .then(
-                if (selected) Modifier.border(2.5.dp, colors.ink, RoundedCornerShape(99.dp))
-                else Modifier.border(2.dp, fill, RoundedCornerShape(99.dp)),
+                if (selected) {
+                    Modifier.border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(99.dp))
+                } else {
+                    Modifier.border(BorderStroke(1.5.dp, colors.ink.copy(alpha = 0.15f)), RoundedCornerShape(99.dp))
+                },
             )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp),
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(cat.emoji)
-        Text(categoryDisplayName(cat.id, cat.name), style = WheregoType.chip, color = labelColor)
+        Text(cat.emoji, fontSize = 16.sp)
+        Text(
+            text = categoryDisplayName(cat.id, cat.name),
+            style = WheregoType.chip,
+            color = labelColor,
+            maxLines = 1,
+        )
     }
 }
