@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-import com.flla.wherego.core.designsystem.theme.parseHexColor
 
 private val CardShape = RoundedCornerShape(22.dp)
 
@@ -45,7 +44,7 @@ fun WheregoTxRow(
         Box(
             Modifier
                 .size(42.dp)
-                .background(parseHexColor(badgeSoftHex), RoundedCornerShape(21.dp)),
+                .background(colors.tealSoft, RoundedCornerShape(21.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Text(emoji, fontSize = 19.sp)

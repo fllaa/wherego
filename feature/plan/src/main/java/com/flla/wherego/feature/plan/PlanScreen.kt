@@ -44,7 +44,6 @@ import com.flla.wherego.core.designsystem.component.WheregoPageHeader
 import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-import com.flla.wherego.core.designsystem.theme.parseHexColor
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Recurrence
@@ -119,10 +118,10 @@ fun PlanScreen(
             )
         } else {
             state.budgets.forEach { budget ->
-                val strong = parseHexColor(budget.strongHex)
+                val strong = colors.teal
                 WheregoMeterCard(
                     emoji = budget.emoji,
-                    badgeFill = parseHexColor(budget.softHex),
+                    badgeFill = colors.tealSoft,
                     name = budget.name,
                     detail = budget.detail,
                     fraction = budget.fraction,
@@ -325,7 +324,7 @@ private fun RuleCard(
         horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         WheregoBadge(
-            fill = softHex?.let { parseHexColor(it) } ?: colors.chipIdle,
+            fill = colors.tealSoft,
             size = 34.dp,
             cornerRadius = 17.dp,
         ) {

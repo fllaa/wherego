@@ -1,9 +1,10 @@
 # Wherego Design System
 
-**Source of truth:** the Pencil HTML mockup `Home + Capture` (412×915).
+**Source of truth for layout, type, shape, copy:** the Pencil HTML mockup `Home + Capture` (412×915).
+**Source of truth for color:** this spec (section 3) and `WheregoColors`. Do not follow the HTML mockup for hex.
 Do not invent a different look. Do not use default Material 3 purple/teal.
 
-If HTML and this spec disagree on a pixel value, **follow the HTML**.
+If HTML and this spec disagree on a pixel value that is not color, **follow the HTML**.
 If this spec and the product plan disagree on visuals, **follow this spec**.
 If this spec and the product plan disagree on *behavior scope*, follow the playbook slices (budget bars may be drawn as a static shell in S1, wired in S4).
 
@@ -11,10 +12,10 @@ If this spec and the product plan disagree on *behavior scope*, follow the playb
 
 ## 1. Personality
 
-Chunky notebook. Warm paper. Fat ink outlines. Soft pills. Rounded like a sticker sheet.
+Chunky notebook. Cool paper. Fat ink outlines. Soft pills. Rounded like a sticker sheet.
 
 - Playful, not babyish
-- High contrast ink on cream
+- High contrast ink on paper
 - One accent motion at a time
 - Copy is short and human (`Park it`, not `Submit`)
 
@@ -30,7 +31,7 @@ Chunky notebook. Warm paper. Fat ink outlines. Soft pills. Rounded like a sticke
 | Status bar height (ignore in-app) | 46dp — use system bars |
 | Bottom capture sheet | overlay + scrim, not a new Activity |
 
-Compose: draw Home full-bleed cream. Capture is a `ModalBottomSheet` / custom sheet anchored to the bottom. No extra top app bar on Home.
+Compose: draw Home full-bleed paper. Capture is a `ModalBottomSheet` / custom sheet anchored to the bottom. No extra top app bar on Home.
 
 ---
 
@@ -38,33 +39,35 @@ Compose: draw Home full-bleed cream. Capture is a `ModalBottomSheet` / custom sh
 
 Name these in `core/designsystem`. Use exact hex.
 
+Family: cobalt + cool off-white. One accent (`teal` token, hex is cobalt). Categories collapse to that accent plus an alarm. Emoji and label distinguish categories, not hue.
+
 | Token | Hex | Use |
 |---|---|---|
-| `paper` | `#FFF3E2` | App background |
-| `ink` | `#0F2E2C` | Text, icons, borders |
-| `muted` | `#52706D` | Secondary text, inactive chips (`ink-soft` in `pencil-new.pen`) |
+| `paper` | `#F2F4F8` | App background |
+| `ink` | `#121826` | Text, icons, borders |
+| `muted` | `#5A6A80` | Secondary text, inactive chips |
 | `white` | `#FFFFFF` | Cards, selected income tab, sheet |
-| `mascotFill` | `#FFEECC` | Go avatar + streak pill fill |
-| `teal` | `#10B5A0` | Primary CTA, expense tab selected, Today icon |
-| `tealDeep` | `#076358` | “left” text, Today label |
-| `tealSoft` | `#D5F4EE` | Left-amount pill |
-| `coral` | `#FF6B4A` | Over-budget, selected Food chip, flame |
-| `peach` | `#FFE1D8` | Expense row badge (food) |
-| `blue` | `#4CA8FF` | Transport under-budget text + bar |
-| `blueSoft` | `#DBECFF` | Transport chip + badge |
-| `greenSoft` | `#DAF6E9` | Groceries chip |
-| `violet` | `#8B7CF6` | Fun under-budget text |
-| `violetSoft` | `#E7E3FE` | Fun chip |
-| `pinkSoft` | `#FFDFEC` | Shopping chip |
-| `track` | `#EDE4D5` | Budget track, hairline borders |
-| `chipIdle` | `#F5EFE4` | Quick-amount chips |
-| `key` | `#F7F2E8` | Numpad keys |
-| `noteChip` | `#FBF7F0` | Add-note chip fill |
+| `mascotFill` | `#E2EAF8` | Go avatar + streak pill fill |
+| `teal` | `#2157C7` | Primary CTA, expense tab selected, Today icon, selected chip |
+| `tealDeep` | `#163A8A` | “left” text, Today label |
+| `tealSoft` | `#D7E3F8` | Left-amount pill, idle chips, badges |
+| `coral` | `#E24B4B` | Over-budget, flame, alarm |
+| `peach` | `#F4D6D6` | Alarm-soft (more-spend pill) |
+| `blue` | `#2157C7` | Alias of accent (legacy name) |
+| `blueSoft` | `#D7E3F8` | Alias of tealSoft |
+| `greenSoft` | `#D7E3F8` | Alias of tealSoft |
+| `violet` | `#2157C7` | Alias of accent |
+| `violetSoft` | `#D7E3F8` | Alias of tealSoft |
+| `pinkSoft` | `#D7E3F8` | Alias of tealSoft |
+| `track` | `#E1E7F0` | Budget track, hairline borders |
+| `chipIdle` | `#E8EDF4` | Quick-amount chips |
+| `key` | `#EEF2F7` | Numpad keys |
+| `noteChip` | `#F6F8FB` | Add-note chip fill |
 | `sheet` | `#FFFFFF` | Capture sheet background |
 
-**Border recipe:** almost every “important” shape uses `2.5dp solid ink` (`#0F2E2C`). Idle chips use `2dp solid` in their own fill color (looks borderless) or `2dp solid #EDE4D5`.
+**Border recipe:** almost every “important” shape uses `2.5dp solid ink` (`#121826`). Idle chips use `2dp solid` in their own fill color (looks borderless) or `2dp solid #E1E7F0`.
 
-**Dark mode:** not in this mockup. Until a dark mockup exists, implement light only and map a later dark palette as cream→`#14201F`, paper cards→`#1C2B2A`, ink→`#FFF3E2`. Do not ship an auto-generated M3 dark that breaks the sticker look.
+**Dark mode:** paper `#10141C`, cards `#1A2230`, ink `#E8EEF6`, muted `#8B9BB0`, track `#2A3444`, accent `#4B86FF`, tealDeep `#8FB0FF`, tealSoft `#1A2F55`, coral `#FF6B6B`. Do not ship an auto-generated M3 dark that breaks the sticker look.
 
 ---
 
@@ -87,7 +90,7 @@ Bundle or download:
 | Card title | Fredoka | 17 | Semibold 600 | ink | `Budget check`, `Today` |
 | Link | Nunito Sans | 13 | Bold 700 | teal | `Plan →` |
 | Cat name | Nunito Sans | 14 | Bold 700 | ink | Budget row |
-| Budget note | Nunito Sans | 13 | Bold 700 | coral / blue / violet | `Rp 190rb over` |
+| Budget note | Nunito Sans | 13 | Bold 700 | coral / tealDeep | `Rp 190rb over` |
 | Tx title | Nunito Sans | 15 | Bold 800 | ink | `Warteg Bahari` |
 | Tx sub | Nunito Sans | 12 | Semibold 600 | muted | `12:40 · Food out` |
 | Tx amount | Fredoka | 16 | Semibold 600 | ink | `Rp 28.000` |
@@ -126,7 +129,7 @@ No Material shadows on cards. Depth = **ink outline**.
 - Cards, avatar, streak, selected chip, sheet, save button: `BorderStroke(2.5.dp, ink)`
 - Idle category chips: fill only, `BorderStroke(2.dp, same as fill)`
 - Note chip: `BorderStroke(2.dp, track)`
-- Grabber: fill `#EDE4D5`, no stroke
+- Grabber: fill `#E1E7F0`, no stroke
 
 Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and slightly dimmed.
 
@@ -137,7 +140,7 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 - Lucide-style stroke icons at 15–22dp, tinted ink / teal / muted / coral
 - Categories = emoji, not vector sets
 - Go mascot in this mockup = coin emoji `🪙` inside the 54dp circle. Keep that until custom art exists.
-- Flame in streak pill is coral `#FF6B4A`
+- Flame in streak pill is coral `#E24B4B`
 
 ---
 
@@ -169,8 +172,8 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 - Header: `Budget check` + `Plan →` (navigates to Plan tab)
 - Max **3** category rows
 - Track height 13, radius 99, fill `track`
-- Fill bar uses category color; if over budget, coral and width = 100%
-- Right label: `Rp Xrb left` (category color) or `Rp Xrb over` (coral)
+- Fill bar uses accent; if over budget, coral and width = 100%
+- Right label: `Rp Xrb left` (tealDeep) or `Rp Xrb over` (coral)
 
 S1/S2: may hardcode empty state `No budgets yet · set them in Plan` inside the same card chrome. Do not skip the chrome if you want visual parity; do not fake over-budget data.
 
@@ -178,7 +181,7 @@ S1/S2: may hardcode empty state `No budgets yet · set them in Plan` inside the 
 
 - Header: `Today` Fredoka 17 + `Rp 148.000` muted 13 (sum of today expenses)
 - Rows: 44 emoji badge + title + `HH:mm · Category` + amount
-- Badge fill = category soft color (food `peach` `#FFE1D8`)
+- Badge fill = tealSoft
 - Divider: none in mockup; use 12–14 vertical gap, no hairlines
 - Mock rows:
   - 🍜 Warteg Bahari · 12:40 · Food out · Rp 28.000
@@ -217,8 +220,8 @@ Quick chips:
 
 Category chips:
 
-- Selected: category strong color + 2.5 ink + **white** label (Food out = coral `#FF6B4A`)
-- Idle: soft color fill, ink label, 2dp same-as-fill border
+- Selected: accent `#2157C7` + 2.5 ink + **white** label
+- Idle: tealSoft fill, ink label, 2dp same-as-fill border
 - Height ~40, padding 8×14, gap 8
 - Trailing `⋯` more button 44×40, 2dp track border, opens full grid sheet
 
@@ -230,9 +233,9 @@ Numpad:
 
 Save:
 
-- Height 56, radius 20, fill teal `#10B5A0`, stroke 2.5 ink
+- Height 56, radius 20, fill teal `#2157C7`, stroke 2.5 ink
 - Label `Park it` + check 21 white
-- Disabled (amount 0 or no category): fill `#D5F4EE`, text `#78918E`, still stroked or unstroked — prefer unstroked + 60% alpha, not a toast
+- Disabled (amount 0 or no category): fill `#D7E3F8`, text `#5A6A80`, still stroked or unstroked — prefer unstroked + 60% alpha, not a toast
 
 Long-press FAB is not in this mockup because the sheet *is* the add path. Home still needs a way to open the sheet: **a 64dp teal ink-outlined FAB** bottom-end above system nav, `+`. Not drawn in the cropped mock (sheet is open). Add it on Home when sheet is closed.
 
@@ -251,9 +254,9 @@ Then:
 
 Implement a custom bar:
 
-- Height 64, cream, no shadow
+- Height 64, paper, no shadow
 - 4 items: Home, Stories, Plan, Me
-- Active: teal dot + Fredoka 11 tealDeep
+- Active: accent dot + Fredoka 11 tealDeep
 - Inactive: muted
 - Icons Lucide-style, 22dp
 - FAB sits 12dp above the bar, end-aligned (18dp from side)
@@ -300,24 +303,27 @@ Do not use `Submit`, `Save transaction`, `Add expense`.
 
 ---
 
-## 12. Category colors (lock to mock + pack)
+## 12. Category colors
+
+Idle = `tealSoft` `#D7E3F8`. Selected / meter = `teal` `#2157C7`. Over / alarm = `coral` `#E24B4B`.
+Categories are distinguished by emoji + label, not by hue.
 
 | Category | Emoji (mock / pack) | Soft | Strong |
 |---|---|---|---|
-| Food out | 🍜 | `#FFE1D8` | `#FF6B4A` |
-| Transport | 🚕 (mock wins over 🛵) | `#DBECFF` | `#4CA8FF` |
-| Groceries | 🛒 | `#DAF6E9` | `#0A7F70` |
-| Fun | 🎬 | `#E7E3FE` | `#8B7CF6` |
-| Shopping | 🛍️ | `#FFDFEC` | `#E85A9B` |
-| Bills | 📄 | `#F5EFE4` | `#C4A574` |
-| Rent & bills | 🏠 | `#FFEECC` | `#E07A5F` |
-| Health | 💊 | `#DAF6E9` | `#2A9D8F` |
-| Gifts | 🎁 | `#FFDFEC` | `#F2A7C3` |
-| Other | ✨ | `#EDE4D5` | `#78918E` |
-| Salary | 💼 | `#D5F4EE` | `#10B5A0` |
-| Side hustle | 🛠️ | `#FFEECC` | `#E09F3E` |
-| Refund | ↩️ | `#DBECFF` | `#4CA8FF` |
-| Other in | ✨ | `#E7E3FE` | `#8B7CF6` |
+| Food out | 🍜 | `#D7E3F8` | `#2157C7` |
+| Transport | 🚕 (mock wins over 🛵) | `#D7E3F8` | `#2157C7` |
+| Groceries | 🛒 | `#D7E3F8` | `#2157C7` |
+| Fun | 🎬 | `#D7E3F8` | `#2157C7` |
+| Shopping | 🛍️ | `#D7E3F8` | `#2157C7` |
+| Bills | 📄 | `#D7E3F8` | `#2157C7` |
+| Rent & bills | 🏠 | `#D7E3F8` | `#2157C7` |
+| Health | 💊 | `#D7E3F8` | `#2157C7` |
+| Gifts | 🎁 | `#D7E3F8` | `#2157C7` |
+| Other | ✨ | `#D7E3F8` | `#2157C7` |
+| Salary | 💼 | `#D7E3F8` | `#2157C7` |
+| Side hustle | 🛠️ | `#D7E3F8` | `#2157C7` |
+| Refund | ↩️ | `#D7E3F8` | `#2157C7` |
+| Other in | ✨ | `#D7E3F8` | `#2157C7` |
 
 Update seed pack: Transport emoji `🚕`, Fun `🎬` to match HTML. `pencil-new.pen` →
 `Onboarding 3 · Categories` renames Rent/Kos to **Rent & bills** (amber soft, `🏠`) and
@@ -328,14 +334,14 @@ swaps Other's `📦` for `✨`; `sortOrder` follows the chip order on that scree
 
 ## 13. What an implementer must copy exactly
 
-From the HTML, these are non-negotiable:
+From the HTML, these are non-negotiable (except color, which follows section 3):
 
-1. Cream page `#FFF3E2`, ink `#0F2E2C`
+1. Paper page `#F2F4F8`, ink `#121826`, accent `#2157C7`
 2. Fredoka + Nunito Sans
 3. Fat 2.5 ink borders on cards, avatar, selected chip, save
 4. Hero 44sp amount
 5. Capture: kind toggle → huge amount → chips → category scroller → numpad with **000** → `Park it`
-6. `Park it` teal button with ink outline
+6. `Park it` accent button with ink outline
 7. Go = coin-in-circle, not a 3D character
 
 ---

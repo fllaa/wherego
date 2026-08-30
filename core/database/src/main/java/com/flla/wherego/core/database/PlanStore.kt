@@ -6,6 +6,7 @@ import com.flla.wherego.core.model.BudgetBar
 import com.flla.wherego.core.model.CsvExport
 import com.flla.wherego.core.model.CsvRow
 import com.flla.wherego.core.model.Goal
+import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.RecurringRule
 import com.flla.wherego.core.model.TransactionKind
@@ -82,7 +83,7 @@ class PlanStore @Inject constructor(
                     categoryId = budget.categoryId,
                     name = cat?.name ?: "Overall",
                     emoji = cat?.emoji ?: "📦",
-                    colorHex = cat?.colorHex ?: "#10B5A0",
+                    colorHex = cat?.colorHex ?: PresetCategories.ACCENT_HEX,
                     spentMinor = if (budget.categoryId == null) overallSpent else spentByCat[budget.categoryId] ?: 0L,
                     capMinor = budget.amountMinor,
                 )

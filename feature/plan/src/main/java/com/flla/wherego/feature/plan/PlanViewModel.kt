@@ -132,10 +132,10 @@ class PlanViewModel @Inject constructor(
                         name = cat?.name ?: "Overall",
                         softHex = cat?.softColorHex
                             ?: budget.categoryId?.let { PresetCategories.softHex(it) }
-                            ?: "#D5F4EE",
+                            ?: PresetCategories.ACCENT_SOFT_HEX,
                         strongHex = cat?.colorHex
                             ?: budget.categoryId?.let { PresetCategories.strongHex(it) }
-                            ?: "#10B5A0",
+                            ?: PresetCategories.ACCENT_HEX,
                         spentMinor = spent,
                         capMinor = cap,
                         over = over,

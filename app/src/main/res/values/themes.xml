@@ -3,6 +3,6 @@
     <style name="Theme.Wherego" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">#FFF3E2</item>
+        <item name="android:windowBackground">#F2F4F8</item>
     </style>
 </resources>

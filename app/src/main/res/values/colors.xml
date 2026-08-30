@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#0F766E</color>
-    <color name="paper">#FFF3E2</color>
-    <color name="ink">#0F2E2C</color>
-    <color name="teal">#10B5A0</color>
+    <color name="ic_launcher_background">#163A8A</color>
+    <color name="paper">#F2F4F8</color>
+    <color name="ink">#121826</color>
+    <color name="teal">#2157C7</color>
 </resources>

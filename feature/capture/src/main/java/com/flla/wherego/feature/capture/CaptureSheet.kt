@@ -48,7 +48,6 @@ import com.flla.wherego.core.designsystem.component.ParkItButton
 import com.flla.wherego.core.designsystem.component.WheregoNumpad
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-import com.flla.wherego.core.designsystem.theme.parseHexColor
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
@@ -406,7 +405,7 @@ private fun CategoryChip(
     onClick: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
-    val fill = if (selected) parseHexColor(cat.colorHex) else parseHexColor(cat.softColorHex)
+    val fill = if (selected) colors.teal else colors.tealSoft
     val labelColor = if (selected) colors.white else colors.ink
     Row(
         Modifier

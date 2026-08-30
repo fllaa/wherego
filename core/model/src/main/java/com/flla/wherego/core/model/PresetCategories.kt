@@ -17,21 +17,24 @@ data class CategoryPack(
 )
 
 object PresetCategories {
+    const val ACCENT_HEX = "#2157C7"
+    const val ACCENT_SOFT_HEX = "#D7E3F8"
+
     val all: List<PresetCategory> = listOf(
-        PresetCategory("cat_food_out", "Food out", "🍜", "#FF6B4A", "#FFE1D8", CategoryKind.EXPENSE, 0),
-        PresetCategory("cat_groceries", "Groceries", "🛒", "#0A7F70", "#DAF6E9", CategoryKind.EXPENSE, 1),
-        PresetCategory("cat_transport", "Transport", "🚕", "#4CA8FF", "#DBECFF", CategoryKind.EXPENSE, 2),
-        PresetCategory("cat_rent", "Rent & bills", "🏠", "#E07A5F", "#FFEECC", CategoryKind.EXPENSE, 3),
-        PresetCategory("cat_fun", "Fun", "🎬", "#8B7CF6", "#E7E3FE", CategoryKind.EXPENSE, 4),
-        PresetCategory("cat_shopping", "Shopping", "🛍️", "#E85A9B", "#FFDFEC", CategoryKind.EXPENSE, 5),
-        PresetCategory("cat_health", "Health", "💊", "#2A9D8F", "#DAF6E9", CategoryKind.EXPENSE, 6),
-        PresetCategory("cat_gifts", "Gifts", "🎁", "#F2A7C3", "#FFDFEC", CategoryKind.EXPENSE, 7),
-        PresetCategory("cat_other", "Other", "✨", "#78918E", "#EDE4D5", CategoryKind.EXPENSE, 8),
-        PresetCategory("cat_bills", "Bills", "📄", "#C4A574", "#F5EFE4", CategoryKind.EXPENSE, 9),
-        PresetCategory("cat_salary", "Salary", "💼", "#10B5A0", "#D5F4EE", CategoryKind.INCOME, 10),
-        PresetCategory("cat_side", "Side hustle", "🛠️", "#E09F3E", "#FFEECC", CategoryKind.INCOME, 11),
-        PresetCategory("cat_refund", "Refund", "↩️", "#4CA8FF", "#DBECFF", CategoryKind.INCOME, 12),
-        PresetCategory("cat_other_in", "Other in", "✨", "#8B7CF6", "#E7E3FE", CategoryKind.INCOME, 13),
+        PresetCategory("cat_food_out", "Food out", "🍜", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 0),
+        PresetCategory("cat_groceries", "Groceries", "🛒", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 1),
+        PresetCategory("cat_transport", "Transport", "🚕", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 2),
+        PresetCategory("cat_rent", "Rent & bills", "🏠", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 3),
+        PresetCategory("cat_fun", "Fun", "🎬", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 4),
+        PresetCategory("cat_shopping", "Shopping", "🛍️", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 5),
+        PresetCategory("cat_health", "Health", "💊", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 6),
+        PresetCategory("cat_gifts", "Gifts", "🎁", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 7),
+        PresetCategory("cat_other", "Other", "✨", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 8),
+        PresetCategory("cat_bills", "Bills", "📄", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 9),
+        PresetCategory("cat_salary", "Salary", "💼", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.INCOME, 10),
+        PresetCategory("cat_side", "Side hustle", "🛠️", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.INCOME, 11),
+        PresetCategory("cat_refund", "Refund", "↩️", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.INCOME, 12),
+        PresetCategory("cat_other_in", "Other in", "✨", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.INCOME, 13),
     )
 
     val expense: List<PresetCategory> = all.filter { it.kind == CategoryKind.EXPENSE }
@@ -58,8 +61,8 @@ object PresetCategories {
     const val CUSTOM_PACK_LABEL = "Custom"
 
     fun softHex(id: String): String =
-        all.firstOrNull { it.id == id }?.softColorHex ?: "#EDE4D5"
+        all.firstOrNull { it.id == id }?.softColorHex ?: ACCENT_SOFT_HEX
 
     fun strongHex(id: String): String =
-        all.firstOrNull { it.id == id }?.colorHex ?: "#78918E"
+        all.firstOrNull { it.id == id }?.colorHex ?: ACCENT_HEX
 }

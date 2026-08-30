@@ -79,7 +79,7 @@ fun WheregoTabBar(
                 .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 4.dp)
                 .border(2.5.dp, colors.ink, CircleShape)
                 .clip(CircleShape)
-                .background(colors.coral)
+                .background(colors.teal)
                 .clickable(onClick = onAdd),
             contentAlignment = Alignment.Center,
         ) {

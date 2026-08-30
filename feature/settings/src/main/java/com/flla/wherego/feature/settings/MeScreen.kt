@@ -76,8 +76,8 @@ import com.flla.wherego.feature.auth.AuthScreen
 import kotlinx.coroutines.launch
 
 private val Palette = listOf(
-    "#FF6B4A", "#0A7F70", "#4CA8FF", "#8B7CF6", "#E85A9B",
-    "#C4A574", "#E07A5F", "#2A9D8F", "#10B5A0", "#E09F3E",
+    "#121826", "#163A8A", "#2157C7", "#4B86FF", "#5A6A80",
+    "#8FB0FF", "#D7E3F8", "#E1E7F0", "#E24B4B", "#F4D6D6",
 )
 
 /** The base currencies `Me → YOUR MONEY → Currency` offers, mirroring `Onboarding 2/3`. */

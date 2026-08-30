@@ -283,7 +283,7 @@ class LedgerStore @Inject constructor(
                     categoryId = tx.categoryId,
                     name = cat?.name ?: "Other",
                     emoji = cat?.emoji ?: "📦",
-                    colorHex = cat?.colorHex ?: "#78918E",
+                    colorHex = cat?.colorHex ?: PresetCategories.ACCENT_HEX,
                     amountMinor = tx.amountBaseMinor,
                 )
             }

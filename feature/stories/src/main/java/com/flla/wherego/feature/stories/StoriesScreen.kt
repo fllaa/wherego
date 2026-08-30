@@ -43,7 +43,6 @@ import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-import com.flla.wherego.core.designsystem.theme.parseHexColor
 import com.flla.wherego.core.model.TransactionKind
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
@@ -305,7 +304,7 @@ private fun BreakdownRow(bar: StoryBar) {
             Text(bar.amountLabel, style = WheregoType.barAmount, color = colors.ink)
             Text(bar.percentLabel, style = WheregoType.leftPill, color = colors.muted)
         }
-        WheregoMeter(fraction = bar.fraction, fillColor = parseHexColor(bar.colorHex))
+        WheregoMeter(fraction = bar.fraction, fillColor = colors.teal)
     }
 }
 

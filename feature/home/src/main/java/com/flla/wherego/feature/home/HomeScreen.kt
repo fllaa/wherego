@@ -354,7 +354,7 @@ private fun BudgetCard(
         } else {
             bars.forEach { bar ->
                 val fraction = if (bar.capMinor <= 0L) 0f else (bar.spentMinor.toFloat() / bar.capMinor).coerceIn(0f, 1f)
-                val fill = if (bar.over) colors.coral else com.flla.wherego.core.designsystem.theme.parseHexColor(bar.colorHex)
+                val fill = if (bar.over) colors.coral else colors.teal
                 val label = if (bar.over) {
                     "${com.flla.wherego.core.model.MoneyFormatter.compact(-bar.remainingMinor, currency)} over"
                 } else {

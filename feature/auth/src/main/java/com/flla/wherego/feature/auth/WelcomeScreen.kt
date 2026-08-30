@@ -208,7 +208,7 @@ private fun ProofCard() {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
                     .clip(RoundedCornerShape(99.dp))
-                    .background(colors.coral)
+                    .background(colors.teal)
                     .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(99.dp))
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {

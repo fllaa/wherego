@@ -50,7 +50,6 @@ import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
 import com.flla.wherego.core.designsystem.component.wheregoHardShadow
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
-import com.flla.wherego.core.designsystem.theme.parseHexColor
 import com.flla.wherego.core.model.CategoryPack
 import com.flla.wherego.core.model.CurrencyScale
 import com.flla.wherego.core.model.DigitBuffer
@@ -505,7 +504,7 @@ private fun CategoryChip(
     Row(
         Modifier
             .clip(shape)
-            .background(if (selected) parseHexColor(softHex) else colors.sheet)
+            .background(if (selected) colors.tealSoft else colors.sheet)
             .border(
                 BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.ink else colors.track),
                 shape,
@@ -552,7 +551,7 @@ private fun FirstLogStep() {
                     .size(72.dp)
                     .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 5.dp)
                     .clip(CircleShape)
-                    .background(colors.coral)
+                    .background(colors.teal)
                     .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
