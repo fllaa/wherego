@@ -29,6 +29,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":core:common"))
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(project(":core:model"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))

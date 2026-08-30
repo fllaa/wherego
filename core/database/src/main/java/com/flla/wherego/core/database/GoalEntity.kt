@@ -11,8 +11,9 @@ data class GoalEntity(
     val allocatedMinor: Long,
     val currency: String,
     val updatedAt: Long,
+    val targetMinor: Long = 0L,
 ) {
-    fun toModel(): Goal = Goal(id, name, allocatedMinor, currency, updatedAt)
+    fun toModel(): Goal = Goal(id, name, allocatedMinor, currency, updatedAt, targetMinor)
 
     companion object {
         fun from(model: Goal): GoalEntity = GoalEntity(
@@ -21,6 +22,7 @@ data class GoalEntity(
             allocatedMinor = model.allocatedMinor,
             currency = model.currency,
             updatedAt = model.updatedAt,
+            targetMinor = model.targetMinor,
         )
     }
 }

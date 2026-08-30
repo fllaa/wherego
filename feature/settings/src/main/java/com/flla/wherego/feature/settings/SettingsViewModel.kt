@@ -11,11 +11,22 @@ import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.CsvImport
 import com.flla.wherego.core.model.CsvMapping
 import com.flla.wherego.core.model.DigitBuffer
+import com.flla.wherego.core.model.LogStreak
 import com.flla.wherego.core.model.MoneyFormatter
+import com.flla.wherego.core.model.MonthPdf
+import com.flla.wherego.core.model.PresetCategories
+import com.flla.wherego.core.model.RecurringRule
 import com.flla.wherego.core.model.ThemeMode
+import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.UserProfile
 import com.flla.wherego.core.sync.AuthRepository
+import com.flla.wherego.core.sync.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +35,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** One row of the read-only `Me → Recurring` list. Plan still owns rule editing. */
+data class RecurringSummary(
+    val emoji: String,
+    val label: String,
+    val detail: String,
+)
 
 data class SettingsUiState(
     val displayName: String = "",
@@ -34,6 +52,34 @@ data class SettingsUiState(
     val categories: List<Category> = emptyList(),
     val signedIn: Boolean = false,
     val accountLine: String = "Guest · offline",
+    val initial: String = "?",
+    val email: String? = null,
+    val streakDays: Int = 0,
+    val logsThisMonth: Int = 0,
+    val daysLogged: Int = 0,
+    val daysInMonth: Int = YearMonth.now().lengthOfMonth(),
+    val monthShortLabel: String = shortMonth(YearMonth.now()),
+    val yearMonth: String = YearMonth.now().toString(),
+    val categoryCount: Int = 0,
+    val recurringActiveCount: Int = 0,
+    val recurringRules: List<RecurringSummary> = emptyList(),
+    /**
+     * `DueReminder` is enqueued unconditionally for every recurring rule the user
+     * creates or confirms, and nothing persists an opt-out, so the row always reads On.
+     */
+    val remindersOn: Boolean = true,
+)
+
+private fun shortMonth(ym: YearMonth): String =
+    ym.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+
+/** The five flows that only describe the profile/theme/account half of `Me`. */
+private data class Account(
+    val profile: UserProfile?,
+    val theme: String,
+    val categories: List<Category>,
+    val digits: String,
+    val auth: AuthState,
 )
 
 @HiltViewModel
@@ -45,33 +91,79 @@ class SettingsViewModel @Inject constructor(
     private val auth: AuthRepository,
 ) : ViewModel() {
     private val balanceDigits = MutableStateFlow("")
+    private val titleFmt = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("id", "ID"))
 
-    val state: StateFlow<SettingsUiState> = combine(
+    private val account = combine(
         profiles.profile,
         themePreferences.mode,
         ledger.allCategories,
         balanceDigits,
         auth.state,
     ) { profile, theme, cats, digits, authState ->
+        Account(profile, theme, cats, digits, authState)
+    }
+
+    val state: StateFlow<SettingsUiState> = combine(
+        account,
+        ledger.observeActive(),
+        plan.observeRules(),
+    ) { acc, txs, rules ->
+        val profile = acc.profile
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
-        val accountLine = if (authState.signedIn) {
-            listOf(authState.displayName, authState.email, "Signed in")
+        val accountLine = if (acc.auth.signedIn) {
+            listOf(acc.auth.displayName, acc.auth.email, "Signed in")
                 .first { !it.isNullOrBlank() }
                 .toString()
         } else {
             "Guest · offline"
         }
+        val name = profile?.displayName?.takeIf { it.isNotBlank() }
+            ?: acc.auth.displayName?.takeIf { it.isNotBlank() }
+        val today = LocalDate.now(zoneOf(profile))
+        val ym = YearMonth.from(today)
+        val start = ym.atDay(1).toString()
+        val end = ym.atEndOfMonth().toString()
+        val inMonth = txs.filter { it.occurredOn >= start && it.occurredOn <= end }
+        val todayIso = today.toString()
+        val activeRules = rules.filter { rule ->
+            val endOn = rule.endOn
+            endOn == null || endOn >= todayIso
+        }
         SettingsUiState(
             displayName = profile?.displayName.orEmpty(),
-            themeMode = theme,
+            themeMode = acc.theme,
             currency = currency,
             balanceLabel = MoneyFormatter.format(0L, currency),
-            balanceDigits = digits,
-            categories = cats,
-            signedIn = authState.signedIn,
+            balanceDigits = acc.digits,
+            categories = acc.categories,
+            signedIn = acc.auth.signedIn,
             accountLine = accountLine,
+            initial = name?.trim()?.firstOrNull()?.uppercase() ?: "?",
+            email = acc.auth.email ?: profile?.email,
+            streakDays = LogStreak.distinctDays(txs.map { it.occurredOn }),
+            logsThisMonth = inMonth.size,
+            daysLogged = LogStreak.distinctDays(inMonth.map { it.occurredOn }),
+            daysInMonth = ym.lengthOfMonth(),
+            monthShortLabel = shortMonth(ym),
+            yearMonth = ym.toString(),
+            categoryCount = acc.categories.count { !it.archived },
+            recurringActiveCount = activeRules.size,
+            recurringRules = activeRules.map { rule -> summarise(rule, acc.categories) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+
+    private fun summarise(rule: RecurringRule, categories: List<Category>): RecurringSummary {
+        val category = categories.firstOrNull { it.id == rule.categoryId }
+        return RecurringSummary(
+            emoji = category?.emoji ?: "🔁",
+            label = rule.note.ifBlank { category?.name ?: "Bill" },
+            detail = listOf(
+                MoneyFormatter.format(rule.amountMinor, rule.currency),
+                rule.freq,
+                "next ${rule.nextOn}",
+            ).joinToString(" · "),
+        )
+    }
 
     private val _balanceNow = MutableStateFlow(0L)
     val balanceNow: StateFlow<Long> = _balanceNow
@@ -96,6 +188,18 @@ class SettingsViewModel @Inject constructor(
 
     fun onTheme(mode: String) {
         viewModelScope.launch { themePreferences.setMode(mode) }
+    }
+
+    /**
+     * `Me → YOUR MONEY → Currency`. `completeOnboarding` is the only write path to
+     * `baseCurrency`, so it is reused with the balance the profile already carries.
+     */
+    fun onCurrency(code: String) {
+        viewModelScope.launch {
+            val profile = profiles.profile.first() ?: return@launch
+            if (profile.baseCurrency == code) return@launch
+            profiles.completeOnboarding(code, profile.startingBalanceMinor, null)
+        }
     }
 
     fun onBalanceDigits(chunk: String) {
@@ -129,13 +233,56 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { ledger.archiveCategory(id, archived) }
     }
 
-    fun completeOnboarding(currency: String, startingBalanceMinor: Long, displayName: String?) {
+    /**
+     * Finish `pencil-new.pen` → `Onboarding 2/3`: persist currency + starting balance
+     * and reconcile the bucket picker. Unticked expense presets are archived, never
+     * deleted, so Me → Categories can bring them back.
+     */
+    fun completeOnboarding(
+        currency: String,
+        startingBalanceMinor: Long,
+        keptCategoryIds: Set<String>?,
+    ) {
         viewModelScope.launch {
-            profiles.completeOnboarding(currency, startingBalanceMinor, displayName)
+            if (keptCategoryIds != null) {
+                for (preset in PresetCategories.expense) {
+                    ledger.archiveCategory(preset.id, preset.id !in keptCategoryIds)
+                }
+            }
+            profiles.completeOnboarding(currency, startingBalanceMinor, null)
         }
     }
 
     suspend fun exportCsv(): String = plan.exportCsv()
+
+    /**
+     * `Me → DATA → Month report PDF`. Same report Stories shares, built for the
+     * month the device is in, ready for `MonthPdfWriter.write`.
+     */
+    suspend fun monthPdfLines(): List<String> {
+        val profile = profiles.profile.first()
+        val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
+        val ym = YearMonth.from(LocalDate.now(zoneOf(profile)))
+        val spends = ledger.observeMonth(ym).first()
+        val txs = ledger.observeActive().first()
+        val start = ym.atDay(1).toString()
+        val end = ym.atEndOfMonth().toString()
+        val txLines = txs
+            .filter { it.occurredOn >= start && it.occurredOn <= end }
+            .map { tx -> pdfLine(tx, spends.firstOrNull { it.categoryId == tx.categoryId }?.name) }
+        val barPairs = spends.take(3).map { spend ->
+            "${spend.emoji} ${spend.name}" to MoneyFormatter.format(spend.amountMinor, currency)
+        }
+        val title = ym.format(titleFmt).replaceFirstChar { it.titlecase(Locale("id", "ID")) }
+        val total = MoneyFormatter.format(spends.sumOf { it.amountMinor }, currency)
+        return MonthPdf.lines(title, total, barPairs, txLines)
+    }
+
+    private fun pdfLine(tx: Transaction, categoryName: String?): String {
+        val amount = MoneyFormatter.format(tx.amountMinor, tx.currency)
+        val category = categoryName ?: tx.categoryId
+        return "${tx.occurredOn}  ${tx.kind}  $amount  $category  ${tx.note}"
+    }
 
     suspend fun importCsv(text: String, mapping: CsvMapping, skipHeader: Boolean): Int {
         val parsed = CsvImport.parse(text)

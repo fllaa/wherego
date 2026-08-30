@@ -11,12 +11,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.model.ThemeMode
+import com.flla.wherego.feature.auth.WelcomeScreen
 import com.flla.wherego.feature.settings.OnboardingRoute
 import com.flla.wherego.navigation.WheregoNavHost
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,11 +41,19 @@ class MainActivity : ComponentActivity() {
             }
             WheregoTheme(darkTheme = dark) {
                 val ready by viewModel.ready.collectAsStateWithLifecycle()
+                val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
                 val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
+                var openCaptureOnStart by remember { mutableStateOf(false) }
                 when {
-                    !ready -> GuestSplash()
-                    !onboardingDone -> OnboardingRoute()
-                    else -> WheregoNavHost()
+                    !ready || welcomeSeen == null -> GuestSplash()
+                    welcomeSeen == false -> WelcomeScreen(
+                        onContinue = { viewModel.setWelcomeSeen(true) },
+                    )
+                    !onboardingDone -> OnboardingRoute(
+                        onBackToWelcome = { viewModel.setWelcomeSeen(false) },
+                        onFinish = { openCapture -> openCaptureOnStart = openCapture },
+                    )
+                    else -> WheregoNavHost(openCaptureOnStart = openCaptureOnStart)
                 }
             }
         }

@@ -52,12 +52,15 @@ private val WheregoTab.route: String
     }
 
 @Composable
-fun WheregoNavHost(modifier: Modifier = Modifier) {
+fun WheregoNavHost(
+    modifier: Modifier = Modifier,
+    openCaptureOnStart: Boolean = false,
+) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val selected = (entry?.destination?.route ?: Routes.Home).toTab()
     val colors = WheregoTheme.colors
-    var captureOpen by remember { mutableStateOf(false) }
+    var captureOpen by remember { mutableStateOf(openCaptureOnStart) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
     var receiptTxId by remember { mutableStateOf<String?>(null) }
     var goMood by remember { mutableStateOf(GoMood.Idle) }

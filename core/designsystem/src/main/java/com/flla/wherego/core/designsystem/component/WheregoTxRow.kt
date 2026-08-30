@@ -22,7 +22,7 @@ import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.designsystem.theme.parseHexColor
 
-private val CardShape = RoundedCornerShape(24.dp)
+private val CardShape = RoundedCornerShape(22.dp)
 
 @Composable
 fun WheregoTxRow(
@@ -39,21 +39,21 @@ fun WheregoTxRow(
             .fillMaxWidth()
             .border(2.5.dp, colors.ink, CardShape)
             .background(colors.white, CardShape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
-                .size(44.dp)
-                .background(parseHexColor(badgeSoftHex), RoundedCornerShape(16.dp)),
+                .size(42.dp)
+                .background(parseHexColor(badgeSoftHex), RoundedCornerShape(21.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Text(emoji, fontSize = 19.sp)
         }
         Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(title, style = WheregoType.txTitle, color = colors.ink)
-            Text(subtitle, style = WheregoType.meta.copy(fontSize = 12.sp), color = colors.muted)
+            Text(subtitle, style = WheregoType.helper, color = colors.muted)
         }
         Text(amountLabel, style = WheregoType.txAmount, color = colors.ink)
     }

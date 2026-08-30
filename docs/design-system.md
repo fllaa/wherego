@@ -42,11 +42,11 @@ Name these in `core/designsystem`. Use exact hex.
 |---|---|---|
 | `paper` | `#FFF3E2` | App background |
 | `ink` | `#0F2E2C` | Text, icons, borders |
-| `muted` | `#78918E` | Secondary text, inactive chips |
+| `muted` | `#52706D` | Secondary text, inactive chips (`ink-soft` in `pencil-new.pen`) |
 | `white` | `#FFFFFF` | Cards, selected income tab, sheet |
 | `mascotFill` | `#FFEECC` | Go avatar + streak pill fill |
 | `teal` | `#10B5A0` | Primary CTA, expense tab selected, Today icon |
-| `tealDeep` | `#0A7F70` | “left” text, Today label |
+| `tealDeep` | `#076358` | “left” text, Today label |
 | `tealSoft` | `#D5F4EE` | Left-amount pill |
 | `coral` | `#FF6B4A` | Over-budget, selected Food chip, flame |
 | `peach` | `#FFE1D8` | Expense row badge (food) |
@@ -310,16 +310,19 @@ Do not use `Submit`, `Save transaction`, `Add expense`.
 | Fun | 🎬 | `#E7E3FE` | `#8B7CF6` |
 | Shopping | 🛍️ | `#FFDFEC` | `#E85A9B` |
 | Bills | 📄 | `#F5EFE4` | `#C4A574` |
-| Rent/Kos | 🏠 | `#FFE1D8` | `#E07A5F` |
+| Rent & bills | 🏠 | `#FFEECC` | `#E07A5F` |
 | Health | 💊 | `#DAF6E9` | `#2A9D8F` |
 | Gifts | 🎁 | `#FFDFEC` | `#F2A7C3` |
-| Other | 📦 | `#EDE4D5` | `#78918E` |
+| Other | ✨ | `#EDE4D5` | `#78918E` |
 | Salary | 💼 | `#D5F4EE` | `#10B5A0` |
 | Side hustle | 🛠️ | `#FFEECC` | `#E09F3E` |
 | Refund | ↩️ | `#DBECFF` | `#4CA8FF` |
 | Other in | ✨ | `#E7E3FE` | `#8B7CF6` |
 
-Update seed pack: Transport emoji `🚕`, Fun `🎬` to match HTML.
+Update seed pack: Transport emoji `🚕`, Fun `🎬` to match HTML. `pencil-new.pen` →
+`Onboarding 3 · Categories` renames Rent/Kos to **Rent & bills** (amber soft, `🏠`) and
+swaps Other's `📦` for `✨`; `sortOrder` follows the chip order on that screen, with
+`Bills` last since the pack no longer preselects it.
 
 ---
 

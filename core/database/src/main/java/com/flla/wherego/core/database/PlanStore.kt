@@ -182,13 +182,19 @@ class PlanStore @Inject constructor(
         return CsvExport.table(rows)
     }
 
-    suspend fun addGoal(name: String, allocatedMinor: Long, currency: String): Goal {
+    suspend fun addGoal(
+        name: String,
+        allocatedMinor: Long,
+        currency: String,
+        targetMinor: Long = 0L,
+    ): Goal {
         val goal = Goal(
             id = ulid.next(),
             name = name.trim().ifBlank { "Goal" },
             allocatedMinor = allocatedMinor,
             currency = currency,
             updatedAt = clock.millis(),
+            targetMinor = targetMinor,
         )
         goalDao.upsert(GoalEntity.from(goal))
         return goal

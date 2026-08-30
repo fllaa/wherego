@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 class MainViewModel @Inject constructor(
     private val userProfileStore: UserProfileStore,
     private val ledgerStore: LedgerStore,
-    themePreferences: ThemePreferences,
+    private val themePreferences: ThemePreferences,
     private val syncScheduler: SyncScheduler,
     private val fxCache: FxCacheScheduler,
 ) : ViewModel() {
@@ -35,9 +35,20 @@ class MainViewModel @Inject constructor(
         ThemeMode.SYSTEM,
     )
 
+    /**
+     * `null` until the first read lands, so the first-run Sign In screen
+     * (`pencil-new.pen` → `Sign In`) never flashes for a returning user.
+     */
+    val welcomeSeen: StateFlow<Boolean?> = themePreferences.welcomeSeen
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val onboardingDone: StateFlow<Boolean> = userProfileStore.profile
         .map { it?.onboardingDone == true }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun setWelcomeSeen(seen: Boolean) {
+        viewModelScope.launch { themePreferences.setWelcomeSeen(seen) }
+    }
 
     init {
         viewModelScope.launch {

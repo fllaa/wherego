@@ -68,4 +68,17 @@ data class Goal(
     val allocatedMinor: Long,
     val currency: String,
     val updatedAt: Long,
-)
+    /**
+     * What the earmark is aiming at. `pencil-new.pen` → `Plan / Set aside` shows
+     * "Rp 1.200.000 of Rp 3.000.000" and a percent pill, so progress is measured against
+     * this goal's own target — not against the shared pot. `0` means no target set.
+     */
+    val targetMinor: Long = 0L,
+) {
+    /** Progress toward [targetMinor] in `0f..1f`; `0f` when no target is set. */
+    val fraction: Float
+        get() = if (targetMinor <= 0L) 0f else (allocatedMinor.toFloat() / targetMinor).coerceIn(0f, 1f)
+
+    val percent: Int
+        get() = if (targetMinor <= 0L) 0 else ((allocatedMinor * 100.0) / targetMinor).toInt().coerceIn(0, 999)
+}

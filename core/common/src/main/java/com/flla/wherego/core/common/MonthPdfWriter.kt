@@ -1,4 +1,4 @@
-package com.flla.wherego.feature.stories
+package com.flla.wherego.core.common
 
 import android.content.Context
 import android.graphics.Color
@@ -10,6 +10,12 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 
+/**
+ * Writes the monospace month report to the cache dir and returns a shareable Uri.
+ *
+ * Lives in `:core:common` because `pencil-new.pen` exposes the report from two places:
+ * Stories (the month it is showing) and `Me → DATA → Month report PDF`.
+ */
 object MonthPdfWriter {
     fun write(context: Context, fileName: String, lines: List<String>): Uri {
         val dir = File(context.cacheDir, "pdf").apply { mkdirs() }

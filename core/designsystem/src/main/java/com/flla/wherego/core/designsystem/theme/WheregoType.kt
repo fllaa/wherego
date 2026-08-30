@@ -106,6 +106,92 @@ object WheregoType {
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
     )
+    val wordmark = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 42.sp,
+    )
+    val onboardTitle = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 30.sp,
+        lineHeight = 37.sp,
+    )
+    val onboardTitleLarge = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp,
+        lineHeight = 39.sp,
+    )
+    val onboardSub = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+    )
+    val stepText = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+        lineHeight = 19.sp,
+    )
+    val helper = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
+        lineHeight = 17.sp,
+    )
+    val balanceValue = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 34.sp,
+    )
+    val buttonLabel = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+    )
+    val pageTitle = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 26.sp,
+    )
+    val monthLabel = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+    )
+    val groupLabel = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 12.sp,
+        letterSpacing = 1.1.sp,
+    )
+    val settingLabel = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+    )
+    val statValue = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+    )
+    val statLabel = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp,
+    )
+    val meterDetail = TextStyle(
+        fontFamily = ui,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+    )
+    val barAmount = TextStyle(
+        fontFamily = display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+    )
 
     fun typography(): Typography = Typography(
         headlineLarge = heroAmount,

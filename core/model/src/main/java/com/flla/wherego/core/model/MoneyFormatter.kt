@@ -8,7 +8,14 @@ import kotlin.math.abs
 object MoneyFormatter {
     fun format(money: Money): String = format(money.amountMinor, money.currency)
 
-    fun format(amountMinor: Long, currency: String): String {
+    fun format(amountMinor: Long, currency: String): String = when (currency) {
+        "IDR" -> "Rp " + number(amountMinor, currency)
+        "USD" -> "$" + number(amountMinor, currency)
+        else -> "$currency " + number(amountMinor, currency)
+    }
+
+    /** The grouped number without the currency prefix, e.g. `4.250.000` for IDR. */
+    fun number(amountMinor: Long, currency: String): String {
         val scale = CurrencyScale.scale(currency)
         val locale = if (currency == "IDR") Locale("id", "ID") else Locale.US
         val symbols = DecimalFormatSymbols(locale)
@@ -16,13 +23,7 @@ object MoneyFormatter {
         val formatter = DecimalFormat(pattern, symbols)
         formatter.minimumFractionDigits = scale
         formatter.maximumFractionDigits = scale
-        val major = amountMinor.toBigDecimal().movePointLeft(scale)
-        val number = formatter.format(major)
-        return when (currency) {
-            "IDR" -> "Rp $number"
-            "USD" -> "$$number"
-            else -> "$currency $number"
-        }
+        return formatter.format(amountMinor.toBigDecimal().movePointLeft(scale))
     }
 
     fun compact(amountMinor: Long, currency: String): String {

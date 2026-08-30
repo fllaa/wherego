@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GoalEntity::class,
         FxRateEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
@@ -203,6 +203,12 @@ abstract class WheregoDatabase : RoomDatabase() {
         val MIGRATION_6_7: Migration = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `user_profile` ADD COLUMN `firebaseUid` TEXT")
+            }
+        }
+
+        val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `goals` ADD COLUMN `targetMinor` INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

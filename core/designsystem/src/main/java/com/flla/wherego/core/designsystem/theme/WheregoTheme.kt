@@ -56,12 +56,20 @@ fun WheregoTheme(
         WheregoColors.Default.copy(
             paper = WheregoColors.Default.darkPaper,
             ink = WheregoColors.Default.darkInk,
+            muted = WheregoColors.Default.darkMuted,
+            tealDeep = WheregoColors.Default.darkTealDeep,
+            track = WheregoColors.Default.darkTrack,
+            divider = WheregoColors.Default.darkTrack,
+            shadow = WheregoColors.Default.darkShadow,
             white = WheregoColors.Default.darkSurface,
             sheet = WheregoColors.Default.darkSurface,
             chipIdle = WheregoColors.Default.darkSurface,
             key = WheregoColors.Default.darkSurface,
             mascotFill = WheregoColors.Default.darkSurface,
             noteChip = WheregoColors.Default.darkSurface,
+            tealSoft = Color(0xFF123B36),
+            teal = Color(0xFF14C7AE),
+            coral = Color(0xFFFF8360),
         )
     } else {
         WheregoColors.Default

@@ -23,6 +23,7 @@ object DatabaseModule {
                 WheregoDatabase.MIGRATION_4_5,
                 WheregoDatabase.MIGRATION_5_6,
                 WheregoDatabase.MIGRATION_6_7,
+                WheregoDatabase.MIGRATION_7_8,
             )
             .build()
 

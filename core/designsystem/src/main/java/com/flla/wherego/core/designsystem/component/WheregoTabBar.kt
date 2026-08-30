@@ -76,6 +76,7 @@ fun WheregoTabBar(
                 .align(Alignment.TopCenter)
                 .offset(y = (-18).dp)
                 .size(64.dp)
+                .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 4.dp)
                 .border(2.5.dp, colors.ink, CircleShape)
                 .clip(CircleShape)
                 .background(colors.coral)
