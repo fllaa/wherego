@@ -35,7 +35,7 @@ fun WheregoGoAvatar(
     Box(
         modifier
             .size(54.dp)
-            .border(2.5.dp, colors.ink, CircleShape)
+            .border(2.5.dp, colors.outline, CircleShape)
             .clip(CircleShape)
             .background(fill)
             .semantics { contentDescription = goCd },

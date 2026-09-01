@@ -293,7 +293,7 @@ private fun CaptureSheetBody(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(colors.tealSoft)
-                    .border(1.5.dp, colors.teal, RoundedCornerShape(14.dp))
+                    .border(1.5.dp, colors.accentText, RoundedCornerShape(14.dp))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -307,7 +307,7 @@ private fun CaptureSheetBody(
                     Text(
                         text = stringResource(R.string.receipt_use_it),
                         style = WheregoType.txAmount,
-                        color = colors.teal,
+                        color = colors.accentText,
                         modifier = Modifier
                             .clickable(onClick = onApplyOcrAmount)
                             .padding(4.dp),
@@ -440,7 +440,7 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (selected) colors.teal else colors.sheet)
                     .then(
-                        if (selected) Modifier.border(2.5.dp, colors.ink, RoundedCornerShape(14.dp))
+                        if (selected) Modifier.border(2.5.dp, colors.outlineStrong, RoundedCornerShape(14.dp))
                         else Modifier,
                     )
                     .clickable { onKind(value) }
@@ -450,7 +450,7 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
                 Text(
                     text = label,
                     style = WheregoType.kindTab,
-                    color = if (selected) colors.white else colors.ink,
+                    color = if (selected) colors.onAccent else colors.ink,
                 )
             }
         }
@@ -551,7 +551,7 @@ private fun CategoryRow(
                 .width(44.dp)
                 .clip(RoundedCornerShape(99.dp))
                 .background(colors.white)
-                .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(99.dp))
+                .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(99.dp))
                 .clickable(onClick = onMore),
             contentAlignment = Alignment.Center,
         ) {
@@ -577,7 +577,7 @@ private fun CategoryGrid(
             .wheregoHardShadow(cornerRadius = 20.dp, offsetY = 3.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(colors.paper)
-            .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(20.dp))
+            .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(20.dp))
             .padding(10.dp),
     ) {
         Column(
@@ -630,7 +630,7 @@ private fun CategoryChip(
     )
 
     val fill = if (selected) colors.teal else colors.tealSoft
-    val labelColor = if (selected) colors.white else colors.ink
+    val labelColor = if (selected) colors.onAccent else colors.ink
 
     Row(
         modifier = modifier
@@ -643,9 +643,9 @@ private fun CategoryChip(
             .background(fill)
             .then(
                 if (selected) {
-                    Modifier.border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(99.dp))
+                    Modifier.border(BorderStroke(2.5.dp, colors.outlineStrong), RoundedCornerShape(99.dp))
                 } else {
-                    Modifier.border(BorderStroke(1.5.dp, colors.ink.copy(alpha = 0.15f)), RoundedCornerShape(99.dp))
+                    Modifier.border(BorderStroke(1.5.dp, colors.outline.copy(alpha = 0.15f)), RoundedCornerShape(99.dp))
                 },
             )
             .clickable(

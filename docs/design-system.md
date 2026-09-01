@@ -37,37 +37,92 @@ Compose: draw Home full-bleed paper. Capture is a `ModalBottomSheet` / custom sh
 
 ## 3. Color tokens
 
-Name these in `core/designsystem`. Use exact hex.
+Name these in `core/designsystem`. Use exact hex. Components read **roles**, never hex; a mode is one
+`WheregoColors` instance swap in `WheregoTheme`.
 
 Family: cobalt + cool off-white. One accent (`teal` token, hex is cobalt). Categories collapse to that accent plus an alarm. Emoji and label distinguish categories, not hue.
+
+### 3.1 Light (the reference)
 
 | Token | Hex | Use |
 |---|---|---|
 | `paper` | `#F2F4F8` | App background |
-| `ink` | `#121826` | Text, icons, borders |
-| `muted` | `#5A6A80` | Secondary text, inactive chips |
-| `white` | `#FFFFFF` | Cards, selected income tab, sheet |
+| `white` | `#FFFFFF` | Card plane. A **surface**, never an on-accent colour |
+| `sheet` | `#FFFFFF` | Capture sheet background |
+| `noteChip` | `#F6F8FB` | Add-note chip fill |
+| `key` | `#EEF2F7` | Numpad keys |
+| `chipIdle` | `#E8EDF4` | Quick-amount chips |
 | `mascotFill` | `#E2EAF8` | Go avatar + streak pill fill |
-| `teal` | `#2157C7` | Primary CTA, expense tab selected, Today icon, selected chip |
-| `tealDeep` | `#163A8A` | “left” text, Today label |
+| `track` | `#E1E7F0` | Budget track, hairline borders |
+| `divider` | `#E8EDF4` | Setting-row divider |
+| `ink` | `#121826` | Text and icons **only** |
+| `muted` | `#5A6A80` | Secondary text, inactive chips |
+| `outline` | `#121826` | 2.5dp contour on paper / card / soft-tint surfaces |
+| `outlineStrong` | `#121826` | Contour on **bright** fills: accent buttons, FAB, category swatches |
+| `shadow` | `#121826` | Hard-shadow slab. Equals `outline` by design |
+| `teal` | `#2157C7` | Accent **fill**: primary CTA, FAB, selected tab/chip, budget bar |
+| `accentText` | `#2157C7` | Accent **content**: links, accent icons, chart strokes |
+| `onAccent` | `#FFFFFF` | Text/icons on a `teal` fill |
+| `tealDeep` | `#163A8A` | Text on `tealSoft`: “left” amount, Today label, active tab |
 | `tealSoft` | `#D7E3F8` | Left-amount pill, idle chips, badges |
 | `coral` | `#E24B4B` | Over-budget, flame, alarm |
-| `peach` | `#F4D6D6` | Alarm-soft (more-spend pill) |
-| `blue` | `#2157C7` | Alias of accent (legacy name) |
-| `blueSoft` | `#D7E3F8` | Alias of tealSoft |
-| `greenSoft` | `#D7E3F8` | Alias of tealSoft |
-| `violet` | `#2157C7` | Alias of accent |
-| `violetSoft` | `#D7E3F8` | Alias of tealSoft |
-| `pinkSoft` | `#D7E3F8` | Alias of tealSoft |
-| `track` | `#E1E7F0` | Budget track, hairline borders |
-| `chipIdle` | `#E8EDF4` | Quick-amount chips |
-| `key` | `#EEF2F7` | Numpad keys |
-| `noteChip` | `#F6F8FB` | Add-note chip fill |
-| `sheet` | `#FFFFFF` | Capture sheet background |
+| `onAlarm` | `#FFFFFF` | Text/icons on a `coral` fill (swipe-to-delete) |
+| `peach` | `#F4D6D6` | Alarm-soft (more-spend pill, archive) |
+| `capFill` / `capTrack` / `capLabel` | `#163A8A` / `#102A66` / `#D7E3F8` | Plan cap hero slab |
+| `blue` `blueSoft` `green` `greenSoft` `onGreenSoft` `violet` `violetSoft` `amber` `amberSoft` `pink` `pinkSoft` | accent / `tealSoft` / `tealDeep` / `coral` | Legacy hue aliases |
 
-**Border recipe:** almost every “important” shape uses `2.5dp solid ink` (`#121826`). Idle chips use `2dp solid` in their own fill color (looks borderless) or `2dp solid #E1E7F0`.
+**Border recipe:** almost every “important” shape uses `2.5dp solid outline`. Bright-filled shapes
+use `outlineStrong`. Idle chips use `2dp solid` in their own fill color (looks borderless) or
+`2dp solid track`.
 
-**Dark mode:** paper `#10141C`, cards `#1A2230`, ink `#E8EEF6`, muted `#8B9BB0`, track `#2A3444`, accent `#4B86FF`, tealDeep `#8FB0FF`, tealSoft `#1A2F55`, coral `#FF6B6B`. Do not ship an auto-generated M3 dark that breaks the sticker look.
+**`ink` is text, `outline` is the contour.** They share one hex in light mode. Do not collapse them
+back into one token: the split is the only reason dark mode can lift the contour without lifting
+body text.
+
+### 3.2 Dark
+
+Built in OKLCH at hue ~262, chroma-clamped into sRGB. Every text pair clears WCAG AA (worst case
+4.65:1); every contour clears 3:1 against `paper` and `card`. The surface ladder mirrors light
+mode's six steps away from the card plane, scaled 1.35x because a dark surface has no ambient
+shading cue to help it separate.
+
+| Token | Hex | Note |
+|---|---|---|
+| `paper` | `#060B14` | Cool off-black, not `#000` |
+| `white` / `sheet` | `#1C232F` | Card plane, lifted above paper |
+| `noteChip` | `#242A36` | ↑ ladder step 1 |
+| `key` | `#29303C` | ↑ step 2 |
+| `chipIdle` | `#2E3643` | ↑ step 3 |
+| `mascotFill` | `#243450` | ↑ step 4, accent-tinted |
+| `track` / `divider` | `#343C49` | ↑ step 5 |
+| `ink` | `#E5ECF5` | 13.3:1 on card |
+| `muted` | `#9BA9BB` | 6.2:1 on card, 4.7:1 on track |
+| `outline` | `#727B8A` | Mid-slate. 3.7:1 on card, 4.6:1 on paper |
+| `outlineStrong` | `#010E32` | Deep navy rim, 4.0:1 on the accent fill |
+| `shadow` | `#727B8A` | Same as `outline`, as in light mode |
+| `teal` | `#386FDC` | Accent fill; holds `onAccent` at 4.7:1 |
+| `accentText` | `#71A3FF` | 7.4:1 on paper, 6.0:1 on card |
+| `onAccent` | `#FFFFFF` | |
+| `tealDeep` | `#91B7FE` | 5.8:1 on `tealSoft` |
+| `tealSoft` | `#25385D` | |
+| `coral` | `#FC746F` | 5.9:1 on card |
+| `onAlarm` | `#240204` | Near-black on the bright coral, 7.3:1 |
+| `peach` | `#5B2126` | |
+| `capFill` / `capTrack` / `capLabel` | `#092866` / `#000B34` / `#A4BEEF` | |
+
+Three rules keep the sticker look intact on a dark paper:
+
+1. **The contour goes mid-slate, not near-white.** Inverting `ink` to `#E5ECF5` for the border turns
+   every card into a glowing wireframe. A mid-tone stroke reads as a drawn edge in both modes.
+2. **The hard slab follows the contour.** A shadow cannot be darker than a near-black paper, so it
+   becomes a visible offset silhouette at the contour's tone. Do not tint it near-black: at 1.07:1
+   against the paper the depth cue disappears entirely.
+3. **The accent splits by role.** `teal` is a fill dark enough to hold white text; `accentText` is
+   a brighter tone for links and icons. One token cannot do both above 4.5:1.
+
+Do not ship an auto-generated M3 dark, and do not build the dark scheme from light constants —
+reading `WheregoColors.Light` inside `darkColorScheme` is what put `#2157C7` primary (2.5:1) and
+`#5A6A80` on-surface-variant (2.9:1) on a near-black surface.
 
 ---
 
@@ -124,12 +179,15 @@ IDR format in UI: `Rp 3.482.500` (dot thousands, no decimals). Compact budget no
 
 ## 6. Elevation & outline
 
-No Material shadows on cards. Depth = **ink outline**.
+No Material shadows on cards. Depth = **contour + hard slab**, never `Modifier.shadow()`.
 
-- Cards, avatar, streak, selected chip, sheet, save button: `BorderStroke(2.5.dp, ink)`
+- Cards, avatar, streak, selected chip, sheet, month pill: `BorderStroke(2.5.dp, outline)`
+- Accent-filled shapes (FAB, save button, selected kind tab, category swatch): `BorderStroke(2.5.dp, outlineStrong)`
 - Idle category chips: fill only, `BorderStroke(2.dp, same as fill)`
 - Note chip: `BorderStroke(2.dp, track)`
-- Grabber: fill `#E1E7F0`, no stroke
+- Grabber: fill `track`, no stroke
+- Hard slab: `Modifier.wheregoHardShadow(shape, colors.shadow, offsetY = 4–5.dp)`, applied **before**
+  `clip`/`background`. Solid offset copy of the shape, no blur, no spread.
 
 Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and slightly dimmed.
 
@@ -148,14 +206,14 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 
 ### 8.1 Go avatar
 
-- 54×54, fill `mascotFill`, stroke 2.5 ink, circle
+- 54×54, fill `mascotFill`, stroke 2.5 `outline`, circle
 - Content: `WheregoWaypointMark` (or `😄` reaction for 800ms after save)
 - After successful save: swap to a grin emoji for 800ms then back (happy state). No Lottie required in S1.
 
 ### 8.2 Streak pill
 
 - Padding 7×12, gap 5
-- Fill `mascotFill`, stroke 2 ink, pill
+- Fill `mascotFill`, stroke 2 `outline`, pill
 - Flame 16 + Fredoka 15 number
 - Number = distinct days logged (see playbook). Mock shows `12`.
 
@@ -168,7 +226,7 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 
 ### 8.4 Budget card
 
-- White, 28 radius, 2.5 ink, padding 18, gap 15
+- `white` fill, 28 radius, 2.5 `outline`, padding 18, gap 15
 - Header: `Budget check` + `Plan →` (navigates to Plan tab)
 - Max **3** category rows
 - Track height 13, radius 99, fill `track`
@@ -201,7 +259,7 @@ Structure top → bottom, padding 16–18, sheet white, top corners 36:
 6. Numpad 4×3
 7. Save `Park it`
 
-Selected kind = teal fill + white Fredoka text + 2.5 ink. Unselected = white text-ink, no extra chrome.
+Selected kind = `teal` fill + `onAccent` Fredoka text + 2.5 `outlineStrong`. Unselected = `sheet` fill, `ink` label, no extra chrome.
 
 Amount:
 
@@ -220,8 +278,8 @@ Quick chips:
 
 Category chips:
 
-- Selected: accent `#2157C7` + 2.5 ink + **white** label
-- Idle: tealSoft fill, ink label, 2dp same-as-fill border
+- Selected: `teal` fill + 2.5 `outlineStrong` + **`onAccent`** label
+- Idle: `tealSoft` fill, `ink` label, 2dp same-as-fill border
 - Height ~40, padding 8×14, gap 8
 - Trailing `⋯` more button 44×40, 2dp track border, opens full grid sheet
 
@@ -233,11 +291,11 @@ Numpad:
 
 Save:
 
-- Height 56, radius 20, fill teal `#2157C7`, stroke 2.5 ink
-- Label `Park it` + check 21 white
-- Disabled (amount 0 or no category): fill `#D7E3F8`, text `#5A6A80`, still stroked or unstroked — prefer unstroked + 60% alpha, not a toast
+- Height 56, radius 20, fill `teal`, stroke 2.5 `outlineStrong`
+- Label `Park it` + check 21 `onAccent`
+- Disabled (amount 0 or no category): fill `tealSoft` at 60% alpha, text `muted`, unstroked — not a toast
 
-Long-press FAB is not in this mockup because the sheet *is* the add path. Home still needs a way to open the sheet: **a 64dp teal ink-outlined FAB** bottom-end above system nav, `+`. Not drawn in the cropped mock (sheet is open). Add it on Home when sheet is closed.
+Long-press FAB is not in this mockup because the sheet *is* the add path. Home still needs a way to open the sheet: **a 64dp `teal` FAB stroked 2.5 `outlineStrong`** bottom-end above system nav, `+`. Not drawn in the cropped mock (sheet is open). Add it on Home when sheet is closed.
 
 ---
 
@@ -338,10 +396,10 @@ From the HTML, these are non-negotiable (except color, which follows section 3):
 
 1. Paper page `#F2F4F8`, ink `#121826`, accent `#2157C7`
 2. Fredoka + Nunito Sans
-3. Fat 2.5 ink borders on cards, avatar, selected chip, save
+3. Fat 2.5 `outline` borders on cards, avatar, selected chip, save (`outlineStrong` on accent fills)
 4. Hero 44sp amount
 5. Capture: kind toggle → huge amount → chips → category scroller → numpad with **000** → `Park it`
-6. `Park it` accent button with ink outline
+6. `Park it` accent button with an `outlineStrong` contour
 7. Go = coin-in-circle, not a 3D character
 
 ---

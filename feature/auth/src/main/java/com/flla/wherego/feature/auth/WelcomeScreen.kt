@@ -98,7 +98,7 @@ fun WelcomeScreen(
                     .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 5.dp)
                     .clip(CircleShape)
                     .background(colors.teal)
-                    .border(BorderStroke(3.dp, colors.ink), CircleShape),
+                    .border(BorderStroke(3.dp, colors.outlineStrong), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 WheregoWaypointMark(modifier = Modifier.size(80.dp), baseFillColor = colors.paper)
@@ -190,7 +190,7 @@ private fun ProofCard() {
                     .size(38.dp)
                     .clip(CircleShape)
                     .background(colors.mascotFill)
-                    .border(BorderStroke(2.dp, colors.ink), CircleShape),
+                    .border(BorderStroke(2.dp, colors.outline), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 WheregoWaypointMark(modifier = Modifier.size(28.dp))
@@ -214,7 +214,7 @@ private fun ProofCard() {
                 modifier = Modifier
                     .clip(RoundedCornerShape(99.dp))
                     .background(colors.teal)
-                    .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(99.dp))
+                    .border(BorderStroke(2.5.dp, colors.outlineStrong), RoundedCornerShape(99.dp))
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text("🍜", fontSize = 15.sp, color = colors.ink)
@@ -236,7 +236,7 @@ private fun GoogleButton(signedIn: Boolean, busy: Boolean, onClick: () -> Unit) 
             .wheregoHardShadow(shape = shape, color = colors.shadow, offsetY = 4.dp)
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .clickable(enabled = !busy, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,

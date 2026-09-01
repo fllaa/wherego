@@ -23,7 +23,7 @@ fun WheregoStreakPill(
     val colors = WheregoTheme.colors
     Row(
         modifier
-            .border(2.dp, colors.ink, RoundedCornerShape(99.dp))
+            .border(2.dp, colors.outline, RoundedCornerShape(99.dp))
             .background(colors.mascotFill, RoundedCornerShape(99.dp))
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,

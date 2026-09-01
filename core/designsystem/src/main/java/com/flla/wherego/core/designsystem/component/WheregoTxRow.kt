@@ -42,7 +42,7 @@ fun WheregoTxRow(
     Row(
         modifier
             .fillMaxWidth()
-            .border(2.5.dp, colors.ink, CardShape)
+            .border(2.5.dp, colors.outline, CardShape)
             .background(colors.white, CardShape)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +67,7 @@ fun WheregoTxRow(
                     Icon(
                         Icons.AutoMirrored.Outlined.ReceiptLong,
                         contentDescription = stringResource(R.string.receipt_parked_title),
-                        tint = colors.teal,
+                        tint = colors.accentText,
                         modifier = Modifier.size(13.dp),
                     )
                 }

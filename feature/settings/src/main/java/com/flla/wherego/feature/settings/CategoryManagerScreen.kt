@@ -169,7 +169,7 @@ fun CategoryManagerScreen(
                         .wheregoHardShadow(cornerRadius = 14.dp, offsetY = 3.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(colors.white)
-                        .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(14.dp))
+                        .border(BorderStroke(2.5.dp, colors.outline), RoundedCornerShape(14.dp))
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -194,7 +194,7 @@ fun CategoryManagerScreen(
                     .wheregoHardShadow(cornerRadius = 99.dp, offsetY = 3.dp)
                     .clip(RoundedCornerShape(99.dp))
                     .background(colors.teal)
-                    .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(99.dp))
+                    .border(BorderStroke(2.5.dp, colors.outlineStrong), RoundedCornerShape(99.dp))
                     .clickable { sheetMode = StickerSheetMode.New }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
@@ -337,7 +337,7 @@ private fun CategorySegmentedTabs(
             .wheregoHardShadow(cornerRadius = 20.dp, offsetY = 3.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(colors.white)
-            .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(20.dp))
+            .border(BorderStroke(2.5.dp, colors.outline), RoundedCornerShape(20.dp))
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -392,7 +392,7 @@ private fun TabPill(
             .background(fill)
             .then(
                 if (selected) {
-                    Modifier.border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(16.dp))
+                    Modifier.border(BorderStroke(2.dp, colors.outlineStrong), RoundedCornerShape(16.dp))
                 } else {
                     Modifier
                 },
@@ -456,7 +456,7 @@ private fun StickerTile(
             .wheregoHardShadow(cornerRadius = 22.dp, offsetY = 4.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(colors.white)
-            .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(22.dp))
+            .border(BorderStroke(2.5.dp, colors.outline), RoundedCornerShape(22.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -478,7 +478,7 @@ private fun StickerTile(
                         .size(48.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(backgroundTint)
-                        .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(16.dp)),
+                        .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -493,7 +493,7 @@ private fun StickerTile(
                         modifier = Modifier
                             .clip(RoundedCornerShape(99.dp))
                             .background(colors.mascotFill)
-                            .border(BorderStroke(1.5.dp, colors.ink), RoundedCornerShape(99.dp))
+                            .border(BorderStroke(1.5.dp, colors.outline), RoundedCornerShape(99.dp))
                             .padding(horizontal = 7.dp, vertical = 3.dp),
                     ) {
                         Text(
@@ -573,7 +573,7 @@ private fun StickerEditorSheetContent(
                 .wheregoHardShadow(cornerRadius = 24.dp, offsetY = 4.dp)
                 .clip(RoundedCornerShape(24.dp))
                 .background(colors.paper)
-                .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(24.dp))
+                .border(BorderStroke(2.5.dp, colors.outline), RoundedCornerShape(24.dp))
                 .padding(18.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -587,7 +587,7 @@ private fun StickerEditorSheetContent(
                         .size(60.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(previewTint)
-                        .border(BorderStroke(2.5.dp, colors.ink), RoundedCornerShape(20.dp)),
+                        .border(BorderStroke(2.5.dp, colors.outline), RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(text = emoji, fontSize = 32.sp)
@@ -631,7 +631,7 @@ private fun StickerEditorSheetContent(
                     .height(50.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(colors.paper)
-                    .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(16.dp))
+                    .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(16.dp))
                     .padding(horizontal = 14.dp, vertical = 12.dp),
             )
         }
@@ -648,7 +648,7 @@ private fun StickerEditorSheetContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
                     .background(colors.paper)
-                    .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(18.dp))
+                    .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(18.dp))
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -683,7 +683,7 @@ private fun StickerEditorSheetContent(
                     .height(140.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(colors.paper)
-                    .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(18.dp))
+                    .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(18.dp))
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -697,7 +697,7 @@ private fun StickerEditorSheetContent(
                             .background(if (selected) colors.mascotFill else Color.Transparent)
                             .then(
                                 if (selected) {
-                                    Modifier.border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(12.dp))
+                                    Modifier.border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(12.dp))
                                 } else {
                                     Modifier
                                 },
@@ -734,10 +734,7 @@ private fun StickerEditorSheetContent(
                             .clip(CircleShape)
                             .background(color)
                             .border(
-                                BorderStroke(
-                                    if (isSelected) 2.5.dp else 1.5.dp,
-                                    if (isSelected) colors.ink else colors.track,
-                                ),
+                                BorderStroke(if (isSelected) 2.5.dp else 1.5.dp, if (isSelected) colors.outlineStrong else colors.track),
                                 CircleShape,
                             )
                             .clickable { colorHex = hex },
@@ -769,7 +766,7 @@ private fun StickerEditorSheetContent(
                         .height(44.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(colors.mascotFill)
-                        .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(14.dp))
+                        .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(14.dp))
                         .clickable { onPin(existing.id) },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -798,7 +795,7 @@ private fun StickerEditorSheetContent(
                         .height(44.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(if (existing.archived) colors.tealSoft else colors.peach)
-                        .border(BorderStroke(2.dp, colors.ink), RoundedCornerShape(14.dp))
+                        .border(BorderStroke(2.dp, colors.outline), RoundedCornerShape(14.dp))
                         .clickable { onArchive(existing.id, !existing.archived) },
                     contentAlignment = Alignment.Center,
                 ) {

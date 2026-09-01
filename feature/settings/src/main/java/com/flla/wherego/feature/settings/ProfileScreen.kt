@@ -122,7 +122,7 @@ fun ProfileScreen(
                     .size(38.dp)
                     .clip(CircleShape)
                     .background(colors.sheet)
-                    .border(BorderStroke(2.5.dp, colors.ink), CircleShape)
+                    .border(BorderStroke(2.5.dp, colors.outline), CircleShape)
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
@@ -391,7 +391,7 @@ private fun ProfileAvatar(photoUrl: String?, signedIn: Boolean) {
             .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 5.dp)
             .clip(CircleShape)
             .background(colors.mascotFill)
-            .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
+            .border(BorderStroke(2.5.dp, colors.outline), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         WheregoWaypointMark(modifier = Modifier.size(62.dp))

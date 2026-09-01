@@ -261,7 +261,7 @@ private fun PickStep(fileName: String, @StringRes errorRes: Int?) {
                     .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 5.dp)
                     .clip(CircleShape)
                     .background(colors.teal)
-                    .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
+                    .border(BorderStroke(2.5.dp, colors.outlineStrong), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -428,7 +428,7 @@ private fun SuccessStep(count: Int) {
                     .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 5.dp)
                     .clip(CircleShape)
                     .background(colors.teal)
-                    .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
+                    .border(BorderStroke(2.5.dp, colors.outlineStrong), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 WheregoWaypointMark(modifier = Modifier.size(56.dp), baseFillColor = colors.paper)
@@ -506,10 +506,7 @@ private fun MapField(
                         .clip(Pill)
                         .background(if (selected) colors.teal else colors.tealSoft)
                         .border(
-                            BorderStroke(
-                                if (selected) 2.5.dp else 2.dp,
-                                if (selected) colors.ink else colors.tealSoft,
-                            ),
+                            BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.outlineStrong else colors.tealSoft),
                             Pill,
                         )
                         .clickable { onSelect(index) }

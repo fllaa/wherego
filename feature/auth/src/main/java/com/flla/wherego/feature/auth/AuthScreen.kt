@@ -142,7 +142,7 @@ fun AuthScreen(
             )
             Text(
                 stringResource(R.string.auth_sign_out),
-                color = colors.white,
+                color = colors.onAccent,
                 style = WheregoType.cta,
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
@@ -157,7 +157,7 @@ fun AuthScreen(
         } else {
             Text(
                 stringResource(R.string.auth_sign_in_google),
-                color = colors.white,
+                color = colors.onAccent,
                 style = WheregoType.cta,
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))

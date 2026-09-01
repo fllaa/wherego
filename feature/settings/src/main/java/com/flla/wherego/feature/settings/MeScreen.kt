@@ -486,7 +486,7 @@ private fun ProfileCard(state: SettingsUiState, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(2.5.dp, colors.ink, shape)
+            .border(2.5.dp, colors.outline, shape)
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -497,7 +497,7 @@ private fun ProfileCard(state: SettingsUiState, onClick: () -> Unit) {
                 .size(54.dp)
                 .clip(RoundedCornerShape(27.dp))
                 .background(colors.violetSoft)
-                .border(2.5.dp, colors.ink, RoundedCornerShape(27.dp)),
+                .border(2.5.dp, colors.outline, RoundedCornerShape(27.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -573,7 +573,7 @@ private fun SettingsGroup(title: String, rows: @Composable ColumnScope.() -> Uni
 private fun AccountRow(signedIn: Boolean, onSignOut: () -> Unit, onSignIn: () -> Unit) {
     val colors = WheregoTheme.colors
     val shape = RoundedCornerShape(22.dp)
-    val tint = if (signedIn) colors.coral else colors.teal
+    val tint = if (signedIn) colors.coral else colors.accentText
     val icon: ImageVector =
         if (signedIn) Icons.AutoMirrored.Outlined.Logout else Icons.AutoMirrored.Outlined.Login
     Row(
@@ -582,7 +582,7 @@ private fun AccountRow(signedIn: Boolean, onSignOut: () -> Unit, onSignIn: () ->
             .height(52.dp)
             .clip(shape)
             .background(colors.sheet)
-            .border(2.5.dp, colors.ink, shape)
+            .border(2.5.dp, colors.outline, shape)
             .clickable(onClick = if (signedIn) onSignOut else onSignIn),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,

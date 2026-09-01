@@ -40,7 +40,7 @@ fun WheregoCard(
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(strokeWidth, strokeColor ?: colors.ink), shape)
+            .border(BorderStroke(strokeWidth, strokeColor ?: colors.outline), shape)
             .padding(padding),
         verticalArrangement = Arrangement.spacedBy(gap),
         horizontalAlignment = horizontalAlignment,

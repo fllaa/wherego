@@ -16,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -38,10 +37,10 @@ fun ParkItButton(
             .fillMaxWidth()
             .height(56.dp),
         shape = RoundedCornerShape(20.dp),
-        border = if (enabled) BorderStroke(2.5.dp, colors.ink) else null,
+        border = if (enabled) BorderStroke(2.5.dp, colors.outlineStrong) else null,
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.teal,
-            contentColor = Color.White,
+            contentColor = colors.onAccent,
             disabledContainerColor = colors.tealSoft.copy(alpha = 0.6f),
             disabledContentColor = colors.muted,
         ),
@@ -70,10 +69,10 @@ fun WheregoPrimaryButton(
             .height(60.dp)
             .then(if (enabled) Modifier.wheregoHardShadow(cornerRadius = 22.dp, offsetY = 4.dp) else Modifier),
         shape = RoundedCornerShape(22.dp),
-        border = if (enabled) BorderStroke(2.5.dp, colors.ink) else null,
+        border = if (enabled) BorderStroke(2.5.dp, colors.outlineStrong) else null,
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.teal,
-            contentColor = Color.White,
+            contentColor = colors.onAccent,
             disabledContainerColor = colors.tealSoft.copy(alpha = 0.6f),
             disabledContentColor = colors.muted,
         ),

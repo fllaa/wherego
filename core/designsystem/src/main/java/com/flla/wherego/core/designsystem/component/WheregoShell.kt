@@ -120,7 +120,7 @@ fun WheregoMonthStepper(
         Modifier
             .clip(Pill)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), Pill)
+            .border(BorderStroke(2.5.dp, colors.outline), Pill)
             .padding(start = 14.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -155,7 +155,7 @@ fun WheregoMonthPill(label: String, onClick: () -> Unit) {
         Modifier
             .clip(Pill)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), Pill)
+            .border(BorderStroke(2.5.dp, colors.outline), Pill)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -281,7 +281,7 @@ fun WheregoStatsCard(stats: List<Pair<String, String>>) {
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .padding(horizontal = 10.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -317,7 +317,7 @@ fun WheregoSettingsCard(content: @Composable ColumnScope.() -> Unit) {
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .padding(vertical = 3.dp),
     ) { content() }
 }
@@ -386,7 +386,7 @@ fun WheregoMeterCard(
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .padding(padding),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -431,7 +431,7 @@ fun WheregoCapCard(
             .fillMaxWidth()
             .clip(shape)
             .background(colors.capFill)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
         Text(label, style = WheregoType.eyebrow.copy(fontSize = 13.sp), color = colors.capLabel)

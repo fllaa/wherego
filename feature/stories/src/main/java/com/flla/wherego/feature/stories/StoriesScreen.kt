@@ -213,7 +213,7 @@ fun StoriesScreen(
                 .fillMaxWidth()
                 .clip(CardShape)
                 .background(colors.amberSoft)
-                .border(2.5.dp, colors.ink, CardShape)
+                .border(2.5.dp, colors.outline, CardShape)
                 .padding(horizontal = 16.dp, vertical = 15.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -222,7 +222,7 @@ fun StoriesScreen(
                 fill = colors.sheet,
                 size = 40.dp,
                 cornerRadius = 20.dp,
-                strokeColor = colors.ink,
+                strokeColor = colors.outline,
             ) {
                 WheregoWaypointMark(modifier = Modifier.size(30.dp))
             }
@@ -442,7 +442,7 @@ private fun FilterPill(filter: TxFilter, onClick: () -> Unit) {
         Modifier
             .clip(Pill)
             .background(colors.sheet)
-            .border(2.dp, colors.ink, Pill)
+            .border(2.dp, colors.outline, Pill)
             .clickable(onClick = onClick)
             .padding(horizontal = 11.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -511,11 +511,11 @@ private fun BalanceSparkline(balance: StoryBalance, modifier: Modifier = Modifie
         drawPath(area, colors.tealSoft)
         drawPath(
             line,
-            colors.teal,
+            colors.accentText,
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
         val here = Offset(left + stepX * (count - 1), yOf(balance.fractions.last()))
         drawCircle(colors.ink, radius = dotRadius, center = here)
-        drawCircle(colors.teal, radius = dotRadius - 1.5.dp.toPx(), center = here)
+        drawCircle(colors.accentText, radius = dotRadius - 1.5.dp.toPx(), center = here)
     }
 }

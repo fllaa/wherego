@@ -263,7 +263,7 @@ fun HomeScreen(
                         Text(
                             stringResource(R.string.home_link_stories),
                             style = WheregoType.link,
-                            color = colors.teal,
+                            color = colors.accentText,
                             modifier = Modifier.clickable(onClick = onOpenStories),
                         )
                     }
@@ -324,7 +324,7 @@ private fun TxItem(
                         .padding(end = 18.dp),
                     contentAlignment = Alignment.CenterEnd,
                 ) {
-                    Text(stringResource(R.string.home_swipe_delete), color = colors.white, style = WheregoType.meta)
+                    Text(stringResource(R.string.home_swipe_delete), color = colors.onAlarm, style = WheregoType.meta)
                 }
             },
             enableDismissFromStartToEnd = false,
@@ -366,7 +366,7 @@ private fun BudgetCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(28.dp))
             .background(colors.white)
-            .border(2.5.dp, colors.ink, RoundedCornerShape(28.dp))
+            .border(2.5.dp, colors.outline, RoundedCornerShape(28.dp))
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp),
     ) {
@@ -375,7 +375,7 @@ private fun BudgetCard(
             Text(
                 stringResource(R.string.home_link_plan),
                 style = WheregoType.link,
-                color = colors.teal,
+                color = colors.accentText,
                 modifier = Modifier.clickable(onClick = onPlan),
             )
         }

@@ -91,7 +91,7 @@ fun WheregoTabBar(
                 .wheregoHardShadow(shape = DockShape, color = colors.shadow, offsetY = 4.dp)
                 .clip(DockShape)
                 .background(colors.sheet)
-                .border(BorderStroke(2.5.dp, colors.ink), DockShape),
+                .border(BorderStroke(2.5.dp, colors.outline), DockShape),
         ) {
             Row(
                 Modifier
@@ -113,7 +113,7 @@ fun WheregoTabBar(
                 .offset(y = (-10).dp)
                 .size(64.dp)
                 .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 4.dp)
-                .border(2.5.dp, colors.ink, CircleShape)
+                .border(2.5.dp, colors.outlineStrong, CircleShape)
                 .clip(CircleShape)
                 .background(colors.teal)
                 .combinedClickable(
@@ -125,7 +125,7 @@ fun WheregoTabBar(
             Icon(
                 Icons.Outlined.Add,
                 contentDescription = stringResource(R.string.ds_cd_add),
-                tint = colors.white,
+                tint = colors.onAccent,
                 modifier = Modifier.size(30.dp),
             )
         }
@@ -178,7 +178,7 @@ private fun TabItem(
                 .clip(CircleShape)
                 .background(badgeFill)
                 .then(
-                    if (active) Modifier.border(BorderStroke(2.dp, colors.ink), CircleShape)
+                    if (active) Modifier.border(BorderStroke(2.dp, colors.outline), CircleShape)
                     else Modifier,
                 ),
             contentAlignment = Alignment.Center,

@@ -57,7 +57,7 @@ fun WheregoOnboardTopBar(
                 .size(38.dp)
                 .clip(CircleShape)
                 .background(colors.sheet)
-                .border(BorderStroke(2.5.dp, colors.ink), CircleShape)
+                .border(BorderStroke(2.5.dp, colors.outline), CircleShape)
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center,
         ) {

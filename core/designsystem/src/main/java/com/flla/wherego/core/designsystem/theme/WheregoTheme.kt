@@ -9,35 +9,89 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
-private val LightScheme = lightColorScheme(
-    primary = WheregoColors.Default.teal,
-    onPrimary = Color.White,
-    secondary = WheregoColors.Default.tealDeep,
-    onSecondary = Color.White,
-    background = WheregoColors.Default.paper,
-    onBackground = WheregoColors.Default.ink,
-    surface = WheregoColors.Default.white,
-    onSurface = WheregoColors.Default.ink,
-    surfaceVariant = WheregoColors.Default.chipIdle,
-    onSurfaceVariant = WheregoColors.Default.muted,
-    outline = WheregoColors.Default.ink,
-    error = WheregoColors.Default.coral,
-)
+/**
+ * The Material scheme exists for the framework components the app does not draw itself: text-field
+ * cursors and indicators, menus, snackbars, ripples, the sheet scrim. Everything the design system
+ * draws reads [WheregoColors] instead.
+ *
+ * Both schemes are built from their own palette instance. Reading light constants inside the dark
+ * scheme is the failure this replaces: it put `#2157C7` primary and `#5A6A80` on-surface-variant on
+ * a near-black surface (2.5:1 and 2.9:1).
+ *
+ * `surfaceTint` is transparent in both modes: depth here is a contour plus a hard slab, so M3's
+ * tonal-elevation overlay would only muddy the surface ladder.
+ */
+private val LightScheme = with(WheregoColors.Light) {
+    lightColorScheme(
+        primary = teal,
+        onPrimary = onAccent,
+        primaryContainer = tealSoft,
+        onPrimaryContainer = tealDeep,
+        secondary = tealDeep,
+        onSecondary = onAccent,
+        secondaryContainer = tealSoft,
+        onSecondaryContainer = tealDeep,
+        tertiary = coral,
+        onTertiary = onAlarm,
+        background = paper,
+        onBackground = ink,
+        surface = white,
+        onSurface = ink,
+        surfaceVariant = chipIdle,
+        onSurfaceVariant = muted,
+        surfaceContainerLowest = white,
+        surfaceContainerLow = noteChip,
+        surfaceContainer = key,
+        surfaceContainerHigh = chipIdle,
+        surfaceContainerHighest = track,
+        surfaceTint = Color.Transparent,
+        inverseSurface = ink,
+        inverseOnSurface = paper,
+        outline = outline,
+        outlineVariant = track,
+        error = coral,
+        onError = onAlarm,
+        errorContainer = peach,
+        onErrorContainer = ink,
+        scrim = Color.Black,
+    )
+}
 
-private val DarkScheme = darkColorScheme(
-    primary = WheregoColors.Default.teal,
-    onPrimary = WheregoColors.Default.ink,
-    secondary = WheregoColors.Default.tealSoft,
-    onSecondary = WheregoColors.Default.ink,
-    background = WheregoColors.Default.darkPaper,
-    onBackground = WheregoColors.Default.darkInk,
-    surface = WheregoColors.Default.darkSurface,
-    onSurface = WheregoColors.Default.darkInk,
-    surfaceVariant = WheregoColors.Default.darkSurface,
-    onSurfaceVariant = WheregoColors.Default.muted,
-    outline = WheregoColors.Default.darkInk,
-    error = WheregoColors.Default.coral,
-)
+private val DarkScheme = with(WheregoColors.Dark) {
+    darkColorScheme(
+        primary = teal,
+        onPrimary = onAccent,
+        primaryContainer = tealSoft,
+        onPrimaryContainer = tealDeep,
+        secondary = tealDeep,
+        onSecondary = outlineStrong,
+        secondaryContainer = tealSoft,
+        onSecondaryContainer = tealDeep,
+        tertiary = coral,
+        onTertiary = onAlarm,
+        background = paper,
+        onBackground = ink,
+        surface = white,
+        onSurface = ink,
+        surfaceVariant = chipIdle,
+        onSurfaceVariant = muted,
+        surfaceContainerLowest = paper,
+        surfaceContainerLow = noteChip,
+        surfaceContainer = key,
+        surfaceContainerHigh = chipIdle,
+        surfaceContainerHighest = track,
+        surfaceTint = Color.Transparent,
+        inverseSurface = ink,
+        inverseOnSurface = paper,
+        outline = outline,
+        outlineVariant = track,
+        error = coral,
+        onError = onAlarm,
+        errorContainer = peach,
+        onErrorContainer = ink,
+        scrim = Color.Black,
+    )
+}
 
 object WheregoTheme {
     val colors: WheregoColors
@@ -51,47 +105,10 @@ fun WheregoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val scheme = if (darkTheme) DarkScheme else LightScheme
-    val palette = if (darkTheme) {
-        WheregoColors.Default.copy(
-            paper = WheregoColors.Default.darkPaper,
-            ink = WheregoColors.Default.darkInk,
-            muted = WheregoColors.Default.darkMuted,
-            tealDeep = WheregoColors.Default.darkTealDeep,
-            track = WheregoColors.Default.darkTrack,
-            divider = WheregoColors.Default.darkTrack,
-            shadow = WheregoColors.Default.darkShadow,
-            white = WheregoColors.Default.darkSurface,
-            sheet = WheregoColors.Default.darkSurface,
-            chipIdle = WheregoColors.Default.darkSurface,
-            key = WheregoColors.Default.darkSurface,
-            mascotFill = WheregoColors.Default.darkSurface,
-            noteChip = WheregoColors.Default.darkSurface,
-            tealSoft = Color(0xFF1A2F55),
-            teal = Color(0xFF4B86FF),
-            coral = Color(0xFFFF6B6B),
-            peach = Color(0xFF3A2224),
-            blue = Color(0xFF4B86FF),
-            blueSoft = Color(0xFF1A2F55),
-            greenSoft = Color(0xFF1A2F55),
-            violet = Color(0xFF4B86FF),
-            violetSoft = Color(0xFF1A2F55),
-            pinkSoft = Color(0xFF1A2F55),
-            amber = Color(0xFF4B86FF),
-            amberSoft = Color(0xFF1A2F55),
-            green = Color(0xFF4B86FF),
-            pink = Color(0xFFFF6B6B),
-            onGreenSoft = Color(0xFF8FB0FF),
-            capFill = Color(0xFF1A3A7A),
-            capTrack = Color(0xFF12284F),
-            capLabel = Color(0xFFD7E3F8),
-        )
-    } else {
-        WheregoColors.Default
-    }
+    val palette = if (darkTheme) WheregoColors.Dark else WheregoColors.Light
     CompositionLocalProvider(LocalWheregoColors provides palette) {
         MaterialTheme(
-            colorScheme = scheme,
+            colorScheme = if (darkTheme) DarkScheme else LightScheme,
             typography = WheregoType.typography(),
             shapes = WheregoShapes.shapes,
             content = content,

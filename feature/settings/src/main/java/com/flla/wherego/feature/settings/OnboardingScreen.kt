@@ -226,7 +226,7 @@ private fun WelcomeStep() {
                 .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 4.dp)
                 .clip(CircleShape)
                 .background(colors.teal)
-                .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
+                .border(BorderStroke(2.5.dp, colors.outlineStrong), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             WheregoWaypointMark(modifier = Modifier.size(56.dp), baseFillColor = colors.paper)
@@ -416,7 +416,7 @@ private fun BalanceField(
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -549,7 +549,7 @@ private fun CategoryChip(
             .clip(shape)
             .background(if (selected) colors.tealSoft else colors.sheet)
             .border(
-                BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.ink else colors.track),
+                BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.outline else colors.track),
                 shape,
             )
             .clickable(onClick = onClick)
@@ -599,7 +599,7 @@ private fun FirstLogStep() {
                     .wheregoHardShadow(shape = CircleShape, color = colors.shadow, offsetY = 5.dp)
                     .clip(CircleShape)
                     .background(colors.teal)
-                    .border(BorderStroke(2.5.dp, colors.ink), CircleShape),
+                    .border(BorderStroke(2.5.dp, colors.outlineStrong), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(

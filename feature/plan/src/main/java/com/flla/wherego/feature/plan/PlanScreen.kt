@@ -133,7 +133,7 @@ fun PlanScreen(
         WheregoSectionHeader(
             title = stringResource(R.string.plan_section_budgets),
             trailing = if (editing) stringResource(R.string.plan_done) else stringResource(R.string.plan_edit),
-            trailingColor = colors.teal,
+            trailingColor = colors.accentText,
             onTrailingClick = { editing = !editing },
         )
         if (state.budgets.isEmpty()) {
@@ -515,7 +515,7 @@ private fun RuleCard(
             .fillMaxWidth()
             .clip(shape)
             .background(colors.sheet)
-            .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .border(BorderStroke(2.5.dp, colors.outline), shape)
             .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -795,7 +795,7 @@ private fun GoalAmountToggle(selected: GoalAmount, onSelect: (GoalAmount) -> Uni
                     .weight(1f)
                     .clip(tab)
                     .background(if (on) colors.teal else colors.sheet)
-                    .then(if (on) Modifier.border(BorderStroke(2.5.dp, colors.ink), tab) else Modifier)
+                    .then(if (on) Modifier.border(BorderStroke(2.5.dp, colors.outlineStrong), tab) else Modifier)
                     .clickable { onSelect(value) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
@@ -803,7 +803,7 @@ private fun GoalAmountToggle(selected: GoalAmount, onSelect: (GoalAmount) -> Uni
                 Text(
                     label,
                     style = WheregoType.kindTab,
-                    color = if (on) colors.white else colors.ink,
+                    color = if (on) colors.onAccent else colors.ink,
                 )
             }
         }
@@ -867,12 +867,12 @@ private fun ChipPill(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         label,
         style = WheregoType.chip,
-        color = if (selected) colors.white else colors.ink,
+        color = if (selected) colors.onAccent else colors.ink,
         modifier = Modifier
             .clip(pill)
             .background(if (selected) colors.teal else colors.tealSoft)
             .border(
-                BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.ink else colors.tealSoft),
+                BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.outlineStrong else colors.tealSoft),
                 pill,
             )
             .clickable(onClick = onClick)
