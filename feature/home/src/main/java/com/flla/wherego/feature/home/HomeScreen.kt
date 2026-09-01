@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.designsystem.component.GoMood
+import com.flla.wherego.core.designsystem.component.TxAmountTone
 import com.flla.wherego.core.designsystem.component.WheregoGoAvatar
 import com.flla.wherego.core.designsystem.component.WheregoHero
 import com.flla.wherego.core.designsystem.component.WheregoStreakPill
@@ -380,6 +381,7 @@ private fun TxItem(
                 title = title,
                 subtitle = subtitle,
                 amountLabel = row.amountLabel,
+                tone = TxAmountTone.ofPolarity(TransactionKind.polarity(row.transaction.kind)),
                 badgeSoftHex = row.badgeSoftHex,
                 hasReceipt = row.hasReceipt,
                 modifier = Modifier.combinedClickable(

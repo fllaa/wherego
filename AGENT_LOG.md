@@ -687,3 +687,54 @@
 - Not done / deferred: the `Balance` tab is reachable from the `+` FAB, so an assertion is three
   taps from a mis-tap. The helper copy and the blank-buffer guard are the only friction
 - Blocked: none
+
+## 2026-09-01  T1350  tx-row-kind
+- Goal: the transactions list gave no way to tell an income row from an expense. Both drew the
+  same unsigned magnitude in the same `ink`, `WheregoTxRow` had no `kind` parameter at all, and
+  the kind reached the row only to relabel a reconcile as `Balance set` — so a Rp 100.000 salary
+  and a Rp 100.000 dinner were identical apart from the emoji, and `cat_other` / `cat_other_in`
+  share `✨`
+- Files changed:
+  - `:core:model` — new `TransactionKind.polarity`: the one place that says which way a kind moves
+    money (`-1` out, `+1` in, `0` neither). `BalanceSeries.signedBase` is now that polarity applied
+    to the base amount, so the balance arithmetic and the rows cannot drift apart. New
+    `PresetCategories.customSoftHex` answers "does this category carry a colour of its own"
+  - `:core:designsystem` — `WheregoTxRow` takes a `TxAmountTone`: `In` draws `+` and `tealDeep`,
+    `Out` plain `ink`, `Neutral` `muted`. It also finally *reads* `badgeSoftHex`, which the
+    component had accepted and thrown away — the avatar was hardcoded to `colors.tealSoft`
+  - `:feature:home`, `:feature:stories`, `:feature:settings` — each callsite maps its own kind onto
+    a tone via `TxAmountTone.ofPolarity(TransactionKind.polarity(kind))`. The two viewmodels pass
+    `customSoftHex` instead of `category?.softColorHex ?: PresetCategories.softHex(id)`, whose
+    fallback could only ever return the shared default; the CSV preview drops its hardcoded
+    `"#D7E3F8"`
+  - tests — `TransactionKindTest` (polarity per kind, and `signedBase` pinned to `polarity ×
+    amount` across all five kinds); `PresetCategoriesTest` (every preset collapses to blank, a
+    custom hex survives, the default collapses case-insensitively, null/blank collapse)
+- Commands:
+  - `./gradlew :app:assembleDebug testDebugUnitTest` → SUCCESS, 114 tests 0 failures (106 + 8 new)
+  - on `emulator-5554` in **dark** mode, one Home list showing all three tones at once:
+    `Balance set  Rp 7.000.000` muted, `Refund  +Rp 300.000` accent blue, `Food out  Rp 10.000`
+    plain white. Stories/August showed `Freelance  +Rp 300.000` sitting under a `Rp 0` day header
+    — the exact case the old row made unreadable, since the header counts expenses only. Badges
+    stayed dark-mode navy, confirming the `customSoftHex` gate. Test anchor swipe-deleted afterwards
+- Decisions:
+  - the tone is a design-system enum, not the domain kind. `:core:designsystem` depends only on
+    `:core:i18n`, and a row that knows the word "expense" stops being reusable — so callers map
+    polarity onto a tone and the rule itself still lives in exactly one place. Same shape as the
+    existing `GoMood`
+  - the `+` carries the distinction as well as the colour does. Colour alone fails red-green
+    deficiency, greyscale screenshots and the `uiautomator` dump this slice was verified with
+  - expenses keep a plain amount and no `-`. Spending is the overwhelming majority of rows;
+    signing every one of them would add noise to the common case to mark the rare one
+  - `badgeSoftHex` is honoured only for a **custom** category. All 14 presets share
+    `ACCENT_SOFT_HEX` `#D7E3F8`, which is byte-identical to light-mode `tealSoft`, so painting it
+    would be a no-op in light mode and would burn a light pastel onto dark paper in dark mode.
+    Blank now means "the theme decides", following `CategoryManagerScreen`'s existing
+    `!= ACCENT_SOFT_HEX` gate
+  - `reconcile` and any unknown kind share `Neutral` rather than `Out`, matching `signedBase`'s
+    refusal to assume a newer build's kind moves money in either direction
+- Not done / deferred: Home's hero still totals expenses only while its list mixes kinds, so an
+  income row sits under a spend total. Stories' day header has the same split (`dayTotalLabel` vs
+  `dayIncomeLabel`, swapped only when the filter is on `Income`). The rows now say which is which;
+  the headers above them still do not
+- Blocked: none

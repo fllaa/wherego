@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.flla.wherego.core.designsystem.component.TxAmountTone
 import com.flla.wherego.core.designsystem.component.WheregoBadge
 import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.WheregoMeter
@@ -323,6 +324,7 @@ fun StoriesScreen(
                             },
                             subtitle = tx.time?.let { "$it · $name" } ?: name,
                             amountLabel = tx.amountLabel,
+                            tone = TxAmountTone.ofPolarity(TransactionKind.polarity(tx.kind)),
                             badgeSoftHex = tx.badgeSoftHex,
                             hasReceipt = tx.hasReceipt,
                         )

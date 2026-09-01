@@ -239,7 +239,7 @@ class HomeViewModel @Inject constructor(
             time = time,
             amountLabel = MoneyFormatter.format(tx.amountMinor, currency),
             emoji = category?.emoji ?: "📦",
-            badgeSoftHex = category?.softColorHex ?: PresetCategories.softHex(tx.categoryId),
+            badgeSoftHex = PresetCategories.customSoftHex(category?.softColorHex),
             transaction = tx,
             hasReceipt = tx.receiptId != null,
         )

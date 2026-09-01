@@ -68,6 +68,18 @@ object PresetCategories {
     fun softHex(id: String): String =
         all.firstOrNull { it.id == id }?.softColorHex ?: ACCENT_SOFT_HEX
 
+    /**
+     * A category's own soft fill, or blank when it carries no choice of its own.
+     *
+     * Every preset shares [ACCENT_SOFT_HEX], so a row badge painted with it would only restate
+     * the theme's own soft accent — and would do it with a fixed light pastel that ignores dark
+     * mode. Only a custom category picks a colour worth honouring, so presets collapse to blank
+     * and let the theme decide.
+     */
+    fun customSoftHex(softColorHex: String?): String =
+        softColorHex?.takeIf { it.isNotBlank() && !it.equals(ACCENT_SOFT_HEX, ignoreCase = true) }
+            ?: ""
+
     fun strongHex(id: String): String =
         all.firstOrNull { it.id == id }?.colorHex ?: ACCENT_HEX
 }

@@ -56,13 +56,9 @@ object BalanceSeries {
     val ORDER: Comparator<Transaction> =
         compareBy({ it.occurredOn }, { it.createdAt }, { it.id })
 
-    fun signedBase(kind: String, amountBaseMinor: Long): Long = when (kind) {
-        TransactionKind.EXPENSE -> -amountBaseMinor
-        TransactionKind.INCOME, TransactionKind.ADJUSTMENT -> amountBaseMinor
-        // A reconcile row asserts a total; it moves nothing. An unknown kind from a newer build
-        // is not assumed to be money in either.
-        else -> 0L
-    }
+    /** [TransactionKind.polarity] applied to the base amount. */
+    fun signedBase(kind: String, amountBaseMinor: Long): Long =
+        TransactionKind.polarity(kind) * amountBaseMinor
 
     /** The newest row asserting what the pot totalled, or `null` before the first one. */
     fun anchor(txs: List<Transaction>): Transaction? {

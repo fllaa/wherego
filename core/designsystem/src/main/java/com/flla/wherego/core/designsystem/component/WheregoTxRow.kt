@@ -17,16 +17,49 @@ import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import com.flla.wherego.core.i18n.R
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
+import com.flla.wherego.core.designsystem.theme.parseHexColor
+import com.flla.wherego.core.i18n.R
 
 private val CardShape = RoundedCornerShape(22.dp)
+
+/**
+ * Which way a row's amount moves the pot, as the row draws it.
+ *
+ * The design system stays clear of the domain vocabulary, so callers map their own kind onto a
+ * tone — `TxAmountTone.ofPolarity(TransactionKind.polarity(kind))` — which keeps the polarity
+ * rule itself in one place in `:core:model`.
+ */
+enum class TxAmountTone {
+    /** Money out. Drawn plain, since spending is the common case and needs no decoration. */
+    Out,
+
+    /** Money in. Drawn with a `+` and the accent, so it cannot be mistaken for a spend. */
+    In,
+
+    /**
+     * Moves nothing — a balance assertion, or a kind this build does not know. Drawn muted so it
+     * reads as bookkeeping rather than as a spend of that size.
+     */
+    Neutral,
+    ;
+
+    companion object {
+        /** Maps a domain polarity (`-1` out, `+1` in, `0` neither) onto a tone. */
+        fun ofPolarity(polarity: Int): TxAmountTone = when {
+            polarity > 0 -> In
+            polarity < 0 -> Out
+            else -> Neutral
+        }
+    }
+}
 
 @Composable
 fun WheregoTxRow(
@@ -34,11 +67,18 @@ fun WheregoTxRow(
     title: String,
     subtitle: String,
     amountLabel: String,
+    tone: TxAmountTone,
     badgeSoftHex: String,
     modifier: Modifier = Modifier,
     hasReceipt: Boolean = false,
 ) {
     val colors = WheregoTheme.colors
+    // Blank means "no colour of its own" — every preset category shares one soft hex, and painting
+    // that on the badge would only restate `tealSoft` in light mode while burning a light pastel
+    // onto dark paper in dark mode. Custom categories carry a real choice, so they win.
+    val badgeColor = remember(badgeSoftHex, colors.tealSoft) {
+        if (badgeSoftHex.isBlank()) colors.tealSoft else parseHexColor(badgeSoftHex)
+    }
     Row(
         modifier
             .fillMaxWidth()
@@ -50,7 +90,7 @@ fun WheregoTxRow(
         Box(
             Modifier
                 .size(42.dp)
-                .background(colors.tealSoft, RoundedCornerShape(21.dp)),
+                .background(badgeColor, RoundedCornerShape(21.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Text(emoji, fontSize = 19.sp)
@@ -73,6 +113,15 @@ fun WheregoTxRow(
                 }
             }
         }
-        Text(amountLabel, style = WheregoType.txAmount, color = colors.ink)
+        Text(
+            // The sign carries the distinction without relying on colour alone.
+            if (tone == TxAmountTone.In) "+$amountLabel" else amountLabel,
+            style = WheregoType.txAmount,
+            color = when (tone) {
+                TxAmountTone.In -> colors.tealDeep
+                TxAmountTone.Out -> colors.ink
+                TxAmountTone.Neutral -> colors.muted
+            },
+        )
     }
 }

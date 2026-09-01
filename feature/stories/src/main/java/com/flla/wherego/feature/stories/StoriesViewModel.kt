@@ -248,7 +248,7 @@ class StoriesViewModel @Inject constructor(
             categoryName = category?.name,
             time = time,
             amountLabel = MoneyFormatter.format(amountMinor, currency),
-            badgeSoftHex = category?.softColorHex ?: PresetCategories.softHex(categoryId),
+            badgeSoftHex = PresetCategories.customSoftHex(category?.softColorHex),
             hasReceipt = receiptId != null,
         )
     }

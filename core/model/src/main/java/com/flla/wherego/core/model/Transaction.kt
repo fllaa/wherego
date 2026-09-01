@@ -43,4 +43,18 @@ object TransactionKind {
      * one-day streak for typing an opening balance.
      */
     fun isActivity(kind: String): Boolean = kind != RECONCILE
+
+    /**
+     * Which way the row moves money: `-1` out, `+1` in, `0` neither.
+     *
+     * [BalanceSeries.signedBase] applies this to the base amount and the transaction rows apply
+     * it to their colour and sign, so the arithmetic and the UI cannot disagree about what
+     * counts as money in. A reconcile row asserts a total rather than moving anything, and an
+     * unknown kind from a newer build is not assumed to move money either — both are `0`.
+     */
+    fun polarity(kind: String): Int = when (kind) {
+        EXPENSE -> -1
+        INCOME, ADJUSTMENT -> 1
+        else -> 0
+    }
 }

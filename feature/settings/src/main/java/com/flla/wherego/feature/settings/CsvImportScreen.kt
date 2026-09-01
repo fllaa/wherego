@@ -45,6 +45,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.flla.wherego.core.designsystem.component.TxAmountTone
 import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.WheregoOnboardTopBar
 import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
@@ -396,7 +397,10 @@ private fun PreviewStep(preview: List<CsvRow>, total: Int, @StringRes errorRes: 
                     title = row.note.ifBlank { row.category.ifBlank { kindLabel(row.kind) } },
                     subtitle = "${row.date} · ${kindLabel(row.kind)}",
                     amountLabel = previewAmount(row),
-                    badgeSoftHex = "#D7E3F8",
+                    tone = TxAmountTone.ofPolarity(
+                        TransactionKind.polarity(row.kind.trim().lowercase()),
+                    ),
+                    badgeSoftHex = "",
                 )
             }
         }
