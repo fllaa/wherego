@@ -14,11 +14,16 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
+interface ReceiptOcr {
+    /** Recognized text, or empty when nothing could be read. Never throws. */
+    suspend fun read(file: File): String
+}
+
 @Singleton
-class ReceiptOcr @Inject constructor(
+class MlKitReceiptOcr @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
-    suspend fun read(file: File): String = withContext(Dispatchers.IO) {
+) : ReceiptOcr {
+    override suspend fun read(file: File): String = withContext(Dispatchers.IO) {
         if (!file.exists()) return@withContext ""
         try {
             val image = InputImage.fromFilePath(context, Uri.fromFile(file))
@@ -40,4 +45,11 @@ class ReceiptOcr @Inject constructor(
             ""
         }
     }
+}
+
+/** Test double. Production binds MlKitReceiptOcr, whose model cannot run off-device. */
+@Singleton
+class FakeReceiptOcr @Inject constructor() : ReceiptOcr {
+    var text: String = ""
+    override suspend fun read(file: File): String = text
 }

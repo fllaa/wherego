@@ -199,6 +199,7 @@
     <string name="receipt_photo_replace">Replace photo</string>
     <string name="receipt_photo_remove">Remove photo</string>
     <string name="receipt_ocr_banner_title">Receipt found: %1$s</string>
+    <string name="receipt_ocr_banner_unsure">Best guess: %1$s</string>
     <string name="receipt_camera">Camera</string>
     <string name="receipt_gallery">Gallery</string>
     <string name="receipt_err_save_photo">Couldn\'t save the photo</string>

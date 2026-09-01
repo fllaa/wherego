@@ -13,6 +13,7 @@ import com.flla.wherego.core.database.zoneOf
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
+import com.flla.wherego.core.model.OcrAmount
 import com.flla.wherego.core.model.OcrAmountParser
 import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.Transaction
@@ -35,7 +36,7 @@ data class CaptureUiState(
     val editingId: String? = null,
     val receiptId: String? = null,
     val isReadingOcr: Boolean = false,
-    val ocrSuggestedAmount: Long? = null,
+    val ocrSuggestion: OcrAmount? = null,
     val kind: String = TransactionKind.EXPENSE,
     val digits: String = "",
     val categoryId: String? = null,
@@ -111,7 +112,7 @@ class CaptureViewModel @Inject constructor(
                     editingId = null,
                     receiptId = null,
                     isReadingOcr = initialReceiptUri != null,
-                    ocrSuggestedAmount = null,
+                    ocrSuggestion = null,
                     kind = TransactionKind.EXPENSE,
                     digits = "",
                     categoryId = null,
@@ -142,7 +143,7 @@ class CaptureViewModel @Inject constructor(
                     editingId = tx.id,
                     receiptId = tx.receiptId,
                     isReadingOcr = false,
-                    ocrSuggestedAmount = null,
+                    ocrSuggestion = null,
                     kind = tx.kind,
                     digits = DigitBuffer.replace(tx.amountMinor),
                     categoryId = tx.categoryId,
@@ -172,25 +173,24 @@ class CaptureViewModel @Inject constructor(
             upload.enqueue(row.id)
             val raw = ocr.read(File(row.localPath))
             val currency = _state.value.currency
-            val amount = OcrAmountParser.parseLargest(raw, currency)
-            receipts.recordOcr(row.id, raw, amount)
+            val parsed = OcrAmountParser.parse(raw, currency)
+            receipts.recordOcr(row.id, raw, parsed?.minor)
             _state.update { s ->
-                val shouldAutoApply = autoApplyAmount || s.digits.isBlank() || s.amountMinor == 0L
-                val newDigits = if (shouldAutoApply && amount != null) {
-                    DigitBuffer.replace(amount)
-                } else {
-                    s.digits
-                }
-                val suggested = if (!shouldAutoApply && amount != null && amount != s.amountMinor) {
-                    amount
+                val wantsFill = autoApplyAmount || s.digits.isBlank() || s.amountMinor == 0L
+                // An unanchored read is only the largest number left once the reference numbers
+                // were thrown out — a guess. It may be offered, never written into the amount,
+                // no matter how empty the buffer is or how the sheet was opened.
+                val fill = if (parsed != null && parsed.anchored && wantsFill) parsed.minor else null
+                val offer = if (fill == null && parsed != null && parsed.minor != s.amountMinor) {
+                    parsed
                 } else {
                     null
                 }
                 s.copy(
                     receiptId = row.id,
                     isReadingOcr = false,
-                    digits = newDigits,
-                    ocrSuggestedAmount = suggested,
+                    digits = if (fill != null) DigitBuffer.replace(fill) else s.digits,
+                    ocrSuggestion = offer,
                 )
             }
         }
@@ -198,20 +198,20 @@ class CaptureViewModel @Inject constructor(
 
     fun applySuggestedOcrAmount() {
         _state.update { s ->
-            val suggested = s.ocrSuggestedAmount ?: return@update s
+            val suggestion = s.ocrSuggestion ?: return@update s
             s.copy(
-                digits = DigitBuffer.replace(suggested),
-                ocrSuggestedAmount = null,
+                digits = DigitBuffer.replace(suggestion.minor),
+                ocrSuggestion = null,
             )
         }
     }
 
     fun dismissSuggestedOcrAmount() {
-        _state.update { it.copy(ocrSuggestedAmount = null) }
+        _state.update { it.copy(ocrSuggestion = null) }
     }
 
     fun removeReceipt() {
-        _state.update { it.copy(receiptId = null, ocrSuggestedAmount = null) }
+        _state.update { it.copy(receiptId = null, ocrSuggestion = null) }
     }
 
     fun onKind(kind: String) {

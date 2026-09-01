@@ -1,5 +1,7 @@
 package com.flla.wherego.feature.capture
 
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.flla.wherego.core.common.UlidGenerator
@@ -9,10 +11,13 @@ import com.flla.wherego.core.database.LedgerStore
 import com.flla.wherego.core.database.ReceiptStore
 import com.flla.wherego.core.database.UserProfileStore
 import com.flla.wherego.core.database.WheregoDatabase
+import com.flla.wherego.core.model.OcrAmount
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
 import com.flla.wherego.core.sync.ReceiptUploadScheduler
 import com.flla.wherego.core.sync.SyncScheduler
+import java.io.File
+import java.io.FileOutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -48,7 +53,7 @@ class CaptureViewModelTest {
     private lateinit var profiles: UserProfileStore
     private lateinit var fxRates: FxRateStore
     private lateinit var receipts: ReceiptStore
-    private lateinit var ocr: ReceiptOcr
+    private lateinit var ocr: FakeReceiptOcr
     private lateinit var upload: ReceiptUploadScheduler
     private lateinit var syncScheduler: SyncScheduler
     private lateinit var ulid: UlidGenerator
@@ -66,7 +71,7 @@ class CaptureViewModelTest {
         profiles = UserProfileStore(db.userProfileDao(), ulid, clock)
         fxRates = FxRateStore(db.fxRateDao(), clock)
         receipts = ReceiptStore(context, db.receiptDao(), ledger, ulid, clock)
-        ocr = ReceiptOcr(context)
+        ocr = FakeReceiptOcr()
         upload = ReceiptUploadScheduler(context)
         syncScheduler = SyncScheduler(context)
         runBlocking {
@@ -108,11 +113,11 @@ class CaptureViewModelTest {
         assertNull(state.receiptId)
         assertFalse(state.hasReceipt)
         assertFalse(state.isReadingOcr)
-        assertNull(state.ocrSuggestedAmount)
+        assertNull(state.ocrSuggestion)
     }
 
     @Test
-    fun ocrAmountSuggestionApplyAndDismiss() = runBlocking {
+    fun dismissAndRemoveClearReceiptState() = runBlocking {
         val vm = createViewModel()
         vm.beginCreate()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -125,13 +130,82 @@ class CaptureViewModelTest {
 
         // Dismiss OCR suggestion
         vm.dismissSuggestedOcrAmount()
-        assertNull(vm.state.value.ocrSuggestedAmount)
+        assertNull(vm.state.value.ocrSuggestion)
 
         // Remove receipt
         vm.removeReceipt()
         assertNull(vm.state.value.receiptId)
         assertFalse(vm.state.value.hasReceipt)
     }
+
+    /**
+     * The BCA QRIS slip that started this: its `RRN` is nine digits, so the old largest-number
+     * read filled Rp 347.260.430 for a Rp 10.000 snack.
+     */
+    @Test
+    fun theQrisSlipFillsTheTotalNotTheReferenceNumber() = runBlocking {
+        val vm = createViewModel()
+        vm.beginCreate()
+        settle { vm.state.value.draftId.isNotBlank() }
+
+        ocr.text = BCA_QRIS_SLIP
+        vm.attachReceipt(receiptUri(), autoApplyAmount = true)
+        settle { vm.state.value.receiptId != null && !vm.state.value.isReadingOcr }
+
+        assertEquals(10_000L, vm.state.value.amountMinor)
+        assertNull("an anchored read fills the amount, it does not nag", vm.state.value.ocrSuggestion)
+    }
+
+    /**
+     * Nothing on this photo names money, so the parser is guessing. A guess may be offered and
+     * must never be written in — not even by fast scan, whose whole point is to fill the amount.
+     */
+    @Test
+    fun anUnanchoredReadIsOfferedButNeverFilledIn() = runBlocking {
+        val vm = createViewModel()
+        vm.beginCreate()
+        settle { vm.state.value.draftId.isNotBlank() }
+
+        ocr.text = "25.000"
+        vm.attachReceipt(receiptUri(), autoApplyAmount = true)
+        settle { vm.state.value.receiptId != null && !vm.state.value.isReadingOcr }
+
+        assertEquals("a guess must not reach the amount", "", vm.state.value.digits)
+        assertEquals(OcrAmount(25_000L, anchored = false), vm.state.value.ocrSuggestion)
+
+        vm.applySuggestedOcrAmount()
+        assertEquals(25_000L, vm.state.value.amountMinor)
+        assertNull(vm.state.value.ocrSuggestion)
+    }
+
+    /** A real JPEG, because `ReceiptStore.ingest` decodes and rescales before any OCR runs. */
+    private fun receiptUri(): Uri {
+        val file = File.createTempFile("receipt", ".jpg")
+        val bitmap = Bitmap.createBitmap(240, 320, Bitmap.Config.ARGB_8888)
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        bitmap.recycle()
+        return Uri.fromFile(file)
+    }
+
+    /** As ML Kit concatenates the blocks of a BCA QRIS success screen, status bar included. */
+    private val BCA_QRIS_SLIP = """
+        16:59
+        7.16 KB/s
+        94
+        BCA
+        QRIS Payment Successful
+        01 Sep 2026 12:15:20
+        IDR 10,000.00
+        Payment to
+        Batagor cilok, CGK
+        Acquirer
+        GOPAY
+        RRN
+        347260430
+        View Details
+        Done
+    """.trimIndent()
+
     @Test
     fun savePersistsDraftWithReceiptId() = runBlocking {
         val vm = createViewModel()

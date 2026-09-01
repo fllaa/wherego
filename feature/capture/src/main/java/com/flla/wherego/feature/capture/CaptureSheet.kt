@@ -293,8 +293,15 @@ private fun CaptureSheetBody(
             )
         }
         AmountDisplay(state = state)
-        if (state.ocrSuggestedAmount != null) {
-            val label = MoneyFormatter.format(state.ocrSuggestedAmount, state.currency)
+        val suggestion = state.ocrSuggestion
+        if (suggestion != null) {
+            val label = MoneyFormatter.format(suggestion.minor, state.currency)
+            // A guess says so. Only a read anchored to an amount label claims the receipt.
+            val title = if (suggestion.anchored) {
+                stringResource(R.string.receipt_ocr_banner_title, label)
+            } else {
+                stringResource(R.string.receipt_ocr_banner_unsure, label)
+            }
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -306,7 +313,7 @@ private fun CaptureSheetBody(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.receipt_ocr_banner_title, label),
+                    text = title,
                     style = WheregoType.meta,
                     color = colors.ink,
                 )

@@ -956,3 +956,51 @@
   `capture_balance_helper`, `plan_empty_recurring`, `stories_balance_anchor`,
   `me_recurring_plan_owns`, `danger_err_failed`) which predate this slice and are copy, not lock
 - Blocked: none
+
+## 2026-09-01  T1740  ocr-anchoring
+- Goal: a BCA QRIS screenshot auto-filled **Rp 347.260.430** for a Rp 10.000 snack. `RRN
+  347260430` is nine digits and no calendar year, so `parseLargest`'s largest-number-wins read the
+  reference number as the spend. Every Indonesian bank and e-wallet slip carries one
+- Files changed:
+  - `:core:model` — `OcrAmount.kt`: `parseLargest` → `parse` returning `OcrAmount(minor, anchored)`.
+    Line-oriented: each line is AMOUNT (`total|jumlah|nominal|tagihan|idr|rp|usd|$`…), REF
+    (`rrn|ref|trace|invoice|va|npwp|mid|tid|id|no`…) or NEUTRAL; REF candidates are **dropped**, not
+    outranked. A label alone on its line lends its role to the line below; a line carrying its own
+    digits does not
+  - `:feature:capture` — `ReceiptOcr` split into interface + `MlKitReceiptOcr` + `FakeReceiptOcr`,
+    bound by new `CaptureModule`. `CaptureUiState.ocrSuggestedAmount: Long?` →
+    `ocrSuggestion: OcrAmount?`. `attachReceipt` only self-fills an **anchored** parse; a guess is
+    offered and never written. `ReceiptViewModel` migrated to `parse`
+  - `:core:i18n` — `receipt_ocr_banner_unsure` (`Best guess: %1$s` / `Kayaknya %1$s`); the banner
+    picks its copy off `suggestion.anchored`
+- Commands:
+  - `./gradlew testDebugUnitTest :app:assembleDebug` → SUCCESS, **141 tests, 0 failures**
+  - `OcrAmountTest` 10 passed, `CaptureViewModelTest` 8 passed
+- Decisions:
+  - An amount word **outranks** a reference word on the same line, so `Total Transaksi` still
+    anchors. A REF line's numbers are discarded outright: filling nothing beats filling an invoice
+    number, and a null parse just leaves the user typing
+  - Role inheritance stops at any line with digits. Without that rule `Total Rp 28.000` would bless
+    the `Tunai 50.000` beneath it — and `Tunai` is cash tendered, not the spend. This corrected
+    `largestIdrFromReceiptBlob`, which asserted 50.000 and encoded the bug; it is now
+    `totalBeatsCashTenderedAndChange` at 28.000
+  - Confidence rides **inside** `ocrSuggestion` rather than as a parallel boolean, so the value and
+    its trustworthiness cannot desync
+  - The gate makes the old copy honest: `dev-plan.md:462` says never auto-post a guess, but fast
+    scan and any blank amount buffer auto-applied whatever came back. Now only a labelled read fills
+  - Degrades safely under any ML Kit block splitting: `RRN` and its digits on one line → REF; split
+    across lines → inherited REF; and if nothing anchors at all the result is a guess, which cannot
+    reach the amount
+  - `ReceiptOcr` became an interface because the ML Kit model cannot run off-device, which is why
+    `CaptureViewModelTest` could construct it but never call `attachReceipt`
+- Not done / deferred: **on-device verification of real ML Kit output is unproven.** Installed on
+  `emulator-5554`, drove Home → sheet → photo → Gallery, but the system photo picker never returned
+  a selection to the app: after confirming, the app's own logs show no `ingest` and no
+  `TextRecognition` activity, and the sheet stayed at `Rp 0` with an unattached chip. Pre-existing
+  picker behaviour — `ingest`/`compressTo`/the launcher were not touched by this slice, and
+  `CaptureViewModelTest` exercises `ingest` on a real JPEG. Also unproven: whether ML Kit splits
+  `IDR` from `10,000.00` (both splits anchor, so the outcome is the same). While driving the
+  emulator I removed `files/datastore/wherego_lock.preferences_pb` to get past the PIN gate — the
+  app lock on that emulator is now off and needs setting again from Me; the Room ledger and
+  `wherego_prefs` were untouched. Display density and the Pixel Launcher were restored
+- Blocked: none

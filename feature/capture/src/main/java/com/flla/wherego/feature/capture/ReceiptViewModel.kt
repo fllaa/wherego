@@ -57,7 +57,9 @@ class ReceiptViewModel @Inject constructor(
             upload.enqueue(row.id)
             val raw = ocr.read(File(row.localPath))
             val currency = profiles.profile.first()?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
-            val amount = OcrAmountParser.parseLargest(raw, currency)
+            // This dialog confirms every read before it touches the ledger, so an unanchored
+            // parse needs no extra gate here — unlike the capture sheet, which can self-fill.
+            val amount = OcrAmountParser.parse(raw, currency)?.minor
             receipts.recordOcr(row.id, raw, amount)
             _state.update {
                 it.copy(
