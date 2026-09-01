@@ -192,6 +192,9 @@
     <string name="plan_cta_remove">Hapus</string>
     <string name="plan_recurring_detail">%1$s · berikutnya %2$s</string>
     <string name="plan_field_note">Catatan</string>
+    <string name="plan_field_first_due">Jatuh tempo pertama</string>
+    <string name="plan_chip_today">Hari ini</string>
+    <string name="plan_chip_pick_date">Pilih tanggal</string>
     <string name="plan_sheet_set_aside">Sisihin</string>
     <string name="plan_field_name">Nama</string>
     <string name="plan_tab_now">Sekarang</string>

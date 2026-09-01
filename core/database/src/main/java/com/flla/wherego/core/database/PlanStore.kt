@@ -133,6 +133,7 @@ class PlanStore @Inject constructor(
         return existing.copy(updatedAt = clock.millis())
     }
 
+    /** [firstOn] is the day the bill first falls due; it seeds both `startOn` and `nextOn`. */
     suspend fun newRule(
         kind: String,
         amountMinor: Long,
@@ -142,10 +143,9 @@ class PlanStore @Inject constructor(
         freq: String,
         dayOfMonth: Int?,
         weekday: Int?,
-        zoneId: ZoneId,
+        firstOn: LocalDate,
     ): RecurringRule {
-        val today = LocalDate.now(clock.withZone(zoneId))
-        val nextOn = today.toString()
+        val startOn = firstOn.toString()
         val rule = RecurringRule(
             id = ulid.next(),
             kind = kind,
@@ -157,9 +157,9 @@ class PlanStore @Inject constructor(
             interval = 1,
             dayOfMonth = dayOfMonth,
             weekday = weekday,
-            startOn = nextOn,
+            startOn = startOn,
             endOn = null,
-            nextOn = nextOn,
+            nextOn = startOn,
             remindDaysBefore = 0,
             autoPost = false,
             updatedAt = clock.millis(),

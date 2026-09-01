@@ -324,3 +324,29 @@
   - Fast Scan: long-pressing `+` opens camera $\to$ OCR auto-fills amount and opens sheet for 1-tap categorization
 - Blocked: none
 
+## 2026-09-01  T0753  ux-recurring-date
+- Goal: a recurring bill's first due date is the user's pick, not forced to today
+- Files changed:
+  - `:core:database` — `PlanStore.newRule` takes `firstOn: LocalDate` (seeds `startOn` + `nextOn`)
+    instead of deriving today from `zoneId`
+  - `:feature:plan` — `PlanUiState.today`; `addRule` derives `dayOfMonth`/`weekday` from the picked
+    date; new `BillSheet` with a `First due` chip row and `FirstDuePicker`; `AmountCategorySheet` is
+    budget-only again (note plumbing dropped); `ChipPill` extracted from `CategoryChipRow`; rule card
+    prints `dayTitle(nextOn)`
+  - `:feature:settings` — `Me → Recurring` detail prints `dayTitle(nextOn)`, not the ISO string
+  - `:core:i18n` — `plan_field_first_due`, `plan_chip_today`, `plan_chip_pick_date` (en + in)
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :app: :core:database: :core:model: :feature:capture:testDebugUnitTest` → SUCCESS
+  - on `emulator-5554`: added `Wifi` 25rb first due `Sat 26 Sep`; card reads
+    `Monthly · next Sat 26 Sep`; row is `dayOfMonth=26 startOn=nextOn=2026-09-26`; Home due inbox
+    stayed empty; August greyed out in the calendar; `in-ID` app locale renders
+    `Jatuh tempo pertama / Hari ini / Pilih tanggal`
+- Decisions:
+  - `dayOfMonth` now comes from the picked date. It was hardcoded `1` at the call site while the
+    first hit was today, so a bill added on the 15th jumped to the 1st on its second hit
+  - The calendar floor is today. An earlier first due is overdue the moment it is saved, and
+    `DueReminder` coerces a negative delay to `0` — the notification would fire at save time
+  - Frequency stays monthly (the sheet never offered a choice). `weekday` is derived anyway so the
+    stored row is already right when a weekly toggle lands
+- Blocked: none

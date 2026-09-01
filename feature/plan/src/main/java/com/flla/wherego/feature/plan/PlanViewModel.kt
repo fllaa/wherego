@@ -69,6 +69,7 @@ data class PlanUiState(
     val monthId: String = YearMonth.now().toString(),
     val month: YearMonth = YearMonth.now(),
     val currentMonth: YearMonth = YearMonth.now(),
+    val today: LocalDate = LocalDate.now(),
     val monthChoices: List<PlanMonthChoice> = emptyList(),
     val monthSpentMinor: Long = 0L,
     val capTotalMinor: Long = 0L,
@@ -120,6 +121,7 @@ class PlanViewModel @Inject constructor(
                 monthId = ym.toString(),
                 month = ym,
                 currentMonth = current,
+                today = today,
                 monthChoices = monthChoices(current),
                 monthSpentMinor = monthSpent,
                 capTotalMinor = capTotal,
@@ -191,7 +193,7 @@ class PlanViewModel @Inject constructor(
         categoryId: String,
         note: String,
         freq: String,
-        dayOfMonth: Int?,
+        firstOn: LocalDate,
     ) {
         viewModelScope.launch {
             val rule = plan.newRule(
@@ -201,9 +203,9 @@ class PlanViewModel @Inject constructor(
                 categoryId = categoryId,
                 note = note,
                 freq = freq,
-                dayOfMonth = if (freq == Recurrence.MONTHLY) dayOfMonth else null,
-                weekday = null,
-                zoneId = zone,
+                dayOfMonth = if (freq == Recurrence.MONTHLY) firstOn.dayOfMonth else null,
+                weekday = if (freq == Recurrence.WEEKLY) firstOn.dayOfWeek.value else null,
+                firstOn = firstOn,
             )
             reminder.schedule(rule, zone)
         }

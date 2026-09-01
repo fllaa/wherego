@@ -22,8 +22,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,11 +58,15 @@ import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.dayTitle
 import com.flla.wherego.core.i18n.monthLabel
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.RecurringRule
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @Composable
 fun PlanRoute(
@@ -81,7 +91,7 @@ fun PlanScreen(
     onSelectMonth: (String) -> Unit,
     onAddBudget: (String?, Long) -> Unit,
     onDeleteBudget: (String) -> Unit,
-    onAddRule: (Long, String, String, String, Int?) -> Unit,
+    onAddRule: (amountMinor: Long, categoryId: String, note: String, freq: String, firstOn: LocalDate) -> Unit,
     onDeleteRule: (String) -> Unit,
     onAddGoal: (String, Long, Long) -> Unit,
     onDeleteGoal: (String) -> Unit,
@@ -264,24 +274,20 @@ fun PlanScreen(
             currency = state.currency,
             confirmLabel = stringResource(R.string.plan_cta_set_it),
             onDismiss = { budgetSheet = false },
-            onConfirm = { catId, amount, _ ->
+            onConfirm = { catId, amount ->
                 onAddBudget(catId, amount)
                 budgetSheet = false
             },
         )
     }
     if (ruleSheet) {
-        AmountCategorySheet(
-            title = stringResource(R.string.plan_sheet_add_bill),
+        BillSheet(
             categories = state.categories.map { it.id to "${it.emoji} ${categoryDisplayName(it.id, it.name)}" },
             currency = state.currency,
-            showNote = true,
-            confirmLabel = stringResource(R.string.plan_cta_add_it),
+            today = state.today,
             onDismiss = { ruleSheet = false },
-            onConfirm = { catId, amount, note ->
-                if (catId != null) {
-                    onAddRule(amount, catId, note, Recurrence.MONTHLY, 1)
-                }
+            onConfirm = { catId, amount, note, firstOn ->
+                onAddRule(amount, catId, note, Recurrence.MONTHLY, firstOn)
                 ruleSheet = false
             },
         )
@@ -434,7 +440,11 @@ private fun RuleCard(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(name, style = WheregoType.txTitle, color = colors.ink)
             Text(
-                stringResource(R.string.plan_recurring_detail, freqLabel(rule.freq), rule.nextOn),
+                stringResource(
+                    R.string.plan_recurring_detail,
+                    freqLabel(rule.freq),
+                    dayTitle(LocalDate.parse(rule.nextOn)),
+                ),
                 style = WheregoType.meterDetail,
                 color = colors.muted,
             )
@@ -456,20 +466,15 @@ private fun AmountCategorySheet(
     title: String,
     categories: List<Pair<String?, String>>,
     currency: String,
-    showNote: Boolean = false,
     confirmLabel: String,
     onDismiss: () -> Unit,
-    onConfirm: (String?, Long, String) -> Unit,
+    onConfirm: (categoryId: String?, amountMinor: Long) -> Unit,
 ) {
     var digits by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(categories.firstOrNull()?.first) }
     val amount = DigitBuffer.amountMinor(digits)
     WheregoBottomSheet(title = title, onDismiss = onDismiss) {
         AmountReadout(amountMinor = amount, currency = currency)
-        if (showNote) {
-            SheetField(label = stringResource(R.string.plan_field_note), value = note, onValueChange = { note = it.take(40) })
-        }
         CategoryChipRow(
             categories = categories,
             selected = selected,
@@ -481,12 +486,132 @@ private fun AmountCategorySheet(
         )
         WheregoPrimaryButton(
             label = confirmLabel,
-            onClick = { onConfirm(selected, amount, note) },
-            enabled = amount > 0L && (!showNote || selected != null),
+            onClick = { onConfirm(selected, amount) },
+            enabled = amount > 0L,
             icon = Icons.Outlined.Check,
         )
     }
 }
+
+/**
+ * `Plan / Add a bill`. The first due date belongs to the user, not the clock: it seeds
+ * `startOn`/`nextOn` and, for a monthly rule, the day of month every later hit lands on.
+ */
+@Composable
+private fun BillSheet(
+    categories: List<Pair<String?, String>>,
+    currency: String,
+    today: LocalDate,
+    onDismiss: () -> Unit,
+    onConfirm: (categoryId: String, amountMinor: Long, note: String, firstOn: LocalDate) -> Unit,
+) {
+    val colors = WheregoTheme.colors
+    var digits by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var selected by remember { mutableStateOf(categories.firstOrNull()?.first) }
+    var firstOn by remember { mutableStateOf(today) }
+    var picking by remember { mutableStateOf(false) }
+    val amount = DigitBuffer.amountMinor(digits)
+    WheregoBottomSheet(title = stringResource(R.string.plan_sheet_add_bill), onDismiss = onDismiss) {
+        AmountReadout(amountMinor = amount, currency = currency)
+        SheetField(
+            label = stringResource(R.string.plan_field_note),
+            value = note,
+            onValueChange = { note = it.take(40) },
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(R.string.plan_field_first_due),
+                style = WheregoType.settingLabel,
+                color = colors.ink,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val isToday = firstOn == today
+                ChipPill(
+                    label = stringResource(R.string.plan_chip_today),
+                    selected = isToday,
+                    onClick = { firstOn = today },
+                )
+                ChipPill(
+                    label = if (isToday) stringResource(R.string.plan_chip_pick_date) else dayTitle(firstOn),
+                    selected = !isToday,
+                    onClick = { picking = true },
+                )
+            }
+        }
+        CategoryChipRow(
+            categories = categories,
+            selected = selected,
+            onSelect = { selected = it },
+        )
+        WheregoNumpad(
+            onDigit = { digits = DigitBuffer.append(digits, it) },
+            onBackspace = { digits = DigitBuffer.backspace(digits) },
+        )
+        WheregoPrimaryButton(
+            label = stringResource(R.string.plan_cta_add_it),
+            onClick = { selected?.let { onConfirm(it, amount, note, firstOn) } },
+            enabled = amount > 0L && selected != null,
+            icon = Icons.Outlined.Check,
+        )
+    }
+    if (picking) {
+        FirstDuePicker(
+            selected = firstOn,
+            earliest = today,
+            onDismiss = { picking = false },
+            onPicked = {
+                firstOn = it
+                picking = false
+            },
+        )
+    }
+}
+
+/**
+ * A bill that first falls due before today would be overdue on creation — and would fire its
+ * reminder the moment it was saved — so the calendar starts at [earliest].
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FirstDuePicker(
+    selected: LocalDate,
+    earliest: LocalDate,
+    onDismiss: () -> Unit,
+    onPicked: (LocalDate) -> Unit,
+) {
+    val floor = earliest.utcMillis()
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selected.utcMillis(),
+        yearRange = earliest.year..earliest.year + 5,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= floor
+            override fun isSelectableYear(year: Int): Boolean = year >= earliest.year
+        },
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val millis = pickerState.selectedDateMillis ?: return@TextButton
+                    onPicked(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                },
+            ) { Text(stringResource(R.string.dialog_ok)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
+        },
+    ) {
+        DatePicker(state = pickerState)
+    }
+}
+
+/** `DatePicker` speaks UTC midnight, whatever zone the user lives in. */
+private fun LocalDate.utcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
 @Composable
 private fun GoalSheet(
@@ -607,7 +732,6 @@ private fun CategoryChipRow(
     selected: String?,
     onSelect: (String?) -> Unit,
 ) {
-    val colors = WheregoTheme.colors
     Row(
         Modifier
             .fillMaxWidth()
@@ -616,24 +740,30 @@ private fun CategoryChipRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         categories.forEach { (id, label) ->
-            val on = selected == id
-            val pill = RoundedCornerShape(99.dp)
-            Text(
-                label,
-                style = WheregoType.chip,
-                color = if (on) colors.white else colors.ink,
-                modifier = Modifier
-                    .clip(pill)
-                    .background(if (on) colors.teal else colors.tealSoft)
-                    .border(
-                        BorderStroke(if (on) 2.5.dp else 2.dp, if (on) colors.ink else colors.tealSoft),
-                        pill,
-                    )
-                    .clickable { onSelect(id) }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-            )
+            ChipPill(label = label, selected = selected == id, onClick = { onSelect(id) })
         }
     }
+}
+
+/** The sheet pill: teal-soft when idle, solid teal under an ink hairline when picked. */
+@Composable
+private fun ChipPill(label: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = WheregoTheme.colors
+    val pill = RoundedCornerShape(99.dp)
+    Text(
+        label,
+        style = WheregoType.chip,
+        color = if (selected) colors.white else colors.ink,
+        modifier = Modifier
+            .clip(pill)
+            .background(if (selected) colors.teal else colors.tealSoft)
+            .border(
+                BorderStroke(if (selected) 2.5.dp else 2.dp, if (selected) colors.ink else colors.tealSoft),
+                pill,
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    )
 }
 
 @Composable

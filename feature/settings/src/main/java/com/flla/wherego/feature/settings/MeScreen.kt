@@ -80,6 +80,7 @@ import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.designsystem.theme.parseHexColor
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.dayTitle
 import com.flla.wherego.core.i18n.monthShort
 import com.flla.wherego.core.i18n.monthYear
 import com.flla.wherego.core.model.Category
@@ -88,6 +89,7 @@ import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.ThemeMode
+import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.launch
 
@@ -470,7 +472,7 @@ private fun recurringDetail(rule: RecurringSummary): String {
     } else {
         stringResource(R.string.freq_monthly)
     }
-    val next = stringResource(R.string.me_recurring_next, rule.nextOn)
+    val next = stringResource(R.string.me_recurring_next, dayTitle(LocalDate.parse(rule.nextOn)))
     return listOf(amount, freq, next).joinToString(" · ")
 }
 
