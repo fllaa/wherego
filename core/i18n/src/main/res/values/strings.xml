@@ -100,6 +100,9 @@
     <string name="lock_biometric_prompt_sub">Confirm it\'s you to open your ledger.</string>
     <string name="lock_biometric_negative">Use PIN</string>
     <string name="lock_biometric_unavailable">No biometrics on this device.</string>
+    <string name="lock_biometric_confirm_title">Confirm it\'s you</string>
+    <string name="lock_biometric_confirm_on">Scan to let biometrics open Wherego.</string>
+    <string name="lock_biometric_confirm_off">Scan to stop opening Wherego with biometrics.</string>
     <string name="lock_cd_biometric">Unlock with biometrics</string>
     <string name="lock_forgot">Forgot PIN?</string>
     <string name="lock_setup_title">Set a PIN</string>

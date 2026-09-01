@@ -100,6 +100,9 @@
     <string name="lock_biometric_prompt_sub">Pastiin ini kamu buat buka catatanmu.</string>
     <string name="lock_biometric_negative">Pakai PIN</string>
     <string name="lock_biometric_unavailable">Belum ada biometrik di HP ini.</string>
+    <string name="lock_biometric_confirm_title">Pastiin ini kamu</string>
+    <string name="lock_biometric_confirm_on">Scan buat ngizinin biometrik buka Wherego.</string>
+    <string name="lock_biometric_confirm_off">Scan buat berhentiin biometrik buka Wherego.</string>
     <string name="lock_cd_biometric">Buka pakai biometrik</string>
     <string name="lock_forgot">Lupa PIN?</string>
     <string name="lock_setup_title">Atur PIN</string>

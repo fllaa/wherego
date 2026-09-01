@@ -1004,3 +1004,60 @@
   app lock on that emulator is now off and needs setting again from Me; the Room ledger and
   `wherego_prefs` were untouched. Display density and the Pixel Launcher were restored
 - Blocked: none
+
+## 2026-09-01  T2141  biometric-toggle-gate
+- Goal: `Me → App lock → Unlock with biometrics` flipped the opt-in on a bare tap. Enabling it is
+  what makes every biometric enrolled on the handset equivalent to the PIN, and the tap proved
+  nothing about who was holding the phone — nor that the sensor and enrolment still worked, so a
+  user could switch it on and only find out at the gate that it was useless
+- Files changed:
+  - `:feature:auth` — `LockSetupViewModel.toggleBiometric()` (read-then-negate) →
+    `setBiometricEnabled(on: Boolean)`, called only from a `BiometricGate` success. `LockManageRoute`
+    resolves the `FragmentActivity` the way `LockRoute` does and owns a local `confirmBiometric(on)`
+    that runs the prompt; `biometricAvailable` now also requires that activity, so the row can never
+    look tappable with no way to show a prompt
+  - `:core:i18n` — `lock_biometric_confirm_title` / `_confirm_on` / `_confirm_off` in `values` and
+    `values-in`. Direction-specific subtitles, because "scan to turn this on" and "scan to turn this
+    off" are different promises
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew testDebugUnitTest` → SUCCESS, **141 tests, 0 failures** (unchanged count)
+  - on `emulator-5554`, four legs, each read back from
+    `files/datastore/wherego_lock.preferences_pb` as protobuf bytes, not from the row alone:
+    tap while Off → `Window{… BiometricPrompt}` up and
+    `FingerprintAuthenticationClient owner=com.flla.wherego`, **no `biometric_enabled` key written**;
+    `emu finger touch 1` → `biometric_enabled 12 02 08 01` (true), row `On`; tap while On → prompt
+    up, `KEYCODE_BACK` to cancel → prompt gone, still `08 01`; tap → finger → `08 00`, row `Off`
+- Decisions:
+  - Both directions go through the sensor. Turning it **off** is not a downgrade of the gate, so the
+    argument for gating it is weaker — but a confirmation that only appears in one direction reads as
+    a glitch, and the cost is one scan
+  - The prompt is **not** a substitute for the PIN as the authority that grants the equivalence. Any
+    biometric enrolled on this device passes it, including a housemate's finger. What it does buy is
+    proof the credential works and that whoever is holding the phone can pass it — the same claim the
+    gate itself makes. Gating the toggle on the *PIN* would be the stronger check; it was not asked
+    for and would collide with `VerifyToDisable` owning that flow already
+  - Negative button is `dialog_cancel`, not `lock_biometric_negative` ("Use PIN"). There is nothing
+    to fall back **to** here: the screen already sits inside an unlocked session, so the button's
+    only job is to abandon the change
+  - `onFallback = {}`, matching `LockRoute`. Cancel, a finger that never matches and a sensor that
+    vanished mid-prompt all leave the row exactly as it was, and `BiometricPrompt` has already shown
+    its own error text in-dialog. A stuck-on flag is harmless: `LockRoute` re-probes availability on
+    every show, so it only ever offers what the hardware can still do
+  - The target is passed into `setBiometricEnabled` rather than re-derived from `state` inside it, so
+    the value written is the one the row displayed when tapped, not whatever the flow holds seconds
+    later when the prompt returns
+- Not done / deferred: no UI test covers this — the repo has no `androidTest` source set in any
+  module, and standing one up for a single composable is out of proportion to the change. The
+  emulator evidence above is the proof. Screenshots of the prompt itself are impossible:
+  `BiometricPrompt` is `FLAG_SECURE`, so `screencap` returns pure black while it is up, which is why
+  the window dump and the fingerprint client owner are cited instead. Also unchanged: `LockRoute`'s
+  `promptShown` is `remember`, not `rememberSaveable`, so a rotation or `AppLocale`'s `recreate()`
+  re-shows a gate prompt the user had dismissed
+- Emulator state: `emulator-5554` was wedged mid-session (black `screencap`, `mCurrentFocus=null`,
+  uiautomator "null root node") and needed `adb reboot`; its device PIN is **1234**, recovered with
+  `locksettings verify --old 1234`, and the post-reboot lockscreen needs it once before
+  `emu finger touch 1` works. The app lock was set to `111111` for the test and **turned back off**
+  afterwards, so the lock file is empty again, as the previous slice left it. `screen_off_timeout`
+  was raised to 1800000; `svc power stayon` was returned to false
+- Blocked: none

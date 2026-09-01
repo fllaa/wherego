@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flla.wherego.core.designsystem.component.GoMood
@@ -71,7 +72,34 @@ fun LockManageRoute(
     val colors = WheregoTheme.colors
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = context.findActivity() as? FragmentActivity
     val atRoot = state.step == LockSetupStep.Manage
+
+    val confirmTitle = stringResource(R.string.lock_biometric_confirm_title)
+    val confirmOn = stringResource(R.string.lock_biometric_confirm_on)
+    val confirmOff = stringResource(R.string.lock_biometric_confirm_off)
+    val confirmNegative = stringResource(R.string.dialog_cancel)
+
+    // Both directions of the opt-in go through the sensor, and the flag is written by the prompt's
+    // success callback rather than by the tap. Cancel, a finger that never matches and a sensor
+    // that has gone away all land in `onFallback`, which leaves the row exactly as it was — the
+    // safe outcome for turning it on, and no worse than today for turning it off, since a stuck-on
+    // flag still only offers what the gate re-probes for on every show.
+    //
+    // The negative button is `Cancel`, not `lock_biometric_negative`: there is no PIN fallback to
+    // offer here. This screen already sits inside an unlocked session, so the button's only job is
+    // to abandon the change.
+    fun confirmBiometric(on: Boolean) {
+        val target = activity ?: return
+        BiometricGate.prompt(
+            activity = target,
+            title = confirmTitle,
+            subtitle = if (on) confirmOn else confirmOff,
+            negative = confirmNegative,
+            onSuccess = { viewModel.setBiometricEnabled(on) },
+            onFallback = {},
+        )
+    }
 
     // A half-finished PIN entry backs out to the manage list, not out of the screen entirely.
     BackHandler(enabled = !atRoot) { viewModel.cancel() }
@@ -109,9 +137,9 @@ fun LockManageRoute(
             state.justEnabled -> EnabledBody()
             atRoot -> ManageBody(
                 state = state,
-                biometricAvailable = BiometricGate.available(context),
+                biometricAvailable = activity != null && BiometricGate.available(context),
                 onSetUp = viewModel::startSetup,
-                onToggleBiometric = viewModel::toggleBiometric,
+                onToggleBiometric = { confirmBiometric(!state.biometricEnabled) },
                 onChangePin = viewModel::startChange,
                 onTurnOff = viewModel::startDisable,
             )

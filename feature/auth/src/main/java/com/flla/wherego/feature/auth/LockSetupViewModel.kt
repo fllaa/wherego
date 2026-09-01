@@ -94,8 +94,19 @@ class LockSetupViewModel @Inject constructor(
         )
     }
 
-    fun toggleBiometric() {
-        viewModelScope.launch { appLock.setBiometricEnabled(!state.value.biometricEnabled) }
+    /**
+     * Writes the biometric opt-in.
+     *
+     * Only ever reached from a [BiometricGate] success, never straight off the row tap. Turning
+     * this on is what makes every biometric enrolled on this handset equivalent to the PIN, and a
+     * tap proves nothing about who is holding the phone; scanning first also catches a stale
+     * enrolment or a dead sensor before the user starts relying on it.
+     *
+     * [on] is passed in rather than read back off [state], so the value written is the one the row
+     * displayed when it was tapped, not whatever the flow happens to hold once the prompt returns.
+     */
+    fun setBiometricEnabled(on: Boolean) {
+        viewModelScope.launch { appLock.setBiometricEnabled(on) }
     }
 
     fun onDigit(digit: String) {
