@@ -5,6 +5,7 @@ import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.CsvRow
 import com.flla.wherego.core.model.FxConvert
 import com.flla.wherego.core.model.LogStreak
+import com.flla.wherego.core.model.MonthSpend
 import com.flla.wherego.core.model.MonthStory
 import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.SpendRow
@@ -274,19 +275,15 @@ class LedgerStore @Inject constructor(
         categoryDao.observeAll(),
     ) { txs, cats ->
         val catMap = cats.associate { it.id to it.toModel() }
-        val start = yearMonth.atDay(1).toString()
-        val end = yearMonth.atEndOfMonth().toString()
-        val rows = txs.map { it.toModel() }
-            .filter { it.kind == TransactionKind.EXPENSE }
-            .filter { it.occurredOn >= start && it.occurredOn <= end }
-            .map { tx ->
-                val cat = catMap[tx.categoryId]
+        val rows = MonthSpend.byCategory(txs.map { it.toModel() }, yearMonth)
+            .map { (categoryId, amountMinor) ->
+                val cat = catMap[categoryId]
                 SpendRow(
-                    categoryId = tx.categoryId,
+                    categoryId = categoryId,
                     name = cat?.name ?: "Other",
                     emoji = cat?.emoji ?: "📦",
                     colorHex = cat?.colorHex ?: PresetCategories.ACCENT_HEX,
-                    amountMinor = tx.amountBaseMinor,
+                    amountMinor = amountMinor,
                 )
             }
         MonthStory.aggregate(rows)
@@ -408,10 +405,7 @@ class LedgerStore @Inject constructor(
 
         fun wrap(tx: Transaction) = HomeTx(tx, catMap[tx.categoryId])
 
-        val monthSpent = txs
-            .filter { it.kind == TransactionKind.EXPENSE }
-            .filter { it.occurredOn >= monthStart && it.occurredOn <= monthEnd }
-            .sumOf { it.amountBaseMinor }
+        val monthSpent = MonthSpend.total(txs, month)
         val monthIncome = txs
             .filter { it.kind == TransactionKind.INCOME }
             .filter { it.occurredOn >= monthStart && it.occurredOn <= monthEnd }

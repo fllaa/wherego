@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.flla.wherego.core.common.UlidGenerator
+import com.flla.wherego.core.model.MonthSpend
 import com.flla.wherego.core.model.TransactionKind
 import java.time.Clock
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -76,6 +78,12 @@ class LedgerStoreTest {
         val restored = store.restore(saved.id)
         assertNull(restored?.deletedAt)
         assertEquals(18_000L, store.monthSpent(YearMonth.of(2026, 8)))
+
+        // The SQL rule and the shared Kotlin rule must never disagree on what "spent" counts.
+        assertEquals(
+            MonthSpend.total(store.observeActive().first(), YearMonth.of(2026, 8)),
+            store.monthSpent(YearMonth.of(2026, 8)),
+        )
     }
 
     @Test

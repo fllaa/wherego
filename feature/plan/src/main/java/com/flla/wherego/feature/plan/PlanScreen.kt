@@ -119,8 +119,8 @@ fun PlanScreen(
         )
 
         WheregoCapCard(
-            label = stringResource(R.string.plan_spent_in_month, monthText),
-            amount = MoneyFormatter.format(state.monthSpentMinor, state.currency),
+            label = capLabel(state),
+            amount = MoneyFormatter.format(capAmountMinor(state), state.currency),
             fraction = state.capFraction,
             footLabel = capFootLabel(state),
             pillLabel = if (state.daysLeft < 0) null else daysLeftLabel(state.daysLeft),
@@ -318,26 +318,35 @@ fun PlanScreen(
     }
 }
 
+/**
+ * The cap card leads with what is left, not what is gone — that is what a plan is for. Home
+ * already owns the raw month spend, so it only surfaces here when no cap exists to count down.
+ */
 @Composable
-private fun capFootLabel(state: PlanUiState): String {
-    val currency = state.currency
-    val cap = MoneyFormatter.format(state.capTotalMinor, currency)
+private fun capLabel(state: PlanUiState): String {
+    val month = monthLabel(state.month, state.currentMonth)
     return when {
-        state.capTotalMinor <= 0L -> stringResource(
-            R.string.plan_cap_no_caps,
-            monthLabel(state.month, state.currentMonth),
-        )
-        state.capRemainingMinor >= 0L -> stringResource(
-            R.string.plan_cap_left_of,
-            MoneyFormatter.format(state.capRemainingMinor, currency),
-            cap,
-        )
-        else -> stringResource(
-            R.string.plan_cap_over_of,
-            MoneyFormatter.format(-state.capRemainingMinor, currency),
-            cap,
-        )
+        state.capTotalMinor <= 0L -> stringResource(R.string.plan_spent_in_month, month)
+        state.capRemainingMinor < 0L -> stringResource(R.string.plan_cap_over_in_month, month)
+        else -> stringResource(R.string.plan_cap_left_in_month, month)
     }
+}
+
+private fun capAmountMinor(state: PlanUiState): Long = when {
+    state.capTotalMinor <= 0L -> state.monthSpentMinor
+    state.capRemainingMinor < 0L -> -state.capRemainingMinor
+    else -> state.capRemainingMinor
+}
+
+@Composable
+private fun capFootLabel(state: PlanUiState): String = if (state.capTotalMinor <= 0L) {
+    stringResource(R.string.plan_cap_no_caps, monthLabel(state.month, state.currentMonth))
+} else {
+    stringResource(
+        R.string.plan_cap_spent_of,
+        MoneyFormatter.format(state.monthSpentMinor, state.currency),
+        MoneyFormatter.format(state.capTotalMinor, state.currency),
+    )
 }
 
 @Composable

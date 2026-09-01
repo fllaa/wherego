@@ -9,10 +9,10 @@ import com.flla.wherego.core.database.zoneOf
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.CategoryKind
 import com.flla.wherego.core.model.MoneyFormatter
+import com.flla.wherego.core.model.MonthSpend
 import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.RecurringRule
-import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
 import com.flla.wherego.core.model.UserProfile
 import com.flla.wherego.core.sync.DueReminder
@@ -113,7 +113,7 @@ class PlanViewModel @Inject constructor(
             ledger.observeActive(),
         ) { budgets, rules, goals, cats, txs ->
             val catMap = cats.associateBy { it.id }
-            val spentByCategory = monthSpend(txs, ym)
+            val spentByCategory = MonthSpend.byCategory(txs, ym)
             val monthSpent = spentByCategory.values.sum()
             val capTotal = budgets.sumOf { it.amountMinor }
             val goalsTotal = goals.sumOf { it.allocatedMinor }
@@ -229,15 +229,6 @@ private fun monthChoices(current: YearMonth): List<PlanMonthChoice> =
         val ym = current.minusMonths(offset.toLong())
         PlanMonthChoice(id = ym.toString(), yearMonth = ym)
     }
-
-private fun monthSpend(txs: List<Transaction>, month: YearMonth): Map<String, Long> {
-    val start = month.atDay(1).toString()
-    val end = month.atEndOfMonth().toString()
-    return txs
-        .filter { it.kind == TransactionKind.EXPENSE && it.occurredOn >= start && it.occurredOn <= end }
-        .groupBy { it.categoryId }
-        .mapValues { (_, rows) -> rows.sumOf { it.amountBaseMinor } }
-}
 
 private fun fraction(part: Long, whole: Long): Float =
     if (whole <= 0L) 0f else (part.toFloat() / whole.toFloat()).coerceIn(0f, 1f)

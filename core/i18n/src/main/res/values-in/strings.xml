@@ -186,8 +186,9 @@
     <string name="plan_cta_add_it">Tambah</string>
     <string name="plan_sheet_month">Bulan</string>
     <string name="plan_cap_no_caps">Belum ada batas buat %1$s</string>
-    <string name="plan_cap_left_of">%1$s sisa dari %2$s</string>
-    <string name="plan_cap_over_of">%1$s lewat dari %2$s</string>
+    <string name="plan_cap_left_in_month">Sisa buat %1$s</string>
+    <string name="plan_cap_over_in_month">Lewat batas di %1$s</string>
+    <string name="plan_cap_spent_of">%1$s kepakai dari %2$s</string>
     <string name="plan_days_last_day">Hari terakhir</string>
     <string name="plan_cta_remove">Hapus</string>
     <string name="plan_recurring_detail">%1$s · berikutnya %2$s</string>
@@ -204,9 +205,10 @@
 
     <!-- Stories -->
     <string name="stories_title">Cerita</string>
-    <string name="stories_than_prev">dari %1$s</string>
-    <string name="stories_delta_less">%1$s lebih hemat</string>
-    <string name="stories_delta_more">%1$s lebih boros</string>
+    <string name="stories_vs_prev">vs %1$s</string>
+    <string name="stories_delta_less">lebih hemat</string>
+    <string name="stories_delta_more">lebih boros</string>
+    <string name="stories_total_spent_in">%1$s kepakai di %2$s</string>
     <string name="stories_section_where">Ke mana aja</string>
     <string name="stories_empty_bars">Belum ada batang kategori.</string>
     <string name="stories_empty_month">Bulan ini belum ada catatan.</string>

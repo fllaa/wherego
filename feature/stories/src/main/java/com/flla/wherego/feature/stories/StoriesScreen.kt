@@ -133,34 +133,50 @@ fun StoriesScreen(
         }
 
         WheregoCard(gap = 2.dp) {
-            Text(
-                stringResource(R.string.plan_spent_in_month, shownMonth),
-                style = WheregoType.eyebrow,
-                color = colors.muted,
-            )
-            Text(
-                state.totalLabel,
-                style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 48.sp),
-                color = colors.ink,
-            )
             val deltaMinor = state.deltaMinor
-            if (deltaMinor != null) {
+            if (deltaMinor == null) {
+                // No previous month to compare against, so the month's own total leads.
+                Text(
+                    stringResource(R.string.plan_spent_in_month, shownMonth),
+                    style = WheregoType.eyebrow,
+                    color = colors.muted,
+                )
+                Text(
+                    state.totalLabel,
+                    style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 48.sp),
+                    color = colors.ink,
+                )
+            } else {
+                Text(
+                    stringResource(
+                        R.string.stories_vs_prev,
+                        monthLabel(state.prevMonth, state.currentMonth),
+                    ),
+                    style = WheregoType.eyebrow,
+                    color = colors.muted,
+                )
+                Text(
+                    MoneyFormatter.format(abs(deltaMinor), state.currency),
+                    style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 48.sp),
+                    color = colors.ink,
+                )
                 Row(
                     Modifier.padding(top = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val onPill = if (state.deltaIsLess) colors.onGreenSoft else colors.ink
+                    val less = state.deltaIsLess
+                    val onPill = if (less) colors.onGreenSoft else colors.ink
                     Row(
                         Modifier
                             .clip(Pill)
-                            .background(if (state.deltaIsLess) colors.greenSoft else colors.peach)
+                            .background(if (less) colors.greenSoft else colors.peach)
                             .padding(horizontal = 11.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
                         Icon(
-                            if (state.deltaIsLess) {
+                            if (less) {
                                 Icons.AutoMirrored.Outlined.TrendingDown
                             } else {
                                 Icons.AutoMirrored.Outlined.TrendingUp
@@ -171,12 +187,7 @@ fun StoriesScreen(
                         )
                         Text(
                             stringResource(
-                                if (state.deltaIsLess) {
-                                    R.string.stories_delta_less
-                                } else {
-                                    R.string.stories_delta_more
-                                },
-                                MoneyFormatter.format(abs(deltaMinor), state.currency),
+                                if (less) R.string.stories_delta_less else R.string.stories_delta_more,
                             ),
                             style = WheregoType.leftPill,
                             color = onPill,
@@ -184,11 +195,13 @@ fun StoriesScreen(
                     }
                     Text(
                         stringResource(
-                            R.string.stories_than_prev,
-                            monthLabel(state.prevMonth, state.currentMonth),
+                            R.string.stories_total_spent_in,
+                            state.totalLabel,
+                            shownMonth,
                         ),
                         style = WheregoType.meta,
                         color = colors.muted,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                 }
             }

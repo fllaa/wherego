@@ -6,10 +6,10 @@ import com.flla.wherego.core.model.BudgetBar
 import com.flla.wherego.core.model.CsvExport
 import com.flla.wherego.core.model.CsvRow
 import com.flla.wherego.core.model.Goal
+import com.flla.wherego.core.model.MonthSpend
 import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.RecurringRule
-import com.flla.wherego.core.model.TransactionKind
 import com.flla.wherego.core.model.UserProfile
 import java.time.Clock
 import java.time.LocalDate
@@ -61,8 +61,6 @@ class PlanStore @Inject constructor(
 
     fun observeBars(yearMonth: String, zoneId: ZoneId): Flow<List<BudgetBar>> {
         val ym = YearMonth.parse(yearMonth)
-        val start = ym.atDay(1).toString()
-        val end = ym.atEndOfMonth().toString()
         return combine(
             budgetDao.observeMonth(yearMonth),
             transactionDao.observeActive(),
@@ -70,12 +68,7 @@ class PlanStore @Inject constructor(
         ) { budgets, txs, cats ->
             if (budgets.isEmpty()) return@combine emptyList()
             val catMap = cats.associate { it.id to it.toModel() }
-            val spentByCat = txs
-                .map { it.toModel() }
-                .filter { it.kind == TransactionKind.EXPENSE }
-                .filter { it.occurredOn >= start && it.occurredOn <= end }
-                .groupBy { it.categoryId }
-                .mapValues { (_, rows) -> rows.sumOf { it.amountBaseMinor } }
+            val spentByCat = MonthSpend.byCategory(txs.map { it.toModel() }, ym)
             val overallSpent = spentByCat.values.sum()
             budgets.map { it.toModel() }.map { budget ->
                 val cat = budget.categoryId?.let { catMap[it] }

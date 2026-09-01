@@ -350,3 +350,47 @@
   - Frequency stays monthly (the sheet never offered a choice). `weekday` is derived anyway so the
     stored row is already right when a weekly toggle lands
 - Blocked: none
+
+## 2026-09-01  T0816  ux-hero-differentiation
+- Goal: Home, Stories and Plan heroes all showed the same figure — the current month's spend. Not a
+  data bug (all three computed it correctly, and the month steppers work), but three heroes and two
+  near-identical captions answering one question. Give each screen its own number, and collapse the
+  six copies of the month-spend rule that let them drift.
+- Files changed:
+  - `:core:model` — new `MonthSpend.byCategory`/`total`: the single month-spend predicate (expense +
+    `occurredOn` inside the month, summed on `amountBaseMinor`), one private `inline forEachIn` doing
+    one pass with no intermediate lists
+  - `:core:database` — `LedgerStore.assembleHome` and `observeMonth` call it; `observeMonth` now
+    builds one `SpendRow` per category instead of one per transaction; `PlanStore.observeBars` calls
+    it and drops its own `start`/`end`
+  - `:feature:plan` — `PlanViewModel` calls it, private `monthSpend` deleted; `PlanScreen` cap card
+    leads with `capLabel`/`capAmountMinor` (remaining, or overage, or spend when no cap exists) and
+    the foot label carries spent-of-cap
+  - `:feature:stories` — hero leads with the previous-month delta (`vs August` / amount / `less`
+    pill + `Rp X spent in September`); falls back to the old total-first layout when `deltaMinor` is
+    null
+  - `:core:i18n` — added `plan_cap_left_in_month`, `plan_cap_over_in_month`, `plan_cap_spent_of`,
+    `stories_vs_prev`, `stories_total_spent_in`; `stories_delta_less`/`_more` are now bare words
+    (the amount moved to the hero); removed `plan_cap_left_of`, `plan_cap_over_of`,
+    `stories_than_prev` (en + in)
+  - tests — `MonthSpendTest` (month edges inclusive, kind filter, base-currency field, grouping
+    agrees with total); `LedgerStoreTest` now asserts SQL `sumExpenses` equals `MonthSpend.total`
+- Commands:
+  - `./gradlew assembleDebug testDebugUnitTest` → SUCCESS, 66 tests 0 failures
+  - on `emulator-5554` (Sep 2026; Jul 200rb / Aug 3.5jt / Sep 1.2jt spend, Sep caps 3.4jt, Aug cap
+    1jt): Home `Spent this month Rp 1.200.000`, Stories `vs August Rp 2.300.000 ↘ less`, Plan
+    `Left to spend in September Rp 2.200.000` — three screens, three numbers
+  - month variants checked: Stories August `vs July Rp 3.300.000 ↗ more`, Stories July falls back to
+    `Spent in July` (no June to compare); Plan August `Over cap in August Rp 2.500.000`, Plan July
+    `Spent in July` + `No caps set for July yet`
+- Decisions:
+  - `MonthSpend` lives in `:core:model`, not on `LedgerStore`: `PlanStore` and `PlanViewModel` both
+    need it, and it is a pure domain rule with no Room dependency
+  - `TransactionDao.sumExpenses` stays as the SQL copy — it is the only DB-side aggregate and avoids
+    loading the table — so a test pins it to `MonthSpend.total` rather than deleting it
+  - Plan keeps the meter as spend-against-cap even though the headline is now remaining; the bar
+    filling up as the number counts down is the standard budget idiom
+  - Plan falls back to raw spend when no cap exists, because there is no remainder to show; that is
+    the one place the month's spend still appears outside Home
+  - A delta of exactly 0 still reads `Rp 0 · less`, as it did before this change
+- Blocked: none

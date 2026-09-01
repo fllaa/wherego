@@ -186,8 +186,9 @@
     <string name="plan_cta_add_it">Add it</string>
     <string name="plan_sheet_month">Month</string>
     <string name="plan_cap_no_caps">No caps set for %1$s yet</string>
-    <string name="plan_cap_left_of">%1$s left of %2$s</string>
-    <string name="plan_cap_over_of">%1$s over %2$s</string>
+    <string name="plan_cap_left_in_month">Left to spend in %1$s</string>
+    <string name="plan_cap_over_in_month">Over cap in %1$s</string>
+    <string name="plan_cap_spent_of">%1$s of %2$s spent</string>
     <string name="plan_days_last_day">Last day</string>
     <string name="plan_cta_remove">Remove</string>
     <string name="plan_recurring_detail">%1$s · next %2$s</string>
@@ -204,9 +205,10 @@
 
     <!-- Stories -->
     <string name="stories_title">Stories</string>
-    <string name="stories_than_prev">than %1$s</string>
-    <string name="stories_delta_less">%1$s less</string>
-    <string name="stories_delta_more">%1$s more</string>
+    <string name="stories_vs_prev">vs %1$s</string>
+    <string name="stories_delta_less">less</string>
+    <string name="stories_delta_more">more</string>
+    <string name="stories_total_spent_in">%1$s spent in %2$s</string>
     <string name="stories_section_where">Where it went</string>
     <string name="stories_empty_bars">No category bars yet.</string>
     <string name="stories_empty_month">Nothing logged this month yet.</string>
