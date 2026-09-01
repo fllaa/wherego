@@ -270,7 +270,12 @@ Room is the source of truth. Cloud is a replica. IDs are ULIDs generated on devi
 
 - Never store floating-point money. `amountMinor` is Integer/Long. Pick one convention and stick to it.
 - **Recommendation:** store scale per currency (ISO 4217 minor units). IDR scale 0, USD scale 2. `amountMinor` is in that currency’s minor unit. `amountBaseMinor` always in base minor units.
-- One pot: Home “balance” = `startingBalance + sum(income base) − sum(expense base) + sum(adjustments)`. Goals allocate from this pot; they do not create a second balance unless you later add accounts.
+- One pot. Goals allocate from this pot; they do not create a second balance unless you later add accounts.
+- **The balance is anchored, not seeded.** A `reconcile` row asserts a total — "as of `occurredOn`, everything totalled `amountMinor`". Home balance = the latest anchor + every row dated after it. Rows dated *before* the anchor are already inside its number and must not be counted again: a backdated spend is history, not a new debit. Counting them twice is the bug `startingBalanceOn` was added to prevent and then never read.
+- **An assertion, never a delta.** A delta is computed from one device's view (`targetMinor − currentBalance()`), so two devices replicating deltas stack them and land on a total neither one asked for. Two assertions are just two claims: the later `occurredOn` anchors, the earlier stays as history. Legacy `adjustment` rows keep their delta meaning and keep being summed — nothing new writes one.
+- **Anchor collisions ask, but only when they must.** Two devices can both assert; parking before sign-in is the promise, so this is expected, not an error. The later anchor wins silently when the arithmetic is unarguable. Ask the user once when two anchors share a date, or when adopting the peer's anchor moves the number they were already shown.
+- Pre-anchor rows stay in Stories and in every spend total — the point of the app is seeing where money went. Draw the anchor on the Balance sparkline instead, so the balance and the month's spend are allowed to disagree without reading as a bug.
+- `user_profile.startingBalanceMinor` / `startingBalanceOn` are the pre-anchor form. Onboarding writes an anchor row instead; the scalars retire with the migration that converts existing profiles.
 - Month boundaries use the user’s zone (`Asia/Jakarta` default). A 23:40 transaction on the 31st does not fall into next month because the server is in UTC.
 - Edits update `updatedAt` and set `dirty`. Sync is last-write-wins per row with `updatedAt`. Good enough for single-user. Do not invent CRDTs.
 
