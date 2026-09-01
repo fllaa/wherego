@@ -445,3 +445,54 @@
 - Not done / deferred: goals and recurring still have no `Edit` affordance of their own — the one
   toggle on the `Budgets` header drives all three sections, as the design frame has it
 - Blocked: none
+
+
+## 2026-09-01  T0918  ux-stories-balance
+- Goal: user reported the Stories `Balance` section was "just a single line on the top" and showed
+  nothing else. It was.
+- Root cause: Vico's `LineChart` forces a zero-based axis —
+  `minY = axisValuesOverrider?.getMinY(model) ?: minY ?: min(model.minY, 0f)`
+  (`core-1.13.1-sources` → `chart/line/LineChart.kt:576`) — and the card set no
+  `axisValuesOverrider`. A real balance sits far from zero, so August's Rp 4.630.000–5.050.000
+  became an 8% band at the very top of a 160dp box, and `getDrawY` (`LineChart.kt:511`) maps a
+  constant balance to `bounds.bottom - 1f * height`, i.e. exactly the top edge. Worse for a fresh
+  profile: `starting=0` with no logs is a constant-zero series, `lengthY = 0`,
+  `(y - minY) / lengthY = NaN`, and the path drew nothing. The card had no axes, no labels and no
+  number either, so the section really was one header plus one hairline
+- Files changed:
+  - `:core:model` — `BalanceSpark` + `BalanceSeries.spark(points)`: normalises the series against
+    its own low/high (`0f` = month low, `1f` = high), flat months collapse to `0.5f` instead of
+    `NaN`, `zeroFraction` marks a sign flip, `null` under two plotted days
+  - `:feature:stories` — `StoryBalance` in the ViewModel carries the fractions plus the now/low/high
+    labels; series now ends at `minOf(end, today)`, so the current month no longer plots a flat tail
+    out to the 31st; the card became a hand-drawn `Canvas` sparkline (88dp, `tealSoft` area, 2.5dp
+    round-joined `teal` line, ink-ringed dot on the last day) titled in-card next to the balance,
+    with `Low`/`High` under it — or `No change this month.` when the month never moved
+  - `:core:i18n` — `stories_balance_low` / `_high` / `_flat`, en + in
+  - `gradle/libs.versions.toml`, `:feature:stories/build.gradle.kts` — Vico dropped
+  - tests — `S6Test`: a barely-moving month spans `0f..1f`, a flat month is all `0.5f` with no
+    zero line, a negative dip puts `zeroFraction` at `0.4f`, one day yields `null`
+- Commands:
+  - `./gradlew :core:model:testDebugUnitTest :app:assembleDebug` → SUCCESS
+  - on `emulator-5554` (Pixel_10_Pro, API 36): pushed a seeded `wherego.db` — starting balance 5jt,
+    7 August logs, low 4.630.000 / high 5.050.000, an 8% band that used to be the hairline. August
+    now draws a stepped line across the full card, `Rp 4.630.000` beside the title, `Low`/`High`
+    beneath, dot on Aug 31. July (no logs, balance carried in) draws the mid-height rule with
+    `No change this month.` September (today is the 1st, one plotted day) hides the card entirely
+    instead of showing an empty one. Re-checked both in dark mode
+- Decisions:
+  - Vico went out rather than getting an `AxisValuesOverrider`. It was one naked line in one card —
+    no axes, markers, scroll or animation — so the library was two artifacts of dependency for a
+    path a `Canvas` draws in 50 lines, in the ink/teal language the rest of the app is drawn in
+  - Normalisation lives in `:core:model`, not the composable: it is the part that was wrong, and it
+    is the part a unit test can hold
+  - The card hides itself only when the balance never left zero. A flat *non-zero* month is worth a
+    line — it says the pot did not move — so it draws mid-height with the flat note instead of
+    `Low X / High X`, which would read as two different numbers
+  - Section title moved inside the card, matching `Where it went`. A `WheregoSectionHeader` above an
+    empty-looking card is what made the emptiness read as a bug
+  - The zero crossing is the one gridline drawn. Below it the pot is empty, which is worth a rule;
+    every other value is already labelled by `Low`/`High`
+- Not done / deferred: the sparkline has no touch readout — no per-day value on drag. `Balance` is
+  still a demoted card the design frame does not have, so it stays a shape with three numbers
+- Blocked: none

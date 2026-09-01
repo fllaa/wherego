@@ -1,6 +1,7 @@
 package com.flla.wherego.feature.stories
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,7 +48,6 @@ import com.flla.wherego.core.designsystem.component.WheregoCard
 import com.flla.wherego.core.designsystem.component.WheregoMeter
 import com.flla.wherego.core.designsystem.component.WheregoMonthStepper
 import com.flla.wherego.core.designsystem.component.WheregoPageHeader
-import com.flla.wherego.core.designsystem.component.WheregoSectionHeader
 import com.flla.wherego.core.designsystem.component.WheregoTxRow
 import com.flla.wherego.core.designsystem.component.WheregoWaypointMark
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
@@ -54,10 +59,6 @@ import com.flla.wherego.core.i18n.monthLabel
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.StoryHeadline
 import com.flla.wherego.core.model.TransactionKind
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.line.lineChart
-import com.patrykandpatrick.vico.compose.chart.line.lineSpec
-import com.patrykandpatrick.vico.core.entry.entryModelOf
 import java.time.LocalDate
 import kotlin.math.abs
 
@@ -326,21 +327,45 @@ fun StoriesScreen(
             }
         }
 
-        if (state.balance.size >= 2) {
-            WheregoSectionHeader(stringResource(R.string.stories_section_balance))
-            WheregoCard {
-                val ys = state.balance.map { it.balanceMinor.toFloat() }
-                Chart(
-                    chart = lineChart(
-                        lines = listOf(
-                            lineSpec(lineColor = colors.teal, lineBackgroundShader = null),
-                        ),
-                    ),
-                    model = entryModelOf(*ys.toTypedArray()),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp),
-                )
+        val balance = state.balance
+        if (balance != null) {
+            WheregoCard(padding = 16.dp, gap = 12.dp) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        stringResource(R.string.stories_section_balance),
+                        style = WheregoType.cardTitle,
+                        color = colors.ink,
+                    )
+                    Text(balance.nowLabel, style = WheregoType.statValue, color = colors.ink)
+                }
+                BalanceSparkline(balance)
+                if (balance.isFlat) {
+                    Text(
+                        stringResource(R.string.stories_balance_flat),
+                        style = WheregoType.helper,
+                        color = colors.muted,
+                    )
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            stringResource(R.string.stories_balance_low, balance.lowLabel),
+                            style = WheregoType.helper,
+                            color = colors.muted,
+                        )
+                        Text(
+                            stringResource(R.string.stories_balance_high, balance.highLabel),
+                            style = WheregoType.helper,
+                            color = colors.muted,
+                        )
+                    }
+                }
             }
         }
     }
@@ -430,5 +455,67 @@ private fun FilterPill(filter: TxFilter, onClick: () -> Unit) {
             modifier = Modifier.size(14.dp),
         )
         Text(stringResource(filter.labelRes), style = WheregoType.leftPill, color = colors.ink)
+    }
+}
+
+/**
+ * The month's running balance drawn by hand, normalised by `BalanceSeries.spark` so the shape
+ * fills the box: fraction `0f` is the month's low, `1f` its high. A real balance sits far from
+ * zero, so a zero-based axis would squeeze the whole month into a hairline along the top edge.
+ * A flat month draws a mid-height rule instead of a line glued to an edge.
+ */
+@Composable
+private fun BalanceSparkline(balance: StoryBalance, modifier: Modifier = Modifier) {
+    val colors = WheregoTheme.colors
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .height(88.dp),
+    ) {
+        val strokeWidth = 2.5.dp.toPx()
+        val dotRadius = 4.dp.toPx()
+        val inset = maxOf(strokeWidth, dotRadius)
+        val left = inset
+        val right = size.width - inset
+        val usableHeight = size.height - inset * 2f
+        val count = balance.fractions.size
+        val stepX = if (count > 1) (right - left) / (count - 1) else 0f
+        fun yOf(fraction: Float): Float = inset + (1f - fraction) * usableHeight
+
+        // The sign flip is the one gridline worth drawing: below it the pot is empty.
+        balance.zeroFraction?.let { zero ->
+            drawLine(
+                color = colors.track,
+                start = Offset(0f, yOf(zero)),
+                end = Offset(size.width, yOf(zero)),
+                strokeWidth = 1.5.dp.toPx(),
+            )
+        }
+
+        val line = Path()
+        val area = Path()
+        balance.fractions.forEachIndexed { index, fraction ->
+            val x = left + stepX * index
+            val y = yOf(fraction)
+            if (index == 0) {
+                line.moveTo(x, y)
+                area.moveTo(x, size.height)
+                area.lineTo(x, y)
+            } else {
+                line.lineTo(x, y)
+                area.lineTo(x, y)
+            }
+        }
+        area.lineTo(left + stepX * (count - 1), size.height)
+        area.close()
+        drawPath(area, colors.tealSoft)
+        drawPath(
+            line,
+            colors.teal,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+        val here = Offset(left + stepX * (count - 1), yOf(balance.fractions.last()))
+        drawCircle(colors.ink, radius = dotRadius, center = here)
+        drawCircle(colors.teal, radius = dotRadius - 1.5.dp.toPx(), center = here)
     }
 }

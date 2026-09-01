@@ -29,6 +29,25 @@ data class BalancePoint(
     val balanceMinor: Long,
 )
 
+/**
+ * A [BalancePoint] series normalised against its own low and high.
+ *
+ * A real balance sits far from zero, so a zero-based axis squeezes a whole month of movement
+ * into a hairline pinned to the top of the box. [fractions] runs `0f` (the month's low) to
+ * `1f` (its high), one entry per plotted day, so the card draws the shape of the month.
+ */
+data class BalanceSpark(
+    val fractions: List<Float>,
+    val lowMinor: Long,
+    val highMinor: Long,
+    val lastMinor: Long,
+    /** Where `0` falls on [fractions]' scale, or `null` when the balance never changes sign. */
+    val zeroFraction: Float?,
+) {
+    /** A month with no movement: [fractions] is a flat mid-line, not a shape. */
+    val isFlat: Boolean get() = lowMinor == highMinor
+}
+
 object BalanceSeries {
     fun signedBase(kind: String, amountBaseMinor: Long): Long = when (kind) {
         TransactionKind.EXPENSE -> -amountBaseMinor
@@ -59,6 +78,29 @@ object BalanceSeries {
             day = day.plusDays(1)
         }
         return out
+    }
+
+    /** `null` when there is nothing to draw — a line needs at least two days. */
+    fun spark(points: List<BalancePoint>): BalanceSpark? {
+        if (points.size < 2) return null
+        var low = points.first().balanceMinor
+        var high = low
+        for (point in points) {
+            if (point.balanceMinor < low) low = point.balanceMinor
+            if (point.balanceMinor > high) high = point.balanceMinor
+        }
+        val span = (high - low).toFloat()
+        return BalanceSpark(
+            fractions = if (span == 0f) {
+                List(points.size) { 0.5f }
+            } else {
+                points.map { (it.balanceMinor - low) / span }
+            },
+            lowMinor = low,
+            highMinor = high,
+            lastMinor = points.last().balanceMinor,
+            zeroFraction = if (low < 0L && high > 0L) -low / span else null,
+        )
     }
 }
 

@@ -2,6 +2,9 @@ package com.flla.wherego.core.model
 
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class S6Test {
@@ -26,6 +29,51 @@ class S6Test {
         val points = BalanceSeries.points(10_000L, txs, LocalDate.parse("2026-08-12"), LocalDate.parse("2026-08-12"))
         assertEquals(1, points.size)
         assertEquals(22_000L, points[0].balanceMinor)
+    }
+
+    @Test
+    fun sparkNormalisesAgainstItsOwnRange() {
+        val spark = BalanceSeries.spark(
+            listOf(
+                BalancePoint("2026-08-01", 5_000_000L),
+                BalancePoint("2026-08-02", 4_975_000L),
+                BalancePoint("2026-08-03", 4_950_000L),
+            ),
+        )!!
+        assertFalse(spark.isFlat)
+        assertEquals(1f, spark.fractions.first(), 0f)
+        assertEquals(0.5f, spark.fractions[1], 1e-6f)
+        assertEquals(0f, spark.fractions.last(), 0f)
+        assertEquals(4_950_000L, spark.lowMinor)
+        assertEquals(5_000_000L, spark.highMinor)
+        assertEquals(4_950_000L, spark.lastMinor)
+        assertNull(spark.zeroFraction)
+    }
+
+    @Test
+    fun sparkFlatMonthSitsMidBox() {
+        val spark = BalanceSeries.spark(
+            List(3) { BalancePoint("2026-08-0${it + 1}", 5_000_000L) },
+        )!!
+        assertTrue(spark.isFlat)
+        assertEquals(listOf(0.5f, 0.5f, 0.5f), spark.fractions)
+        assertNull(spark.zeroFraction)
+    }
+
+    @Test
+    fun sparkPlacesZeroWhenBalanceGoesNegative() {
+        val spark = BalanceSeries.spark(
+            listOf(
+                BalancePoint("2026-08-01", 3_000L),
+                BalancePoint("2026-08-02", -2_000L),
+            ),
+        )!!
+        assertEquals(0.4f, spark.zeroFraction!!, 1e-6f)
+    }
+
+    @Test
+    fun sparkNeedsTwoDays() {
+        assertNull(BalanceSeries.spark(listOf(BalancePoint("2026-08-01", 1L))))
     }
 
     @Test

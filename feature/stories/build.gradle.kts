@@ -45,6 +45,4 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.vico.compose)
-    implementation(libs.vico.compose.m3)
 }

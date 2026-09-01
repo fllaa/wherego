@@ -221,6 +221,9 @@
     <string name="stories_empty_filter_expense">No expense logs this month.</string>
     <string name="stories_empty_filter_income">No income logs this month.</string>
     <string name="stories_section_balance">Balance</string>
+    <string name="stories_balance_low">Low %1$s</string>
+    <string name="stories_balance_high">High %1$s</string>
+    <string name="stories_balance_flat">No change this month.</string>
     <string name="stories_cd_filter">Filter logs</string>
     <string name="filter_all">All</string>
     <string name="filter_expense">Expense</string>

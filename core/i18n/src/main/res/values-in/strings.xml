@@ -221,6 +221,9 @@
     <string name="stories_empty_filter_expense">Belum ada catatan pengeluaran bulan ini.</string>
     <string name="stories_empty_filter_income">Belum ada catatan pemasukan bulan ini.</string>
     <string name="stories_section_balance">Saldo</string>
+    <string name="stories_balance_low">Terendah %1$s</string>
+    <string name="stories_balance_high">Tertinggi %1$s</string>
+    <string name="stories_balance_flat">Bulan ini belum ada perubahan.</string>
     <string name="stories_cd_filter">Filter catatan</string>
     <string name="filter_all">Semua</string>
     <string name="filter_expense">Keluar</string>

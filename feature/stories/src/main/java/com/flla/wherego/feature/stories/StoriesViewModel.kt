@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.flla.wherego.core.database.LedgerStore
 import com.flla.wherego.core.database.UserProfileStore
 import com.flla.wherego.core.database.zoneOf
-import com.flla.wherego.core.model.BalancePoint
 import com.flla.wherego.core.model.BalanceSeries
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.MoneyFormatter
@@ -66,6 +65,19 @@ data class StoryDay(
     val transactions: List<StoryTx>,
 )
 
+/**
+ * The `Balance` card at the foot of Stories: the month's running balance normalised to its own
+ * low/high by [BalanceSeries.spark], plus the three numbers that give the line a scale.
+ */
+data class StoryBalance(
+    val fractions: List<Float>,
+    val zeroFraction: Float?,
+    val nowLabel: String,
+    val lowLabel: String,
+    val highLabel: String,
+    val isFlat: Boolean,
+)
+
 data class StoriesUiState(
     val month: YearMonth = YearMonth.now(),
     val prevMonth: YearMonth = YearMonth.now().minusMonths(1),
@@ -80,7 +92,7 @@ data class StoriesUiState(
     val days: List<StoryDay> = emptyList(),
     val headline: StoryHeadline = StoryHeadline.Empty,
     val canGoNext: Boolean = false,
-    val balance: List<BalancePoint> = emptyList(),
+    val balance: StoryBalance? = null,
     val currency: String = UserProfile.DEFAULT_CURRENCY,
 )
 
@@ -110,6 +122,8 @@ class StoriesViewModel @Inject constructor(
         ) { spends, prevSpends, txs, cats ->
             val start = ym.atDay(1)
             val end = ym.atEndOfMonth()
+            // The current month's unspent future days would plot as a flat tail to the 31st.
+            val plotEnd = minOf(end, LocalDate.now(zone))
             val startKey = start.toString()
             val endKey = end.toString()
             val inMonth = txs.filter { it.occurredOn >= startKey && it.occurredOn <= endKey }
@@ -141,7 +155,7 @@ class StoriesViewModel @Inject constructor(
                 days = dayGroups(inMonth, catById, currency, zone),
                 headline = MonthStory.headline(spends),
                 canGoNext = ym < current,
-                balance = BalanceSeries.points(starting, txs, start, end),
+                balance = storyBalance(starting, txs, start, plotEnd, currency),
                 currency = currency,
             )
         }
@@ -156,6 +170,30 @@ class StoriesViewModel @Inject constructor(
             val ym = current ?: YearMonth.now()
             ym.plusMonths(1)
         }
+    }
+
+    /**
+     * `null` when there is nothing worth drawing: fewer than two plotted days, or a balance that
+     * never left zero — a fresh profile that skipped the starting balance has no line to show.
+     */
+    private fun storyBalance(
+        startingMinor: Long,
+        txs: List<Transaction>,
+        from: LocalDate,
+        to: LocalDate,
+        currency: String,
+    ): StoryBalance? {
+        val points = BalanceSeries.points(startingMinor, txs, from, to)
+        val spark = BalanceSeries.spark(points) ?: return null
+        if (spark.isFlat && spark.lastMinor == 0L) return null
+        return StoryBalance(
+            fractions = spark.fractions,
+            zeroFraction = spark.zeroFraction,
+            nowLabel = MoneyFormatter.format(spark.lastMinor, currency),
+            lowLabel = MoneyFormatter.format(spark.lowMinor, currency),
+            highLabel = MoneyFormatter.format(spark.highMinor, currency),
+            isFlat = spark.isFlat,
+        )
     }
 
     private fun percentOf(amountMinor: Long, totalMinor: Long): Int =
