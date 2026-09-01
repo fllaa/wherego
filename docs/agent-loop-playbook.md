@@ -447,11 +447,11 @@ No OCR yet. No goals yet.
 
 Tasks:
 
-- [ ] After save (or from edit): attach photo from camera/gallery.
-- [ ] Store local file in app storage. Compress to max edge 1080 JPEG quality 70.
-- [ ] ML Kit text recognition; parse largest plausible amount; prefill confirm dialog. Never auto-save OCR.
-- [ ] Upload worker to Firebase Storage only if signed in. Path `users/{uid}/receipts/{id}.jpg`.
-- [ ] Fail open: photo stays local if upload fails.
+- [x] Attach photo from camera/gallery inside the sheet, during create and edit.
+- [x] Store local file in app storage. Compress to max edge 1080 JPEG quality 70.
+- [x] ML Kit text recognition; anchor the amount to a label (`Total`, `Rp`, `IDR`) and discard reference numbers; only an anchored read prefills. Never auto-save OCR.
+- [x] Upload worker to Firebase Storage only if signed in. Path `users/{uid}/receipts/{id}.jpg`.
+- [x] Fail open: photo stays local if upload fails.
 
 ---
 
