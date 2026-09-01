@@ -802,3 +802,96 @@
   number. Kind is also still legible while hidden (`+••••••` on income), which is deliberate. No
   auto-hide on backgrounding, and no biometric reveal
 - Blocked: none
+
+## 2026-09-01  T1548  app-lock
+- Goal: a 6-digit PIN in front of the whole app, with biometrics as the fast path. Off by default,
+  set up from `Me → APP → App lock`. A returning user with it on meets the gate before any figure
+  renders; a user with it off sees no change anywhere. Same threat model as `hide-amounts` — a
+  shoulder-surfer or a handed-over phone, **not** a rooted device with the filesystem in hand
+- Files changed:
+  - `:core:datastore` — new `PinMac` + `KeystorePinMac`: the PIN is stored as
+    `HMAC-SHA256(keystoreKey, salt‖pin)` under a non-exportable Android Keystore key. New `AppLock`
+    on its **own** `wherego_lock` DataStore file, holding digest, salt, biometric opt-in and the
+    failure throttle, and returning a `PinVerdict` sealed result. New `AppLockController` owning the
+    runtime `locked` flag and the 60s background grace. New `DatastoreModule` to bind `PinMac` —
+    the module had no DI module before
+  - `:core:designsystem` — `WheregoPinPad` and `WheregoPinDots` appended to `WheregoNumpad.kt`, so
+    both pads share the existing `private NumpadKey` and cannot drift apart
+  - `:core:i18n` — 29 `lock_*` strings, the `lock_wrong` plural and `me_row_app_lock`, both locales
+  - `:feature:auth` — `BiometricGate`; `LockMessage` + `lockMessageText`; `LockViewModel` and
+    `LockScreen` (the gate); `LockSetupViewModel` and `LockManageRoute` (`Me → App lock`)
+  - `:app` — `MainActivity` is now a `FragmentActivity` and gates on `locked` directly after the
+    splash; `MainViewModel` calls `appLockController.bind()` before `_ready`; `WheregoApp` observes
+    `ProcessLifecycleOwner`; `Theme.Wherego` reparented to `Theme.AppCompat.DayNight.NoActionBar`;
+    new `backup_rules.xml` and `data_extraction_rules.xml` exclude the lock file
+  - `:core:sync` — `AccountEraser` gained `appLock.disable()`. `preferences.clear()` cannot reach a
+    second DataStore file, and an erase that left a live digest behind would break the "matches a
+    fresh install" promise in `LocalDataEraser`
+  - tests — `AppLockTest` (10), `AppLockControllerTest` (7), shared `FakePinMac`; `AccountEraserTest`
+    now also asserts an erase clears the lock
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew :core:datastore:testDebugUnitTest` → 21 passed (17 new)
+  - full unit sweep across `:core:*`, `:feature:capture`, `:app` → SUCCESS
+  - on `emulator-5554` (API 36): fresh install walked Sign In → onboarding → Home with **no** gate
+    anywhere; set PIN, row flipped to `On`; force-stop and relaunch drew the gate with no tab bar and
+    no figures behind it and back did nothing; wrong PINs counted `4 / 3 / 2 / 1 try left`, the fifth
+    started a 30s cooldown and the **correct** PIN during that cooldown was still refused; after it
+    expired the PIN opened Home. Backgrounded 8s → no re-lock, 64s → re-lock. Launched the real
+    `com.android.camera2` on top and returned inside the window → no re-lock. `install -r` kept the
+    lock working, proving digest and Keystore key both survive. Enrolled a fingerprint: the row
+    stopped reading `No biometrics on this device.`, the gate grew its CTA, the prompt authenticated
+    via `emu finger touch`, `Use PIN` fell back to the pad, and with the opt-in on the prompt came up
+    by itself on cold start. `Forgot PIN?` as a guest showed the coral not-backed-up warning, erased,
+    and landed in onboarding with the lock off and no gate on the next cold start. Checked light and
+    dark. Capture's money numpad still carries its `000` key. Zero crashes across the session
+- Decisions:
+  - a Keystore-keyed HMAC, not a salted hash or PBKDF2. Six digits is a 10^6 keyspace, so any digest
+    an attacker can copy off the device is exhaustible in under a second and the salt buys nothing
+    against a search that small. Signing with a non-exportable, hardware-backed key changes the shape
+    of the problem: the digest cannot be attacked at all without this handset. Costs no dependency —
+    `KeyStore` and `Mac` are platform APIs. Deliberately no `setUserAuthenticationRequired`: that
+    would make the PIN unverifiable on exactly the device that most needs a PIN, one with no
+    biometrics enrolled
+  - its own DataStore file rather than a slot in `wherego_prefs`. Two `preferencesDataStore`
+    delegates on one file name throw, but the real reason is backup: `allowBackup` is on and a digest
+    restored onto another handset could never be verified there, so the file has to be excludable on
+    its own without taking theme and currency with it. `reconcile()` closes the remaining hole by
+    clearing a digest whose key has vanished — failing open beats trapping the owner out of an
+    offline ledger with no recovery, since an attacker cannot conjure a missing hardware key either
+  - `ProcessLifecycleOwner` with a 60s grace, not `Activity.onStop`. `onStop` fires on rotation and
+    on `AppLocale`'s locale `recreate()`, which would lock on a screen turn. The grace exists because
+    attaching a receipt hands the foreground to the camera, the photo picker or a share chooser: an
+    immediate re-lock would demand a PIN mid-capture, in an app whose whole premise is that capture
+    never waits. Absence is modelled as `null`, not `0`, so a fresh-boot `elapsedRealtime` reading
+    cannot be mistaken for "never backgrounded"
+  - `BIOMETRIC_STRONG` alone, never `DEVICE_CREDENTIAL`. `canAuthenticate` does not support the
+    combination on API 28-29, and the device credential would only duplicate the PIN this app already
+    owns. Its absence is what makes `setNegativeButtonText` mandatory — that button is the `Use PIN`
+    escape hatch
+  - `Theme.Wherego` had to leave `android:Theme.Material.Light.NoActionBar`. `androidx.biometric`
+    falls back to its own dialog on API < 28 and on some vendor 28-29 paths, and that dialog inflates
+    an `androidx.appcompat` `AlertDialog`, which resolves only under an AppCompat theme. Left alone
+    this was a crash waiting for an older handset, not a cosmetic detail. Every surface is Compose
+    and the style still pins window background and both system-bar colours, so nothing moved
+  - the throttle lives in `AppLock.verify`, not in the caller, and an active cooldown short-circuits
+    **before** the digest comparison. Checking the PIN first would leave the delay inconveniencing
+    only the people who are already wrong, and doing nothing to the one converging on the answer.
+    Turning the lock off in settings goes through the same `verify`, so the settings screen is not
+    the cheap way past it. Wall clock, because the cooldown has to survive the force-stop that
+    anyone guessing a PIN would try first
+  - `PinMac` is an interface because Robolectric ships no working `AndroidKeyStore`. `FakePinMac`
+    stays in test sources: a stand-in for a security primitive has no business in the APK, where a
+    mis-wired binding could quietly replace the real digest. That is why it is not beside
+    `FakeAuthRepository` in main
+  - forgot-PIN splits on whether there is an account to prove. Signed in, re-running Google sign-in
+    is a stronger claim than the PIN, and the returned uid must equal the stored one or any Google
+    account would open any phone. A guest only gets the erase, and it calls `LocalDataEraser`
+    directly rather than `AccountEraser` — deleting the Firebase user and the cloud copy is far
+    beyond "I forgot my PIN"
+  - `lock_wrong` is a plural. The first device pass read `1 tries left`
+- Not done / deferred: the signed-in Google re-auth path is code-reviewed but not device-verified —
+  the emulator has no Google account to sign in with. Biometrics are offered for app entry only;
+  `hide-amounts` still has no biometric reveal and no auto-hide on backgrounding. The grace window is
+  a constant, not a user-facing setting
+- Blocked: none

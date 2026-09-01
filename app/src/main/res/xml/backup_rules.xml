@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Auto Backup on API <= 30. The app lock's DataStore file is excluded because its PIN digest is
+    an HMAC under a non-exportable Android Keystore key: the key cannot ride along to a restored
+    device, so a restored digest would be permanently unverifiable and would lock the owner out of
+    their own ledger. Everything else — theme, currency, ledger — still backs up.
+-->
+<full-backup-content>
+    <exclude domain="file" path="datastore/wherego_lock.preferences_pb" />
+</full-backup-content>

@@ -7,6 +7,7 @@ import com.flla.wherego.core.database.LedgerStore
 import com.flla.wherego.core.database.PlanStore
 import com.flla.wherego.core.database.UserProfileStore
 import com.flla.wherego.core.database.zoneOf
+import com.flla.wherego.core.datastore.AppLock
 import com.flla.wherego.core.datastore.ThemePreferences
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.CsvImport
@@ -74,6 +75,8 @@ data class SettingsUiState(
     val recurringRules: List<RecurringSummary> = emptyList(),
     /** `Me → APP → Hide amounts`; masks every figure Wherego renders while browsing. */
     val amountsHidden: Boolean = false,
+    /** `Me → APP → App lock`; whether a PIN gates the app on launch. */
+    val appLockOn: Boolean = false,
     /**
      * `DueReminder` is enqueued unconditionally for every recurring rule the user
      * creates or confirms, and nothing persists an opt-out, so the row always reads On.
@@ -103,6 +106,7 @@ class SettingsViewModel @Inject constructor(
     private val ledger: LedgerStore,
     private val plan: PlanStore,
     private val themePreferences: ThemePreferences,
+    private val appLock: AppLock,
     private val auth: AuthRepository,
     private val eraser: AccountEraser,
 ) : ViewModel() {
@@ -123,7 +127,8 @@ class SettingsViewModel @Inject constructor(
         ledger.observeActive(),
         plan.observeRules(),
         themePreferences.amountsHidden,
-    ) { acc, txs, rules, hidden ->
+        appLock.enabled,
+    ) { acc, txs, rules, hidden, lockOn ->
         val profile = acc.profile
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
         val accountLine = if (acc.auth.signedIn) {
@@ -167,6 +172,7 @@ class SettingsViewModel @Inject constructor(
             recurringActiveCount = activeRules.size,
             recurringRules = activeRules.map { rule -> summarise(rule, acc.categories) },
             amountsHidden = hidden,
+            appLockOn = lockOn,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 

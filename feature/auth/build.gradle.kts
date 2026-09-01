@@ -30,6 +30,9 @@ kotlin {
 
 dependencies {
     implementation(project(":core:sync"))
+    implementation(project(":core:datastore"))
+    implementation(project(":core:database"))
+    implementation(project(":core:model"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:i18n"))
     implementation(platform(libs.androidx.compose.bom))
@@ -42,4 +45,8 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.biometric)
+    implementation(libs.kotlinx.coroutines.core)
 }

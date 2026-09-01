@@ -91,6 +91,37 @@
     <string name="auth_err_no_google_account">Tambahin akun Google di HP ini, terus coba lagi.</string>
     <string name="auth_err_not_google_credential">Credential-nya bukan Google ID token.</string>
 
+    <!-- App lock (device-local PIN + biometric; unrelated to the Google backup auth above) -->
+    <string name="lock_title">Masukkan PIN</string>
+    <string name="lock_sub">Wherego lagi dikunci.</string>
+    <string name="lock_cooldown">Kebanyakan salah. Coba lagi %1$d detik.</string>
+    <string name="lock_biometric_cta">Buka pakai biometrik</string>
+    <string name="lock_biometric_prompt_title">Buka Wherego</string>
+    <string name="lock_biometric_prompt_sub">Pastiin ini kamu buat buka catatanmu.</string>
+    <string name="lock_biometric_negative">Pakai PIN</string>
+    <string name="lock_biometric_unavailable">Belum ada biometrik di HP ini.</string>
+    <string name="lock_cd_biometric">Buka pakai biometrik</string>
+    <string name="lock_forgot">Lupa PIN?</string>
+    <string name="lock_setup_title">Atur PIN</string>
+    <string name="lock_setup_sub">Enam angka. Wherego nanya ini tiap kamu buka aplikasi.</string>
+    <string name="lock_confirm_title">Ulangi PIN-nya</string>
+    <string name="lock_mismatch">PIN-nya beda. Mulai lagi.</string>
+    <string name="lock_manage_title">Kunci aplikasi</string>
+    <string name="lock_row_biometric">Buka pakai biometrik</string>
+    <string name="lock_row_change_pin">Ganti PIN</string>
+    <string name="lock_row_turn_off">Matikan kunci aplikasi</string>
+    <string name="lock_verify_to_disable">Masukkan PIN buat matiin kuncinya.</string>
+    <string name="lock_verify_to_change">Masukkan PIN yang sekarang.</string>
+    <string name="lock_reauth_title">Buka pakai Google</string>
+    <string name="lock_reauth_body">Masuk pakai akun Google yang nyimpen backup catatan ini, terus Wherego hapus PIN-nya. Datamu tetap aman.</string>
+    <string name="lock_reauth_cta">Lanjut pakai Google</string>
+    <string name="lock_reauth_wrong_account">Itu akun Google yang beda.</string>
+    <string name="lock_reauth_failed">Nggak bisa dicek. Coba lagi.</string>
+    <string name="lock_erase_title">Hapus dan mulai dari awal?</string>
+    <string name="lock_erase_body">PIN yang kelupaan nggak bisa dibalikin di HP ini. Wherego bisa hapus data di HP ini dan mulai dari nol.</string>
+    <string name="lock_erase_guest_warning">Kamu belum masuk, jadi data ini nggak ada backup-nya. Bakal hilang.</string>
+    <string name="lock_erase_confirm">Hapus</string>
+
     <!-- Onboarding -->
     <string name="onb_welcome_title">Kamu nggak butuh spreadsheet. Cukup 20 detik.</string>
     <string name="onb_welcome_sub">Wherego itu buku catatan saku, bukan lemari arsip.</string>
@@ -255,6 +286,7 @@
     <string name="me_row_appearance">Tampilan</string>
     <string name="me_row_reminders">Pengingat</string>
     <string name="me_row_hide_amounts">Sembunyikan nominal</string>
+    <string name="me_row_app_lock">Kunci aplikasi</string>
     <string name="me_value_on">Nyala</string>
     <string name="me_value_off">Mati</string>
     <string name="me_section_data">DATA</string>
@@ -397,6 +429,9 @@
     </plurals>
     <plurals name="stories_log_count">
         <item quantity="other">%d catatan</item>
+    </plurals>
+    <plurals name="lock_wrong">
+        <item quantity="other">PIN salah. Sisa %d percobaan.</item>
     </plurals>
     <plurals name="me_value_active">
         <item quantity="other">%d aktif</item>

@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.flla.wherego.core.database.LocalDataEraser
+import com.flla.wherego.core.datastore.AppLock
+import com.flla.wherego.core.datastore.PinMac
 import com.flla.wherego.core.datastore.ThemePreferences
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.Transaction
@@ -28,6 +30,7 @@ import org.robolectric.annotation.Config
 class AccountEraserTest {
     private lateinit var context: Context
     private lateinit var preferences: ThemePreferences
+    private lateinit var appLock: AppLock
     private lateinit var syncScheduler: SyncScheduler
     private lateinit var fxCache: FxCacheScheduler
     private lateinit var activity: Activity
@@ -36,6 +39,7 @@ class AccountEraserTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Context>()
         preferences = ThemePreferences(context)
+        appLock = AppLock(context, NoopPinMac())
         syncScheduler = SyncScheduler(context)
         fxCache = FxCacheScheduler(context)
         activity = Robolectric.buildActivity(Activity::class.java).get()
@@ -53,17 +57,21 @@ class AccountEraserTest {
             receipts = NoopReceipts(),
             local = local,
             preferences = preferences,
+            appLock = appLock,
             syncScheduler = syncScheduler,
             fxCache = fxCache,
         )
 
         preferences.setWelcomeSeen(true)
         assertTrue(preferences.welcomeSeen.first())
+        appLock.enable("123456")
+        assertTrue(appLock.enabled.first())
 
         val result = eraser.erase(activity)
         assertTrue(result.isSuccess)
         assertEquals(listOf("cloud", "authDelete", "signOut", "local"), log)
         assertFalse(preferences.welcomeSeen.first())
+        assertFalse(appLock.enabled.first())
     }
 
     @Test
@@ -78,6 +86,7 @@ class AccountEraserTest {
             receipts = NoopReceipts(),
             local = local,
             preferences = preferences,
+            appLock = appLock,
             syncScheduler = syncScheduler,
             fxCache = fxCache,
         )
@@ -104,6 +113,7 @@ class AccountEraserTest {
             receipts = NoopReceipts(),
             local = local,
             preferences = preferences,
+            appLock = appLock,
             syncScheduler = syncScheduler,
             fxCache = fxCache,
         )
@@ -160,4 +170,20 @@ private class RecordingCloud(
 private class NoopReceipts : ReceiptUploader {
     override suspend fun upload(uid: String, receiptId: String, file: File): String? = null
     override suspend fun deleteAll(uid: String) = Unit
+}
+
+/**
+ * Enough of a [PinMac] for the erase path, which only needs the digest written and then dropped.
+ *
+ * Deliberately a test-source class: a stand-in for a security primitive has no business shipping
+ * in the APK, where a mis-wired binding could silently swap out the real Keystore digest.
+ */
+private class NoopPinMac : PinMac {
+    override fun hasKey(): Boolean = true
+
+    override fun ensureKey() = Unit
+
+    override fun mac(salt: ByteArray, pin: String): ByteArray = pin.toByteArray()
+
+    override fun deleteKey() = Unit
 }

@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Wherego" parent="android:Theme.Material.Light.NoActionBar">
+    <!--
+        AppCompat parent, not `android:Theme.Material.*`: androidx.biometric falls back to its own
+        FingerprintDialogFragment on API < 28 and on some vendor API 28-29 paths, and that dialog
+        inflates androidx.appcompat.app.AlertDialog, which only resolves under an AppCompat theme.
+        Every pixel of the app is Compose and styled by WheregoTheme, so the parent only governs
+        the pre-Compose cold-start window — and all three attributes below still pin that.
+    -->
+    <style name="Theme.Wherego" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">#F2F4F8</item>

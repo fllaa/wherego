@@ -2,7 +2,7 @@ package com.flla.wherego
 
 import android.content.Context
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -25,13 +25,14 @@ import com.flla.wherego.core.i18n.ProvideAppLanguage
 import com.flla.wherego.core.i18n.AppLocale
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.model.ThemeMode
+import com.flla.wherego.feature.auth.LockRoute
 import com.flla.wherego.feature.auth.WelcomeScreen
 import com.flla.wherego.feature.settings.OnboardingRoute
 import com.flla.wherego.navigation.WheregoNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val viewModel: MainViewModel by viewModels()
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocale.context(newBase, AppLocale.load(newBase)))
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
                     val ready by viewModel.ready.collectAsStateWithLifecycle()
                     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
                     val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
+                    val locked by viewModel.locked.collectAsStateWithLifecycle()
                     var openCaptureOnStart by remember { mutableStateOf(false) }
                     var skipOnboarding by remember { mutableStateOf(false) }
                     LaunchedEffect(welcomeSeen) {
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
                     }
                     when {
                         !ready || welcomeSeen == null -> GuestSplash()
+                        locked -> LockRoute()
                         welcomeSeen == false -> WelcomeScreen(
                             onContinue = { fromBackup ->
                                 skipOnboarding = fromBackup

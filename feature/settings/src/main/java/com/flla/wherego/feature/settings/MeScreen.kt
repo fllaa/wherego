@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Repeat
@@ -91,6 +92,7 @@ import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Recurrence
 import com.flla.wherego.core.model.ThemeMode
+import com.flla.wherego.feature.auth.LockManageRoute
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.launch
@@ -120,10 +122,12 @@ fun MeScreen(
     var showCats by remember { mutableStateOf(false) }
     var showAuth by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
+    var showLock by remember { mutableStateOf(false) }
     val page = when {
         showAuth -> MePage.Profile
         showCats -> MePage.Categories
         showImport -> MePage.Import
+        showLock -> MePage.Lock
         else -> MePage.Root
     }
     val shareSubject = stringResource(R.string.me_share_subject)
@@ -171,6 +175,7 @@ fun MeScreen(
                 onBack = { showImport = false },
                 onCommit = { text, mapping, skip -> viewModel.importCsv(text, mapping, skip) },
             )
+            MePage.Lock -> LockManageRoute(onBack = { showLock = false })
             MePage.Root -> SettingsScreen(
                 state = state,
                 balanceMinor = balance,
@@ -216,12 +221,13 @@ fun MeScreen(
                     }
                 },
                 onToggleAmounts = viewModel::toggleAmountsHidden,
+                onAppLock = { showLock = true },
             )
         }
     }
 }
 
-private enum class MePage { Root, Profile, Categories, Import }
+private enum class MePage { Root, Profile, Categories, Import, Lock }
 
 /** Which demoted control is currently open in a sheet. */
 private enum class MeSheet { NONE, APPEARANCE, BALANCE, CURRENCY, RECURRING, REMINDERS }
@@ -243,6 +249,7 @@ fun SettingsScreen(
     onImport: () -> Unit,
     onMonthPdf: () -> Unit,
     onToggleAmounts: () -> Unit,
+    onAppLock: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
     var sheet by remember { mutableStateOf(MeSheet.NONE) }
@@ -330,6 +337,18 @@ fun SettingsScreen(
                 label = stringResource(R.string.me_row_hide_amounts),
                 onClick = onToggleAmounts,
                 value = if (state.amountsHidden) {
+                    stringResource(R.string.me_value_on)
+                } else {
+                    stringResource(R.string.me_value_off)
+                },
+            )
+            WheregoSettingDivider()
+            WheregoSettingRow(
+                icon = Icons.Outlined.Lock,
+                badgeFill = colors.violetSoft,
+                label = stringResource(R.string.me_row_app_lock),
+                onClick = onAppLock,
+                value = if (state.appLockOn) {
                     stringResource(R.string.me_value_on)
                 } else {
                     stringResource(R.string.me_value_off)

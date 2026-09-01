@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 31+ equivalent of backup_rules.xml. Both cloud backup and direct device transfer drop the
+    app lock's DataStore file: its PIN digest is an HMAC under a non-exportable Android Keystore
+    key, which never leaves this device, so a copied digest could never be verified again.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/wherego_lock.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="datastore/wherego_lock.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>

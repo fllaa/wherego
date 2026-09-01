@@ -91,6 +91,37 @@
     <string name="auth_err_no_google_account">Add a Google account on this device, then try again.</string>
     <string name="auth_err_not_google_credential">Credential is not a Google ID token.</string>
 
+    <!-- App lock (device-local PIN + biometric; unrelated to the Google backup auth above) -->
+    <string name="lock_title">Enter your PIN</string>
+    <string name="lock_sub">Wherego is locked.</string>
+    <string name="lock_cooldown">Too many tries. Try again in %1$d s.</string>
+    <string name="lock_biometric_cta">Unlock with biometrics</string>
+    <string name="lock_biometric_prompt_title">Unlock Wherego</string>
+    <string name="lock_biometric_prompt_sub">Confirm it\'s you to open your ledger.</string>
+    <string name="lock_biometric_negative">Use PIN</string>
+    <string name="lock_biometric_unavailable">No biometrics on this device.</string>
+    <string name="lock_cd_biometric">Unlock with biometrics</string>
+    <string name="lock_forgot">Forgot PIN?</string>
+    <string name="lock_setup_title">Set a PIN</string>
+    <string name="lock_setup_sub">Six digits. Wherego asks for it when you open the app.</string>
+    <string name="lock_confirm_title">Confirm your PIN</string>
+    <string name="lock_mismatch">Those did not match. Start again.</string>
+    <string name="lock_manage_title">App lock</string>
+    <string name="lock_row_biometric">Unlock with biometrics</string>
+    <string name="lock_row_change_pin">Change PIN</string>
+    <string name="lock_row_turn_off">Turn off app lock</string>
+    <string name="lock_verify_to_disable">Enter your PIN to turn the lock off.</string>
+    <string name="lock_verify_to_change">Enter your current PIN.</string>
+    <string name="lock_reauth_title">Unlock with Google</string>
+    <string name="lock_reauth_body">Sign in with the Google account backing up this ledger and Wherego will clear the PIN. Your data stays.</string>
+    <string name="lock_reauth_cta">Continue with Google</string>
+    <string name="lock_reauth_wrong_account">That is a different Google account.</string>
+    <string name="lock_reauth_failed">Could not verify. Try again.</string>
+    <string name="lock_erase_title">Erase and start over?</string>
+    <string name="lock_erase_body">There is no way to recover a forgotten PIN on this device. Wherego can erase this phone\'s data and start fresh.</string>
+    <string name="lock_erase_guest_warning">You are not signed in, so this data is not backed up anywhere. It will be gone.</string>
+    <string name="lock_erase_confirm">Erase</string>
+
     <!-- Onboarding -->
     <string name="onb_welcome_title">You don’t need a spreadsheet. You need 20 seconds.</string>
     <string name="onb_welcome_sub">Wherego is a pocket notebook, not a filing cabinet.</string>
@@ -255,6 +286,7 @@
     <string name="me_row_appearance">Appearance</string>
     <string name="me_row_reminders">Reminders</string>
     <string name="me_row_hide_amounts">Hide amounts</string>
+    <string name="me_row_app_lock">App lock</string>
     <string name="me_value_on">On</string>
     <string name="me_value_off">Off</string>
     <string name="me_section_data">DATA</string>
@@ -400,6 +432,10 @@
     <plurals name="stories_log_count">
         <item quantity="one">%d log</item>
         <item quantity="other">%d logs</item>
+    </plurals>
+    <plurals name="lock_wrong">
+        <item quantity="one">Wrong PIN. %d try left.</item>
+        <item quantity="other">Wrong PIN. %d tries left.</item>
     </plurals>
     <plurals name="me_value_active">
         <item quantity="one">%d active</item>

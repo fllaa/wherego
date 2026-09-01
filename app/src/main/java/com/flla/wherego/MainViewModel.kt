@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flla.wherego.core.database.LedgerStore
 import com.flla.wherego.core.database.UserProfileStore
+import com.flla.wherego.core.datastore.AppLockController
 import com.flla.wherego.core.datastore.ThemePreferences
 import com.flla.wherego.core.model.ThemeMode
 import com.flla.wherego.core.model.AppLanguage
@@ -24,6 +25,7 @@ class MainViewModel @Inject constructor(
     private val userProfileStore: UserProfileStore,
     private val ledgerStore: LedgerStore,
     private val themePreferences: ThemePreferences,
+    private val appLockController: AppLockController,
     private val syncScheduler: SyncScheduler,
     private val fxCache: FxCacheScheduler,
 ) : ViewModel() {
@@ -50,6 +52,9 @@ class MainViewModel @Inject constructor(
         .map { it?.onboardingDone == true }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    /** Whether the launch gate is up. Owned by [AppLockController]; unlocking flips it there. */
+    val locked: StateFlow<Boolean> = appLockController.locked
+
     val language: StateFlow<String> = userProfileStore.profile
         .map { AppLanguage.parse(it?.localeTag) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppLanguage.SYSTEM)
@@ -60,6 +65,9 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            // Before `_ready`, so an unlocked frame of the ledger can never slip out ahead of the
+            // gate on a cold start.
+            appLockController.bind()
             userProfileStore.ensureGuest()
             ledgerStore.seedCategoriesIfEmpty()
             _ready.value = true

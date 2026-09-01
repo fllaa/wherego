@@ -2,6 +2,7 @@ package com.flla.wherego.core.sync
 
 import android.app.Activity
 import com.flla.wherego.core.database.LocalDataEraser
+import com.flla.wherego.core.datastore.AppLock
 import com.flla.wherego.core.datastore.ThemePreferences
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,6 +14,7 @@ class AccountEraser @Inject constructor(
     private val receipts: ReceiptUploader,
     private val local: LocalDataEraser,
     private val preferences: ThemePreferences,
+    private val appLock: AppLock,
     private val syncScheduler: SyncScheduler,
     private val fxCache: FxCacheScheduler,
 ) {
@@ -34,6 +36,10 @@ class AccountEraser @Inject constructor(
         auth.signOut()
         local.resetToGuest()
         preferences.clear()
+        // `preferences.clear()` cannot reach this: the lock keeps its own DataStore file so it can
+        // be excluded from backup. Left behind, an erase would strand a live PIN and an orphan
+        // Keystore key on a device that is supposed to match a fresh install.
+        appLock.disable()
         syncScheduler.enqueuePeriodic()
         fxCache.enqueueWeekly()
         return Result.success(Unit)
