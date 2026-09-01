@@ -106,6 +106,7 @@
     <string name="lock_setup_sub">Enam angka. Wherego nanya ini tiap kamu buka aplikasi.</string>
     <string name="lock_confirm_title">Ulangi PIN-nya</string>
     <string name="lock_mismatch">PIN-nya beda. Mulai lagi.</string>
+    <string name="lock_setup_done">Kunci aplikasi nyala.</string>
     <string name="lock_manage_title">Kunci aplikasi</string>
     <string name="lock_row_biometric">Buka pakai biometrik</string>
     <string name="lock_row_change_pin">Ganti PIN</string>

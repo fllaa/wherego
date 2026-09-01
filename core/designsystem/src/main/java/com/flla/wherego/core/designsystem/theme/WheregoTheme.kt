@@ -111,6 +111,7 @@ fun WheregoTheme(
     CompositionLocalProvider(
         LocalWheregoColors provides palette,
         LocalAmountsHidden provides amountsHidden,
+        LocalReducedMotion provides resolveReducedMotion(),
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkScheme else LightScheme,

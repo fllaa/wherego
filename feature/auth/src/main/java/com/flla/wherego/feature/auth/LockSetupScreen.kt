@@ -1,6 +1,9 @@
 package com.flla.wherego.feature.auth
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,10 +27,13 @@ import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.LockReset
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -36,12 +42,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.flla.wherego.core.designsystem.component.WheregoPinDots
+import com.flla.wherego.core.designsystem.component.GoMood
+import com.flla.wherego.core.designsystem.component.WheregoGoAvatar
 import com.flla.wherego.core.designsystem.component.WheregoPinPad
 import com.flla.wherego.core.designsystem.component.WheregoPrimaryButton
 import com.flla.wherego.core.designsystem.component.WheregoSettingDivider
 import com.flla.wherego.core.designsystem.component.WheregoSettingRow
 import com.flla.wherego.core.designsystem.component.WheregoSettingsCard
+import com.flla.wherego.core.designsystem.theme.LocalReducedMotion
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.datastore.AppLock
@@ -97,8 +105,9 @@ fun LockManageRoute(
                 )
             }
         }
-        if (atRoot) {
-            ManageBody(
+        when {
+            state.justEnabled -> EnabledBody()
+            atRoot -> ManageBody(
                 state = state,
                 biometricAvailable = BiometricGate.available(context),
                 onSetUp = viewModel::startSetup,
@@ -106,8 +115,7 @@ fun LockManageRoute(
                 onChangePin = viewModel::startChange,
                 onTurnOff = viewModel::startDisable,
             )
-        } else {
-            PinEntryBody(
+            else -> PinEntryBody(
                 state = state,
                 onDigit = viewModel::onDigit,
                 onBackspace = viewModel::onBackspace,
@@ -205,51 +213,21 @@ private fun PinEntryBody(
             .padding(horizontal = 26.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Centres in the space above the pad, matching the unlock gate.
-        Column(
-            Modifier
+        PinStage(
+            title = stringResource(title),
+            subtitle = stringResource(subtitle),
+            // Idle throughout: Go has no opinion about a PIN you are choosing, only about one you
+            // are being asked for. He reacts to a mismatch through the recoil, same as the gate.
+            mood = GoMood.Idle,
+            digits = state.digits.length,
+            total = AppLock.PIN_LENGTH,
+            message = state.message,
+            shakeKey = state.shakeKey,
+            // Centres in the space above the pad, matching the unlock gate.
+            modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                stringResource(title),
-                style = WheregoType.onboardTitle,
-                color = colors.ink,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(subtitle),
-                style = WheregoType.helper,
-                color = colors.muted,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(28.dp))
-            WheregoPinDots(
-                filled = state.digits.length,
-                total = AppLock.PIN_LENGTH,
-                error = state.message != null,
-            )
-            Spacer(Modifier.height(12.dp))
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .height(34.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val message = state.message
-                if (message != null) {
-                    Text(
-                        lockMessageText(message),
-                        style = WheregoType.helper,
-                        color = colors.coral,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
+        )
         WheregoPinPad(
             onDigit = onDigit,
             onBackspace = onBackspace,
@@ -257,5 +235,40 @@ private fun PinEntryBody(
             enabled = state.cooldownSeconds == 0 && !state.busy,
         )
         Spacer(Modifier.height(28.dp))
+    }
+}
+
+/** The one beat of celebration, held for [LockSetupViewModel] `CELEBRATION_MILLIS` after enabling. */
+@Composable
+private fun EnabledBody() {
+    val colors = WheregoTheme.colors
+    val reduced = LocalReducedMotion.current
+    val pop = remember { Animatable(if (reduced) 1f else 0.5f) }
+    LaunchedEffect(Unit) {
+        if (reduced) return@LaunchedEffect
+        pop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMediumLow))
+    }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(horizontal = 26.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        WheregoGoAvatar(
+            mood = GoMood.Happy,
+            size = 92.dp,
+            modifier = Modifier.graphicsLayer {
+                scaleX = pop.value
+                scaleY = pop.value
+            },
+        )
+        Spacer(Modifier.height(20.dp))
+        Text(
+            stringResource(R.string.lock_setup_done),
+            style = WheregoType.onboardTitle,
+            color = colors.ink,
+            textAlign = TextAlign.Center,
+        )
     }
 }

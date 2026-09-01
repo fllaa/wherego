@@ -24,6 +24,10 @@ data class LockSetupUiState(
     val biometricEnabled: Boolean = false,
     val digits: String = "",
     val message: LockMessage? = null,
+    /** Bumped on every rejected PIN or mismatch so the stage can shake again. */
+    val shakeKey: Int = 0,
+    /** Holds the celebration frame for a beat after the lock is first switched on. */
+    val justEnabled: Boolean = false,
     val cooldownSeconds: Int = 0,
     val busy: Boolean = false,
 )
@@ -43,6 +47,8 @@ class LockSetupViewModel @Inject constructor(
         val step: LockSetupStep = LockSetupStep.Manage,
         val digits: String = "",
         val message: LockMessage? = null,
+        val shakeKey: Int = 0,
+        val justEnabled: Boolean = false,
         val cooldownSeconds: Int = 0,
         val busy: Boolean = false,
         val first: String = "",
@@ -62,6 +68,8 @@ class LockSetupViewModel @Inject constructor(
             biometricEnabled = biometric,
             digits = l.digits,
             message = l.message,
+            shakeKey = l.shakeKey,
+            justEnabled = l.justEnabled,
             cooldownSeconds = l.cooldownSeconds,
             busy = l.busy,
         )
@@ -77,7 +85,13 @@ class LockSetupViewModel @Inject constructor(
     fun cancel() = go(LockSetupStep.Manage)
 
     private fun go(step: LockSetupStep) {
-        local.value = local.value.copy(step = step, digits = "", message = null, first = "")
+        local.value = local.value.copy(
+            step = step,
+            digits = "",
+            message = null,
+            first = "",
+            justEnabled = false,
+        )
     }
 
     fun toggleBiometric() {
@@ -125,13 +139,18 @@ class LockSetupViewModel @Inject constructor(
                 digits = "",
                 first = "",
                 message = LockMessage.Info(R.string.lock_mismatch),
+                shakeKey = local.value.shakeKey + 1,
             )
             return
         }
         viewModelScope.launch {
             local.value = local.value.copy(busy = true)
             appLock.enable(pin)
-            local.value = Local()
+            // The one moment the user is choosing the lock rather than being stopped by it, so it
+            // gets a beat of celebration before dropping back to the manage list.
+            local.value = Local(justEnabled = true)
+            delay(CELEBRATION_MILLIS)
+            if (local.value.justEnabled) local.value = Local()
         }
     }
 
@@ -152,9 +171,14 @@ class LockSetupViewModel @Inject constructor(
                     digits = "",
                     busy = false,
                     message = LockMessage.WrongPin(verdict.attemptsLeft),
+                    shakeKey = local.value.shakeKey + 1,
                 )
                 is PinVerdict.CoolingDown -> {
-                    local.value = local.value.copy(digits = "", busy = false)
+                    local.value = local.value.copy(
+                        digits = "",
+                        busy = false,
+                        shakeKey = local.value.shakeKey + 1,
+                    )
                     startCooldown(verdict.untilMillis)
                 }
             }
@@ -180,5 +204,10 @@ class LockSetupViewModel @Inject constructor(
     private fun secondsUntil(untilMillis: Long): Int {
         val left = untilMillis - System.currentTimeMillis()
         return if (left <= 0) 0 else ((left + 999) / 1_000).toInt()
+    }
+
+    private companion object {
+        /** Long enough to register as a reply, short enough not to feel like a wait. */
+        const val CELEBRATION_MILLIS = 1_300L
     }
 }

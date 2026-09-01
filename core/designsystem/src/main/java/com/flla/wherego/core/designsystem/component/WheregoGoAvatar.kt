@@ -14,16 +14,22 @@ import androidx.compose.ui.res.stringResource
 import com.flla.wherego.core.i18n.R
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 
 enum class GoMood { Idle, Happy, Sleepy }
 
+/**
+ * Go, the app's face. [size] defaults to the 54dp Home uses; the lock gate sizes him up, and the
+ * inner mark and emoji scale with him so the proportions hold at any size.
+ */
 @Composable
 fun WheregoGoAvatar(
     modifier: Modifier = Modifier,
     mood: GoMood = GoMood.Idle,
+    size: Dp = 54.dp,
 ) {
     val goCd = stringResource(R.string.ds_cd_go)
     val colors = WheregoTheme.colors
@@ -34,7 +40,7 @@ fun WheregoGoAvatar(
     }
     Box(
         modifier
-            .size(54.dp)
+            .size(size)
             .border(2.5.dp, colors.outline, CircleShape)
             .clip(CircleShape)
             .background(fill)
@@ -42,15 +48,9 @@ fun WheregoGoAvatar(
         contentAlignment = Alignment.Center,
     ) {
         when (mood) {
-            GoMood.Idle -> {
-                WheregoWaypointMark(modifier = Modifier.size(38.dp))
-            }
-            GoMood.Happy -> {
-                Text("😄", fontSize = 26.sp)
-            }
-            GoMood.Sleepy -> {
-                Text("😴", fontSize = 26.sp)
-            }
+            GoMood.Idle -> WheregoWaypointMark(modifier = Modifier.size(size * 0.70f))
+            GoMood.Happy -> Text("😄", fontSize = (size.value * 0.48f).sp)
+            GoMood.Sleepy -> Text("😴", fontSize = (size.value * 0.48f).sp)
         }
     }
 }

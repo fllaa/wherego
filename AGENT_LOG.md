@@ -895,3 +895,64 @@
   `hide-amounts` still has no biometric reveal and no auto-hide on backgrounding. The grace window is
   a constant, not a user-facing setting
 - Blocked: none
+
+## 2026-09-01  T1630  app-lock-play
+- Goal: the gate from `app-lock` was correct and completely inert. You meet it several times a day
+  and it gave nothing back. Go now fronts it and reacts, the keys move under the finger, and a
+  rejected PIN is felt as well as read
+- Files changed:
+  - `:core:designsystem` — new `Motion.kt`: `LocalReducedMotion` plus `resolveReducedMotion()`.
+    `WheregoTheme` resolves the animator duration scale once and provides it beside the palette.
+    `WheregoGoAvatar` gained `size` (default still the 54dp Home uses) with the inner mark and
+    emoji scaling off it. `NumpadKey` gained `pressAnimated`, **off by default**; `WheregoPinPad`
+    passes it and ticks a haptic per key; `WheregoPinDots` springs each dot past full size and
+    animates `track → ink`
+  - `:core:i18n` — `lock_setup_done`, both locales
+  - `:feature:auth` — new `PinStage.kt`, the shared stack above every keypad (Go, title, dots,
+    message) which owns the shake and the reject haptic. `LockScreen` and `LockSetupScreen` both
+    delegate to it, deleting the duplicate header each was carrying. `LockSetupScreen` gained
+    `EnabledBody`, the first-enable celebration. Both view models gained a `shakeKey` counter;
+    `LockSetupViewModel` gained `justEnabled` and holds it for 1.3s
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - full unit sweep across `:core:*`, `:feature:capture`, `:app` → SUCCESS
+  - on `emulator-5554` (API 36): Go fronts the gate and the setup steps; six digits produced the
+    celebration frame (`App lock is on.`) and it auto-dismissed to the manage list; five wrong PINs
+    drove the cooldown and Go went to sleep with the dots coral. Dots read correctly at three filled
+    plus three empty slots, with the third caught mid-overshoot in a still. **Entered a PIN at 150ms
+    per key and all six registered**, so the press spring does not swallow taps. The capture sheet's
+    money pad still carries its `000` key and `1` then `000` still gives `1.000`. With
+    `animator_duration_scale 0` the gate still unlocks and nothing animates. Checked light and dark:
+    dark keeps the off-black paper, Go sits in the dark `mascotFill`, dot contrast holds
+- Decisions:
+  - `DESIGN_VARIANCE` deliberately **low** for this surface. You type this PIN blind, daily, so
+    muscle memory is the feature and an asymmetric or surprising layout would fight it. All of the
+    playfulness is motion and character; the composition did not move
+  - Go reuses the existing `Idle / Happy / Sleepy` grammar rather than gaining a mood. `Sleepy`
+    during a cooldown is a **static** mood swap, not motion, which keeps the punitive state plain:
+    animating the moment the app refuses you is tone-deaf. A wrong PIN is a recoil instead of a
+    mood, so Go never gains an "alarmed" face that Home would then have to understand
+  - the dots shake horizontally while Go rotates and dips. One driver, two mappings, because a
+    single shared translation would read as the whole screen twitching rather than as Go flinching
+  - press physics sit behind a parameter that defaults off, so the money pad in the capture sheet is
+    untouched. Both pads still share one `NumpadKey`, which is what stops them drifting apart, but
+    that pad commits real ledger rows and movement under a finger entering an amount is a
+    behavioural change nobody asked for
+  - success on the gate stays **instant**. A celebration on the most frequent daily action turns
+    into friction fast, so the reward went to first-enable instead, which a user sees once. The
+    filling sixth dot is the only feedback the unlock needs
+  - empty dots floor at 0.82 scale, not near zero. The first attempt shrank them so far that six
+    waiting slots stopped reading as slots at all, which traded legibility for a pop
+  - haptics are **not** gated on reduced motion. Someone who turned off animation has not asked to
+    stop feeling their own keypresses, and the OS has a separate switch for that
+  - `PinStage` exists because the gate and the setup screens had grown two copies of the same
+    stack. Two copies is two places for the choreography to drift
+- Not done / deferred: **introduced and fixed an ANR.** The first device run timed out input
+  dispatch after 5001ms because `pressAnimated && !rememberReducedMotion()` invoked a Composable
+  behind a short-circuit, which corrupts the slot table, and additionally fired a binder query to
+  the settings provider once per key, ten per pad. Hoisting it to `LocalReducedMotion` provided by
+  the theme fixed both at once and follows `LocalAmountsHidden`. Also unfixed on purpose: seven
+  pre-existing em-dashes in `strings.xml` (`onb_currency_skip`, `onb_first_sub`,
+  `capture_balance_helper`, `plan_empty_recurring`, `stories_balance_anchor`,
+  `me_recurring_plan_owns`, `danger_err_failed`) which predate this slice and are copy, not lock
+- Blocked: none

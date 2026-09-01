@@ -25,14 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.flla.wherego.core.designsystem.component.WheregoPinDots
+import com.flla.wherego.core.designsystem.component.GoMood
 import com.flla.wherego.core.designsystem.component.WheregoPinPad
-import com.flla.wherego.core.designsystem.component.WheregoWaypointMark
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.datastore.AppLock
@@ -94,55 +92,21 @@ fun LockRoute(viewModel: LockViewModel = hiltViewModel()) {
             .padding(horizontal = 26.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // The header group centres itself in whatever is left above the pad, so a tall screen does
-        // not open a void between the dots and the keys.
-        Column(
-            Modifier
+        // Go dozes off while the throttle holds; the rest of the time he is just watching you
+        // type. Wrong PINs are a recoil inside PinStage, not a mood change.
+        PinStage(
+            title = stringResource(R.string.lock_title),
+            subtitle = stringResource(R.string.lock_sub),
+            mood = if (state.cooldownSeconds > 0) GoMood.Sleepy else GoMood.Idle,
+            digits = state.digits.length,
+            total = AppLock.PIN_LENGTH,
+            message = state.message,
+            shakeKey = state.shakeKey,
+            // Centres in whatever is left above the pad, so a tall screen does not open a void.
+            modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            WheregoWaypointMark(size = 64.dp)
-            Spacer(Modifier.height(20.dp))
-            Text(
-                stringResource(R.string.lock_title),
-                style = WheregoType.onboardTitle,
-                color = colors.ink,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(R.string.lock_sub),
-                style = WheregoType.helper,
-                color = colors.muted,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(28.dp))
-            WheregoPinDots(
-                filled = state.digits.length,
-                total = AppLock.PIN_LENGTH,
-                error = state.message != null,
-            )
-            Spacer(Modifier.height(12.dp))
-            // Reserved height, so nothing shifts when a message appears or clears.
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .height(34.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val message = state.message
-                if (message != null) {
-                    Text(
-                        lockMessageText(message),
-                        style = WheregoType.helper,
-                        color = colors.coral,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
+        )
         WheregoPinPad(
             onDigit = viewModel::onDigit,
             onBackspace = viewModel::onBackspace,

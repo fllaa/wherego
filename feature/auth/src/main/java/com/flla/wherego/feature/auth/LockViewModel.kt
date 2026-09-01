@@ -27,6 +27,11 @@ data class LockUiState(
     val digits: String = "",
     /** Line under the dots. `null` when the last attempt has not failed. */
     val message: LockMessage? = null,
+    /**
+     * Bumped on every rejected attempt so the screen can shake again. A counter, not a flag: two
+     * wrong PINs in a row must produce two reactions.
+     */
+    val shakeKey: Int = 0,
     val biometricOffered: Boolean = false,
     /** `0` when input is accepted; counts down while the throttle holds. */
     val cooldownSeconds: Int = 0,
@@ -100,9 +105,14 @@ class LockViewModel @Inject constructor(
                     digits = "",
                     busy = false,
                     message = LockMessage.WrongPin(verdict.attemptsLeft),
+                    shakeKey = _state.value.shakeKey + 1,
                 )
                 is PinVerdict.CoolingDown -> {
-                    _state.value = _state.value.copy(digits = "", busy = false)
+                    _state.value = _state.value.copy(
+                        digits = "",
+                        busy = false,
+                        shakeKey = _state.value.shakeKey + 1,
+                    )
                     startCooldown(verdict.untilMillis)
                 }
             }

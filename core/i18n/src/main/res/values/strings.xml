@@ -106,6 +106,7 @@
     <string name="lock_setup_sub">Six digits. Wherego asks for it when you open the app.</string>
     <string name="lock_confirm_title">Confirm your PIN</string>
     <string name="lock_mismatch">Those did not match. Start again.</string>
+    <string name="lock_setup_done">App lock is on.</string>
     <string name="lock_manage_title">App lock</string>
     <string name="lock_row_biometric">Unlock with biometrics</string>
     <string name="lock_row_change_pin">Change PIN</string>
