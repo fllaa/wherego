@@ -435,7 +435,7 @@ fun WheregoCapCard(
             .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
         Text(label, style = WheregoType.eyebrow.copy(fontSize = 13.sp), color = colors.capLabel)
-        Text(amount, style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 50.sp), color = Color.White)
+        Text(amount, style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 50.sp), color = colors.onAccent)
         Box(
             Modifier
                 .fillMaxWidth()

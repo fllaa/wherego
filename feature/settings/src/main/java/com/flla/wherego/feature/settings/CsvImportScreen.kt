@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -267,7 +266,7 @@ private fun PickStep(fileName: String, @StringRes errorRes: Int?) {
                 Icon(
                     Icons.Outlined.Upload,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = colors.onAccent,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -501,7 +500,7 @@ private fun MapField(
                 Text(
                     chipLabel,
                     style = WheregoType.stepText,
-                    color = if (selected) Color.White else colors.ink,
+                    color = if (selected) colors.onAccent else colors.ink,
                     modifier = Modifier
                         .clip(Pill)
                         .background(if (selected) colors.teal else colors.tealSoft)

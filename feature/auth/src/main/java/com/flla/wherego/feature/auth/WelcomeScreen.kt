@@ -218,7 +218,7 @@ private fun ProofCard() {
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text("🍜", fontSize = 15.sp, color = colors.ink)
-                Text(categoryDisplayName("cat_food_out", "Food out"), style = WheregoType.stepText, color = Color.White)
+                Text(categoryDisplayName("cat_food_out", "Food out"), style = WheregoType.stepText, color = colors.onAccent)
             }
             Text("Rp 18.000", style = WheregoType.balanceValue.copy(fontSize = 26.sp), color = colors.ink)
         }

@@ -323,7 +323,7 @@ private fun CurrencyStep(
                     Icon(
                         Icons.Outlined.Check,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = colors.onAccent,
                         modifier = Modifier.size(15.dp),
                     )
                 }
@@ -605,7 +605,7 @@ private fun FirstLogStep() {
                 Icon(
                     Icons.Outlined.Add,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = colors.onAccent,
                     modifier = Modifier.size(34.dp),
                 )
             }

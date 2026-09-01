@@ -206,13 +206,13 @@ fun CategoryManagerScreen(
                     Icon(
                         Icons.Outlined.Add,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = colors.onAccent,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = stringResource(R.string.me_category_new_title),
                         style = WheregoType.chip,
-                        color = Color.White,
+                        color = colors.onAccent,
                     )
                 }
             }
@@ -380,7 +380,7 @@ private fun TabPill(
         label = "tabFill",
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) Color.White else colors.muted,
+        targetValue = if (selected) colors.onAccent else colors.muted,
         animationSpec = tween(180),
         label = "tabText",
     )
@@ -744,7 +744,7 @@ private fun StickerEditorSheetContent(
                             Icon(
                                 Icons.Outlined.Check,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = colors.onAccent,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
