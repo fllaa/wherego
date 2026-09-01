@@ -18,6 +18,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -162,5 +163,87 @@ class CaptureViewModelTest {
         val inDb = ledger.getTransaction(savedTx!!.id)
         assertNotNull(inDb)
         assertEquals(savedTx!!.id, inDb?.id)
+    }
+
+    /**
+     * The `Balance` tab asserts a total. There is no category to pick, so `canSave` cannot demand
+     * one — but a blank buffer must never park an anchor, since an anchor stops every earlier row
+     * counting toward the balance.
+     */
+    @Test
+    fun theBalanceTabSavesWithoutACategoryButNotWhileBlank() = runBlocking {
+        val vm = createViewModel()
+        vm.beginCreate()
+        settle { vm.state.value.draftId.isNotBlank() }
+
+        vm.onCategory("cat_food")
+        vm.onKind(TransactionKind.RECONCILE)
+        settle { vm.state.value.isReconcile }
+
+        assertNull("a category cannot survive onto an assertion", vm.state.value.categoryId)
+        assertFalse("a blank balance is not a claim", vm.state.value.canSave)
+
+        vm.onDigit("0")
+        assertTrue("an explicit zero is a real claim", vm.state.value.canSave)
+    }
+
+    /** Re-dating an assertion is the thing `Adjust balance` cannot do; it always stamps today. */
+    @Test
+    fun theBalanceTabWritesAnAssertionOnThePickedDay() = runBlocking {
+        val vm = createViewModel()
+        vm.beginCreate()
+        settle { vm.state.value.draftId.isNotBlank() }
+
+        vm.onKind(TransactionKind.RECONCILE)
+        settle { vm.state.value.isReconcile }
+        vm.onDigit("5")
+        vm.onDigit("000")
+        vm.onDigit("000")
+        vm.onYesterday()
+
+        var saved: Transaction? = null
+        vm.save { tx -> saved = tx }
+        settle { saved != null }
+
+        assertEquals(TransactionKind.RECONCILE, saved?.kind)
+        assertEquals(5_000_000L, saved?.amountMinor)
+        assertEquals("2026-08-29", saved?.occurredOn)
+        assertEquals("cat_other", saved?.categoryId)
+    }
+
+    /** Editing corrects the claim in place instead of adding a competing one. */
+    @Test
+    fun editingAnAssertionDoesNotMintASecondAnchor() = runBlocking {
+        val vm = createViewModel()
+        vm.beginCreate()
+        settle { vm.state.value.draftId.isNotBlank() }
+        vm.onKind(TransactionKind.RECONCILE)
+        settle { vm.state.value.isReconcile }
+        vm.onDigit("1")
+        vm.onDigit("000")
+        var first: Transaction? = null
+        vm.save { tx -> first = tx }
+        settle { first != null }
+
+        vm.beginEdit(first!!)
+        settle { vm.state.value.editingId == first!!.id }
+        vm.onBackspace()
+        vm.onDigit("9")
+        var edited: Transaction? = null
+        vm.save { tx -> edited = tx }
+        settle { edited != null && edited!!.amountMinor != first!!.amountMinor }
+
+        assertEquals(first!!.id, edited?.id)
+        assertEquals(1, ledger.observeActive().first().count { it.kind == TransactionKind.RECONCILE })
+    }
+
+    /** Drains the test dispatcher until [done], the way the older tests spin by hand. */
+    private fun settle(done: () -> Boolean) {
+        var attempts = 0
+        while (!done() && attempts < 50) {
+            testDispatcher.scheduler.advanceUntilIdle()
+            Thread.sleep(10)
+            attempts++
+        }
     }
 }

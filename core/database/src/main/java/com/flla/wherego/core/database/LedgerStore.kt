@@ -319,7 +319,7 @@ class LedgerStore @Inject constructor(
                 kind = TransactionKind.RECONCILE,
                 amountMinor = targetMinor,
                 currency = currency,
-                categoryId = "cat_other",
+                categoryId = PresetCategories.OTHER,
                 note = "",
                 occurredOn = todayOn(zoneId),
                 occurredAt = clock.millis(),

@@ -20,6 +20,12 @@ object PresetCategories {
     const val ACCENT_HEX = "#2157C7"
     const val ACCENT_SOFT_HEX = "#D7E3F8"
 
+    /**
+     * Where a row lands when no category applies. A `reconcile` row asserts a total and has no
+     * category to speak of, but the ledger stores one on every row.
+     */
+    const val OTHER = "cat_other"
+
     val all: List<PresetCategory> = listOf(
         PresetCategory("cat_food_out", "Food out", "🍜", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 0),
         PresetCategory("cat_groceries", "Groceries", "🛒", ACCENT_HEX, ACCENT_SOFT_HEX, CategoryKind.EXPENSE, 1),

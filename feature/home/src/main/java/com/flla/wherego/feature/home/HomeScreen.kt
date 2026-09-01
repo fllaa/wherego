@@ -341,8 +341,9 @@ private fun TxItem(
     val colors = WheregoTheme.colors
     val name = row.categoryName?.let { categoryDisplayName(row.categoryId, it) }
         ?: stringResource(R.string.category_fallback_other)
-    // A reconcile row asserts a total. It carries no note, the capture sheet cannot represent it,
-    // and duplicating it would manufacture a second same-day anchor out of nothing.
+    // A reconcile row asserts a total: it carries no note, and duplicating it would manufacture a
+    // second same-day anchor out of nothing. Tapping opens the sheet's Balance tab to re-date or
+    // correct it, which `Adjust balance` cannot do — that path always stamps today.
     val isReconcile = row.transaction.kind == TransactionKind.RECONCILE
     val title = if (isReconcile) stringResource(R.string.kind_reconcile) else row.note.ifBlank { name }
     val subtitle = row.time?.let { "$it · $name" } ?: name
@@ -382,9 +383,8 @@ private fun TxItem(
                 badgeSoftHex = row.badgeSoftHex,
                 hasReceipt = row.hasReceipt,
                 modifier = Modifier.combinedClickable(
-                    enabled = !isReconcile,
                     onClick = onClick,
-                    onLongClick = { menu = true },
+                    onLongClick = if (isReconcile) null else ({ menu = true }),
                 ),
             )
         }

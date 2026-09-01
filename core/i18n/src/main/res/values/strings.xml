@@ -138,6 +138,8 @@
     <!-- Capture -->
     <string name="capture_tab_expense">Expense</string>
     <string name="capture_tab_income">Income</string>
+    <string name="capture_tab_balance">Balance</string>
+    <string name="capture_balance_helper">Not a spend — what the pot totals on this day.</string>
     <string name="capture_chip_today">Today</string>
     <string name="capture_chip_yesterday">Yesterday</string>
     <string name="capture_chip_pick">Pick</string>

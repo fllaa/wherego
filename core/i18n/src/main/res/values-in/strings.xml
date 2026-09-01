@@ -138,6 +138,8 @@
     <!-- Capture -->
     <string name="capture_tab_expense">Keluar</string>
     <string name="capture_tab_income">Masuk</string>
+    <string name="capture_tab_balance">Saldo</string>
+    <string name="capture_balance_helper">Bukan pengeluaran — total duitmu di tanggal ini.</string>
     <string name="capture_chip_today">Hari ini</string>
     <string name="capture_chip_yesterday">Kemarin</string>
     <string name="capture_chip_pick">Pilih</string>

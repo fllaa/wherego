@@ -641,7 +641,49 @@
     `signedBase`'s old `else -> +amount` and read an assertion as income. After release this would
     need a transitional zero-amount field
 - Not done / deferred: the migration changes an existing user's balance on upgrade — that is the
-  double-count fix landing, explained by the Stories tick but not announced. No reconcile tab in the
-  capture sheet, so an assertion can only be created from `Adjust balance` or onboarding. Pulls are
-  still unpaginated
+  double-count fix landing, explained by the Stories tick but not announced. Pulls are still
+  unpaginated
+- Blocked: none
+
+## 2026-09-01  T1310  capture-balance-tab
+- Goal: the deferred item from `balance-anchor` — assertions could only be created from
+  `Me → Adjust balance`, which always stamps today, so a wrong one could not be corrected and a
+  past one ("on 1 Aug I had 5jt") could not be stated at all. Tapping a `Balance set` row did
+  nothing
+- Files changed:
+  - `:core:model` — `PresetCategories.OTHER` replaces the `"cat_other"` literal that
+    `setBalanceTo` and now the capture sheet both need. A reconcile row carries a category it
+    never reads, because the ledger stores one on every row
+  - `:feature:capture` — third pill in `KindToggle`. `CaptureUiState.isReconcile` drops the
+    category requirement from `canSave` and hides what an assertion has no use for: the
+    10rb/15rb/25rb quick-spend chips, the photo/OCR chip, the category scroller and its grid.
+    Date chips stay — they are the point. `save` falls back to `PresetCategories.OTHER` only on
+    that tab
+  - `:feature:home` — `Balance set` rows are tappable again now that the sheet can represent
+    one; `onLongClick` stays null, since `same again` on an assertion would manufacture a second
+    same-day anchor
+  - `:core:i18n` — `capture_tab_balance`, `capture_balance_helper`, en + in
+- Commands:
+  - `./gradlew :app:assembleDebug testDebugUnitTest` → SUCCESS, 106 passed
+  - new `CaptureViewModelTest` ×3: the tab saves without a category but not while the buffer is
+    blank, it writes the assertion on the picked day, and editing one corrects it in place rather
+    than minting a second anchor
+  - on `emulator-5554`: the toggle shows `Expense | Income | Balance`; the Balance tab shows
+    `Not a spend — what the pot totals on this day.` with the quick-amount chips, photo chip and
+    category scroller gone and `Today/Yesterday/Pick` kept. `4.000.000` + `Yesterday` + `Park it`
+    wrote `reconcile|4000000|2026-08-31|cat_other` — a backdated assertion, which `Adjust balance`
+    cannot produce. Tapping the resulting `Balance set` row reopened the sheet on the Balance tab
+    with `4.000.000` pre-filled. Test row swipe-deleted afterwards
+- Decisions:
+  - `canSave` requires a non-blank buffer rather than `amountMinor > 0`. An explicit `0` is a real
+    claim ("wallet is empty") and must save; an untouched sheet must not, because parking an anchor
+    silently stops every earlier row counting toward the balance
+  - the category scroller is hidden rather than filtered. `Category.matches("reconcile")` is empty
+    for every category, so the row would have rendered as an empty scroller with a `More` button
+  - no confirmation dialog on the tab. `Instant Park it` (T0930) is the rule; the helper line
+    carries the warning instead, and a wrong assertion is one swipe from gone
+  - `Adjust balance` stays. It is the discoverable path for the common case, and both write the
+    same row through the same `save`
+- Not done / deferred: the `Balance` tab is reachable from the `+` FAB, so an assertion is three
+  taps from a mis-tap. The helper copy and the blank-buffer guard are the only friction
 - Blocked: none

@@ -14,6 +14,7 @@ import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.OcrAmountParser
+import com.flla.wherego.core.model.PresetCategories
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
 import com.flla.wherego.core.model.UserProfile
@@ -52,7 +53,15 @@ data class CaptureUiState(
 ) {
     val hasReceipt: Boolean get() = receiptId != null
     val amountMinor: Long get() = DigitBuffer.amountMinor(digits)
-    val canSave: Boolean get() = amountMinor > 0L && categoryId != null
+    /** An assertion of the pot's total: no category to pick, and no receipt or quick spend chips. */
+    val isReconcile: Boolean get() = kind == TransactionKind.RECONCILE
+
+    /**
+     * A blank buffer never saves, so a stray tap on the `Balance` tab cannot park an anchor that
+     * silently stops every earlier row counting. An explicit `0` is a real claim and does save.
+     */
+    val canSave: Boolean
+        get() = if (isReconcile) digits.isNotBlank() else amountMinor > 0L && categoryId != null
     val amountLabel: String get() = MoneyFormatter.format(amountMinor, currency)
     val matchingCategories: List<Category>
         get() = categories.filter { it.matches(kind) }
@@ -288,7 +297,9 @@ class CaptureViewModel @Inject constructor(
         if (!snapshot.canSave) return
         viewModelScope.launch {
             try {
-                val categoryId = snapshot.categoryId ?: return@launch
+                val categoryId = snapshot.categoryId
+                    ?: PresetCategories.OTHER.takeIf { snapshot.isReconcile }
+                    ?: return@launch
                 val row = ledger.save(
                     CaptureDraft(
                         kind = snapshot.kind,

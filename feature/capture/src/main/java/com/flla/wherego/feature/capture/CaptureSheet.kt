@@ -285,6 +285,13 @@ private fun CaptureSheetBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         KindToggle(kind = state.kind, onKind = onKind)
+        if (state.isReconcile) {
+            Text(
+                stringResource(R.string.capture_balance_helper),
+                style = WheregoType.helper,
+                color = colors.muted,
+            )
+        }
         AmountDisplay(state = state)
         if (state.ocrSuggestedAmount != null) {
             val label = MoneyFormatter.format(state.ocrSuggestedAmount, state.currency)
@@ -343,21 +350,25 @@ private fun CaptureSheetBody(
                 showCalendar = true,
                 onClick = onPickRequested,
             )
-            QuickChip("10rb", onClick = { onQuickAmount(10_000L) })
-            QuickChip("15rb", onClick = { onQuickAmount(15_000L) })
-            QuickChip("25rb", onClick = { onQuickAmount(25_000L) })
+            if (!state.isReconcile) {
+                QuickChip("10rb", onClick = { onQuickAmount(10_000L) })
+                QuickChip("15rb", onClick = { onQuickAmount(15_000L) })
+                QuickChip("25rb", onClick = { onQuickAmount(25_000L) })
+            }
             QuickChip(stringResource(R.string.capture_chip_note), selected = state.noteOpen, onClick = onToggleNote)
             QuickChip(state.currency, selected = state.currency != state.baseCurrency, onClick = onCycleCurrency)
-            val photoLabel = when {
-                state.isReadingOcr -> "⏳ " + stringResource(R.string.receipt_reading_title)
-                state.hasReceipt -> "✓ " + stringResource(R.string.capture_chip_photo)
-                else -> stringResource(R.string.capture_chip_photo)
+            if (!state.isReconcile) {
+                val photoLabel = when {
+                    state.isReadingOcr -> "⏳ " + stringResource(R.string.receipt_reading_title)
+                    state.hasReceipt -> "✓ " + stringResource(R.string.capture_chip_photo)
+                    else -> stringResource(R.string.capture_chip_photo)
+                }
+                QuickChip(
+                    photoLabel,
+                    selected = state.hasReceipt,
+                    onClick = onPhotoClick,
+                )
             }
-            QuickChip(
-                photoLabel,
-                selected = state.hasReceipt,
-                onClick = onPhotoClick,
-            )
         }
         if (state.currency != state.baseCurrency) {
             OutlinedTextField(
@@ -385,22 +396,24 @@ private fun CaptureSheetBody(
                 ),
             )
         }
-        CategoryRow(
-            chips = state.chipCategories,
-            selectedId = state.categoryId,
-            onCategory = onCategory,
-            onMore = onToggleMore,
-        )
-        AnimatedVisibility(
-            visible = state.showAllCategories,
-            enter = expandVertically(spring()) + fadeIn(),
-            exit = shrinkVertically(spring()) + fadeOut(),
-        ) {
-            CategoryGrid(
-                categories = state.matchingCategories,
+        if (!state.isReconcile) {
+            CategoryRow(
+                chips = state.chipCategories,
                 selectedId = state.categoryId,
                 onCategory = onCategory,
+                onMore = onToggleMore,
             )
+            AnimatedVisibility(
+                visible = state.showAllCategories,
+                enter = expandVertically(spring()) + fadeIn(),
+                exit = shrinkVertically(spring()) + fadeOut(),
+            ) {
+                CategoryGrid(
+                    categories = state.matchingCategories,
+                    selectedId = state.categoryId,
+                    onCategory = onCategory,
+                )
+            }
         }
         WheregoNumpad(onDigit = onDigit, onBackspace = onBackspace)
         ParkItButton(enabled = state.canSave, onClick = onSave)
@@ -432,6 +445,7 @@ private fun KindToggle(kind: String, onKind: (String) -> Unit) {
         listOf(
             TransactionKind.EXPENSE to stringResource(R.string.capture_tab_expense),
             TransactionKind.INCOME to stringResource(R.string.capture_tab_income),
+            TransactionKind.RECONCILE to stringResource(R.string.capture_tab_balance),
         ).forEach { (value, label) ->
             val selected = kind == value
             Box(
