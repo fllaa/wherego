@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GoalEntity::class,
         FxRateEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
@@ -237,6 +237,64 @@ abstract class WheregoDatabase : RoomDatabase() {
                         `lastPullCursor` INTEGER NOT NULL,
                         PRIMARY KEY(`collection`)
                     )
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        /**
+         * The opening balance stops being a scalar on the profile and becomes an anchor row —
+         * the same assertion `Me → Adjust balance` now writes. Two reasons, both live bugs:
+         * `startingBalanceOn` was never read, so a backdated spend was debited against a figure
+         * that already accounted for it; and a scalar merges last-write-wins while transactions
+         * merge by union, so two devices that each onboarded with a balance kept the union of
+         * rows but only one of the two balances.
+         *
+         * The row is `dirty`, so it reaches the cloud like any other. Nothing has shipped
+         * (`versionCode = 1`), so no older client is out there to mis-sign a `reconcile` row it
+         * has never heard of; after release this conversion would need a transitional field.
+         *
+         * The scalar is zeroed rather than dropped: the column stays as the fallback for a
+         * profile that never set a balance, and the cloud profile document keeps carrying it.
+         */
+        val MIGRATION_10_11: Migration = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    INSERT OR IGNORE INTO `transactions` (
+                        `id`, `kind`, `amountMinor`, `currency`, `fxRateToBase`, `amountBaseMinor`,
+                        `categoryId`, `note`, `occurredOn`, `occurredAt`, `recurringId`,
+                        `receiptId`, `createdAt`, `updatedAt`, `deletedAt`, `dirty`
+                    )
+                    SELECT
+                        'reconcile-' || p.`id`,
+                        'reconcile',
+                        p.`startingBalanceMinor`,
+                        p.`baseCurrency`,
+                        '1',
+                        p.`startingBalanceMinor`,
+                        'cat_other',
+                        '',
+                        COALESCE(
+                            p.`startingBalanceOn`,
+                            date(p.`createdAt` / 1000, 'unixepoch')
+                        ),
+                        p.`createdAt`,
+                        NULL,
+                        NULL,
+                        p.`createdAt`,
+                        p.`updatedAt`,
+                        NULL,
+                        1
+                    FROM `user_profile` p
+                    WHERE p.`startingBalanceMinor` != 0
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE `user_profile`
+                    SET `startingBalanceMinor` = 0, `startingBalanceOn` = NULL
+                    WHERE `startingBalanceMinor` != 0
                     """.trimIndent(),
                 )
             }

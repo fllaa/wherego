@@ -241,7 +241,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val profile = profiles.profile.first() ?: return@launch
             if (profile.baseCurrency == code) return@launch
-            profiles.completeOnboarding(code, profile.startingBalanceMinor, null)
+            profiles.completeOnboarding(code, null)
         }
     }
 
@@ -259,7 +259,6 @@ class SettingsViewModel @Inject constructor(
             val target = DigitBuffer.amountMinor(balanceDigits.value)
             ledger.setBalanceTo(
                 targetMinor = target,
-                startingBalanceMinor = profile.startingBalanceMinor,
                 currency = profile.baseCurrency,
                 zoneId = zoneOf(profile),
             )
@@ -300,7 +299,14 @@ class SettingsViewModel @Inject constructor(
                     ledger.archiveCategory(preset.id, preset.id !in keptCategoryIds)
                 }
             }
-            profiles.completeOnboarding(currency, startingBalanceMinor, null)
+            profiles.completeOnboarding(currency, null)
+            if (startingBalanceMinor != 0L) {
+                ledger.setBalanceTo(
+                    targetMinor = startingBalanceMinor,
+                    currency = currency,
+                    zoneId = zoneOf(profiles.profile.first()),
+                )
+            }
         }
     }
 

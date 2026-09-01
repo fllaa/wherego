@@ -26,19 +26,19 @@ class UserProfileStore @Inject constructor(
         return created
     }
 
+    /**
+     * Currency, name and the tour flag. The opening balance is no longer written here — it is an
+     * anchor row now, so that two devices which each stated one keep both claims instead of
+     * silently dropping the loser to last-write-wins.
+     */
     suspend fun completeOnboarding(
         baseCurrency: String,
-        startingBalanceMinor: Long,
         displayName: String?,
     ) {
         val existing = dao.get() ?: return
-        val zone = ZoneId.of(existing.timeZoneId)
-        val today = LocalDate.now(clock.withZone(zone)).toString()
         dao.update(
             existing.copy(
                 baseCurrency = baseCurrency,
-                startingBalanceMinor = startingBalanceMinor,
-                startingBalanceOn = if (startingBalanceMinor != 0L) today else existing.startingBalanceOn,
                 displayName = displayName?.trim()?.ifBlank { null } ?: existing.displayName,
                 onboardingDone = true,
                 updatedAt = clock.millis(),

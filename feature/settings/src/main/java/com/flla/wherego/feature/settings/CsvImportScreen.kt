@@ -542,6 +542,7 @@ private fun columnLabel(headers: List<String>, index: Int, skipHeader: Boolean):
 private fun kindLabel(kind: String): String = when (kind.trim().lowercase()) {
     TransactionKind.INCOME -> stringResource(R.string.kind_income)
     TransactionKind.ADJUSTMENT -> stringResource(R.string.kind_adjustment)
+    TransactionKind.RECONCILE -> stringResource(R.string.kind_reconcile)
     else -> stringResource(R.string.kind_expense)
 }
 

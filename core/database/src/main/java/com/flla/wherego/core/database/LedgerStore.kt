@@ -1,6 +1,7 @@
 package com.flla.wherego.core.database
 
 import com.flla.wherego.core.common.UlidGenerator
+import com.flla.wherego.core.model.BalanceSeries
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.CsvRow
 import com.flla.wherego.core.model.FxConvert
@@ -166,6 +167,7 @@ class LedgerStore @Inject constructor(
             val kind = when (row.kind.trim().lowercase()) {
                 TransactionKind.INCOME -> TransactionKind.INCOME
                 TransactionKind.ADJUSTMENT -> TransactionKind.ADJUSTMENT
+                TransactionKind.RECONCILE -> TransactionKind.RECONCILE
                 else -> TransactionKind.EXPENSE
             }
             val fallbackId = if (kind == TransactionKind.INCOME) "cat_other_in" else "cat_other"
@@ -289,33 +291,39 @@ class LedgerStore @Inject constructor(
         MonthStory.aggregate(rows)
     }
 
-    suspend fun currentBalance(startingBalanceMinor: Long): Long {
-        val txs = transactionDao.listActive()
-        val income = txs.filter { it.kind == TransactionKind.INCOME }.sumOf { it.amountBaseMinor }
-        val expense = txs.filter { it.kind == TransactionKind.EXPENSE }.sumOf { it.amountBaseMinor }
-        val adj = txs.filter { it.kind == TransactionKind.ADJUSTMENT }.sumOf { it.amountBaseMinor }
-        return startingBalanceMinor + income - expense + adj
-    }
+    /**
+     * @param startingBalanceMinor the pre-anchor profile scalar. Used only until this profile has
+     * been migrated to an anchor row of its own.
+     */
+    suspend fun currentBalance(startingBalanceMinor: Long): Long =
+        BalanceSeries.total(
+            txs = transactionDao.listActive().map { it.toModel() },
+            fallbackMinor = startingBalanceMinor,
+        )
 
+    /**
+     * Records what the pot totals right now — an assertion, not the delta this used to write. A
+     * delta is computed from one device's view of the balance, so two devices replicating deltas
+     * stack them and land on a total neither one asked for.
+     *
+     * Re-asserting the same number is not a no-op: it moves the anchor to today, which is the
+     * point of reconciling.
+     */
     suspend fun setBalanceTo(
         targetMinor: Long,
-        startingBalanceMinor: Long,
         currency: String,
         zoneId: ZoneId,
     ) {
-        val current = currentBalance(startingBalanceMinor)
-        val delta = targetMinor - current
-        if (delta == 0L) return
-        val today = todayOn(zoneId)
         save(
             CaptureDraft(
-                kind = TransactionKind.ADJUSTMENT,
-                amountMinor = delta,
+                kind = TransactionKind.RECONCILE,
+                amountMinor = targetMinor,
                 currency = currency,
                 categoryId = "cat_other",
-                note = "Set balance",
-                occurredOn = today,
+                note = "",
+                occurredOn = todayOn(zoneId),
                 occurredAt = clock.millis(),
+                baseCurrency = currency,
             ),
             editingId = null,
         )
@@ -410,7 +418,9 @@ class LedgerStore @Inject constructor(
             .filter { it.kind == TransactionKind.INCOME }
             .filter { it.occurredOn >= monthStart && it.occurredOn <= monthEnd }
             .sumOf { it.amountBaseMinor }
-        val weekLogged = txs.count { it.occurredOn >= weekStartOn && it.occurredOn <= todayOn }
+        val weekLogged = txs.count {
+            TransactionKind.isActivity(it.kind) && it.occurredOn >= weekStartOn && it.occurredOn <= todayOn
+        }
 
         val todayTxs = txs.filter { it.occurredOn == todayOn }
             .sortedWith(compareByDescending<Transaction> { it.occurredAt ?: 0L }.thenByDescending { it.createdAt })
@@ -432,7 +442,9 @@ class LedgerStore @Inject constructor(
             todayExpenseMinor = todayExpense,
             today = todayTxs.map(::wrap),
             earlierThisWeek = earlier.map(::wrap),
-            streakDays = com.flla.wherego.core.model.LogStreak.distinctDays(txs.map { it.occurredOn }),
+            streakDays = LogStreak.distinctDays(
+                txs.filter { TransactionKind.isActivity(it.kind) }.map { it.occurredOn },
+            ),
             hasTxToday = todayTxs.isNotEmpty(),
         )
     }

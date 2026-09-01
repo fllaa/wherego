@@ -77,7 +77,7 @@ class LocalDataEraserTest {
             editingId = null,
         )
         profiles.ensureGuest()
-        profiles.completeOnboarding("IDR", 5_000L, null)
+        profiles.completeOnboarding("IDR", null)
 
         val stubReceipt = File(ReceiptFiles.dir(context), "stub.jpg").apply {
             writeText("dummy receipt")

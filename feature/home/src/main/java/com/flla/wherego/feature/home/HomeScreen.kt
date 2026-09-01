@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +33,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,10 +58,13 @@ import com.flla.wherego.core.designsystem.theme.WheregoTheme
 import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
+import com.flla.wherego.core.i18n.dayTitle
 import com.flla.wherego.core.i18n.weekdayFull
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Transaction
+import com.flla.wherego.core.model.TransactionKind
 import com.flla.wherego.core.sync.CloudDot
+import java.time.LocalDate
 
 @Composable
 fun HomeRoute(
@@ -70,6 +75,7 @@ fun HomeRoute(
     goMood: GoMood = GoMood.Idle,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val clash by viewModel.balanceClash.collectAsStateWithLifecycle()
     HomeScreen(
         state = state,
         goMood = goMood,
@@ -80,6 +86,42 @@ fun HomeRoute(
         onOpenPlan = onOpenPlan,
         onOpenStories = onOpenStories,
         onOpenCapture = onOpenCapture,
+    )
+    clash?.let { BalanceClashDialog(it, viewModel::resolveBalanceClash) }
+}
+
+/**
+ * Two devices each said what the pot totalled. The newer claim already anchors the balance, so
+ * this is not "pick a number" — it is the one chance to overrule an arithmetic result that
+ * silently changed a figure the user had been shown. Keeping one soft-deletes the other, and that
+ * decision syncs, so every device lands on the same anchor.
+ */
+@Composable
+private fun BalanceClashDialog(clash: BalanceClash, onResolve: (String) -> Unit) {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text(stringResource(R.string.home_clash_title)) },
+        text = {
+            Text(
+                stringResource(
+                    R.string.home_clash_body,
+                    clash.mineLabel,
+                    dayTitle(LocalDate.parse(clash.mineOn)),
+                    clash.theirsLabel,
+                    dayTitle(LocalDate.parse(clash.theirsOn)),
+                ),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onResolve(clash.mineId) }) {
+                Text(stringResource(R.string.home_clash_keep, clash.theirsLabel))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onResolve(clash.theirsId) }) {
+                Text(stringResource(R.string.home_clash_keep, clash.mineLabel))
+            }
+        },
     )
 }
 
@@ -299,7 +341,10 @@ private fun TxItem(
     val colors = WheregoTheme.colors
     val name = row.categoryName?.let { categoryDisplayName(row.categoryId, it) }
         ?: stringResource(R.string.category_fallback_other)
-    val title = row.note.ifBlank { name }
+    // A reconcile row asserts a total. It carries no note, the capture sheet cannot represent it,
+    // and duplicating it would manufacture a second same-day anchor out of nothing.
+    val isReconcile = row.transaction.kind == TransactionKind.RECONCILE
+    val title = if (isReconcile) stringResource(R.string.kind_reconcile) else row.note.ifBlank { name }
     val subtitle = row.time?.let { "$it · $name" } ?: name
     var menu by remember { mutableStateOf(false) }
     val dismissState = rememberSwipeToDismissBoxState(
@@ -337,6 +382,7 @@ private fun TxItem(
                 badgeSoftHex = row.badgeSoftHex,
                 hasReceipt = row.hasReceipt,
                 modifier = Modifier.combinedClickable(
+                    enabled = !isReconcile,
                     onClick = onClick,
                     onLongClick = { menu = true },
                 ),

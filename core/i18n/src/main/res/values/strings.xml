@@ -27,6 +27,7 @@
     <string name="kind_expense">Expense</string>
     <string name="kind_income">Income</string>
     <string name="kind_adjustment">Adjustment</string>
+    <string name="kind_reconcile">Balance set</string>
     <string name="kind_both">Both</string>
 
     <!-- Languages: endonyms, identical in every translation -->
@@ -117,6 +118,9 @@
     <string name="home_greeting_fallback">you</string>
     <string name="home_section_due">Due</string>
     <string name="home_cta_log_it">Log it</string>
+    <string name="home_clash_title">Two balances</string>
+    <string name="home_clash_body">This phone said %1$s on %2$s. Your other one says %3$s on %4$s, and the newer one wins. Keep that?</string>
+    <string name="home_clash_keep">Keep %1$s</string>
     <string name="home_section_today">Today</string>
     <string name="home_empty_today">First one is the hardest. Tap +</string>
     <string name="home_section_yesterday">Yesterday</string>
@@ -224,6 +228,7 @@
     <string name="stories_balance_low">Low %1$s</string>
     <string name="stories_balance_high">High %1$s</string>
     <string name="stories_balance_flat">No change this month.</string>
+    <string name="stories_balance_anchor">Counting from %1$s — the day you set it.</string>
     <string name="stories_cd_filter">Filter logs</string>
     <string name="filter_all">All</string>
     <string name="filter_expense">Expense</string>

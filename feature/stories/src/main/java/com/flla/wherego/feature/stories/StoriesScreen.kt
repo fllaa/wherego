@@ -316,7 +316,11 @@ fun StoriesScreen(
                         val name = storyTxName(tx)
                         WheregoTxRow(
                             emoji = tx.emoji,
-                            title = tx.note.ifBlank { name },
+                            title = if (tx.kind == TransactionKind.RECONCILE) {
+                                stringResource(R.string.kind_reconcile)
+                            } else {
+                                tx.note.ifBlank { name }
+                            },
                             subtitle = tx.time?.let { "$it · $name" } ?: name,
                             amountLabel = tx.amountLabel,
                             badgeSoftHex = tx.badgeSoftHex,
@@ -365,6 +369,16 @@ fun StoriesScreen(
                             color = colors.muted,
                         )
                     }
+                }
+                balance.anchorOn?.let { on ->
+                    Text(
+                        stringResource(
+                            R.string.stories_balance_anchor,
+                            dayTitle(LocalDate.parse(on)),
+                        ),
+                        style = WheregoType.helper,
+                        color = colors.muted,
+                    )
                 }
             }
         }
@@ -463,6 +477,10 @@ private fun FilterPill(filter: TxFilter, onClick: () -> Unit) {
  * fills the box: fraction `0f` is the month's low, `1f` its high. A real balance sits far from
  * zero, so a zero-based axis would squeeze the whole month into a hairline along the top edge.
  * A flat month draws a mid-height rule instead of a line glued to an edge.
+ *
+ * The anchor gets a vertical rule: the day the user said what the pot totalled, which is where
+ * the count restarts. Without it, a balance that ignores everything before that day looks like
+ * arithmetic going wrong rather than a reconciliation being honoured.
  */
 @Composable
 private fun BalanceSparkline(balance: StoryBalance, modifier: Modifier = Modifier) {
@@ -509,6 +527,15 @@ private fun BalanceSparkline(balance: StoryBalance, modifier: Modifier = Modifie
         area.lineTo(left + stepX * (count - 1), size.height)
         area.close()
         drawPath(area, colors.tealSoft)
+        balance.anchorFraction?.let { at ->
+            val x = left + (right - left) * at
+            drawLine(
+                color = colors.muted,
+                start = Offset(x, 0f),
+                end = Offset(x, size.height),
+                strokeWidth = 1.5.dp.toPx(),
+            )
+        }
         drawPath(
             line,
             colors.accentText,

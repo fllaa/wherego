@@ -1,6 +1,8 @@
 package com.flla.wherego.core.sync
 
 import android.app.Activity
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.flla.wherego.core.database.CategoryDao
 import com.flla.wherego.core.database.CategoryEntity
 import com.flla.wherego.core.database.SyncStateDao
@@ -9,20 +11,36 @@ import com.flla.wherego.core.database.TransactionDao
 import com.flla.wherego.core.database.TransactionEntity
 import com.flla.wherego.core.database.UserProfileDao
 import com.flla.wherego.core.database.UserProfileEntity
+import com.flla.wherego.core.datastore.ThemePreferences
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class SyncEngineTest {
+    private lateinit var preferences: ThemePreferences
+
+    @Before
+    fun setUp() = runBlocking {
+        preferences = ThemePreferences(ApplicationProvider.getApplicationContext<Context>())
+        preferences.clear()
+    }
+
     @Test
     fun reinstallAdoptsOnboardedCloudAndDoesNotClobberIt() = runBlocking {
         val local = profile(id = "guest-now", onboarded = false, updatedAt = 9_000L)
@@ -120,6 +138,37 @@ class SyncEngineTest {
         assertEquals(5_000L, stored.amountMinor)
     }
 
+    /**
+     * Another device asserted a total and it took over the balance. The arithmetic is right, but
+     * the figure the user was shown changed, so Home gets one question to overrule it.
+     */
+    @Test
+    fun aPeerAssertionThatMovesTheBalanceRaisesAQuestion() = runBlocking {
+        val mine = reconcile(id = "mine", on = "2026-08-01", total = 5_000_000L)
+        val theirs = reconcile(id = "theirs", on = "2026-08-20", total = 4_800_000L)
+        val txs = MemTx(TransactionEntity.from(mine))
+        val cloud = MemCloud(profile = null)
+        cloud.pushTransactions("uid-1", listOf(theirs))
+
+        engine(MemProfiles.onboarded(), MemCategories(), cloud, txs).sync()
+
+        assertEquals("mine" to "theirs", preferences.balanceConflict.first())
+    }
+
+    /** Two devices that assert the same total agree. There is nothing to ask about. */
+    @Test
+    fun aPeerAssertionThatAgreesRaisesNothing() = runBlocking {
+        val mine = reconcile(id = "mine", on = "2026-08-01", total = 5_000_000L)
+        val theirs = reconcile(id = "theirs", on = "2026-08-20", total = 5_000_000L)
+        val txs = MemTx(TransactionEntity.from(mine))
+        val cloud = MemCloud(profile = null)
+        cloud.pushTransactions("uid-1", listOf(theirs))
+
+        engine(MemProfiles.onboarded(), MemCategories(), cloud, txs).sync()
+
+        assertNull(preferences.balanceConflict.first())
+    }
+
     private fun engine(
         profiles: MemProfiles,
         categories: MemCategories,
@@ -132,6 +181,7 @@ class SyncEngineTest {
         categories = categories,
         profiles = profiles,
         syncState = MemSyncState(),
+        preferences = preferences,
     )
 }
 

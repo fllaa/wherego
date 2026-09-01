@@ -49,24 +49,78 @@ data class BalanceSpark(
 }
 
 object BalanceSeries {
+    /**
+     * The one order rows are read in. `id` is a ULID, so two devices pick the same anchor out of
+     * the same set of rows without talking to each other.
+     */
+    val ORDER: Comparator<Transaction> =
+        compareBy({ it.occurredOn }, { it.createdAt }, { it.id })
+
     fun signedBase(kind: String, amountBaseMinor: Long): Long = when (kind) {
         TransactionKind.EXPENSE -> -amountBaseMinor
-        else -> amountBaseMinor
+        TransactionKind.INCOME, TransactionKind.ADJUSTMENT -> amountBaseMinor
+        // A reconcile row asserts a total; it moves nothing. An unknown kind from a newer build
+        // is not assumed to be money in either.
+        else -> 0L
     }
 
+    /** The newest row asserting what the pot totalled, or `null` before the first one. */
+    fun anchor(txs: List<Transaction>): Transaction? {
+        var best: Transaction? = null
+        for (tx in txs) {
+            if (tx.deletedAt != null || tx.kind != TransactionKind.RECONCILE) continue
+            if (best == null || ORDER.compare(tx, best) > 0) best = tx
+        }
+        return best
+    }
+
+    /**
+     * The pot right now: the latest assertion plus everything that moved after it. Rows dated
+     * before the anchor are already inside its number, and counting them again is the bug
+     * `startingBalanceOn` was added to prevent and then never read.
+     *
+     * @param fallbackMinor the pre-anchor `user_profile.startingBalanceMinor`. Used only until a
+     * profile has been migrated to an anchor row of its own.
+     */
+    fun total(txs: List<Transaction>, fallbackMinor: Long): Long {
+        val anchor = anchor(txs)
+        var sum = anchor?.amountBaseMinor ?: fallbackMinor
+        for (tx in txs) {
+            if (tx.deletedAt != null) continue
+            if (anchor != null && ORDER.compare(tx, anchor) <= 0) continue
+            sum += signedBase(tx.kind, tx.amountBaseMinor)
+        }
+        return sum
+    }
+
+    /**
+     * One point per day across `[from, to]`.
+     *
+     * The series is seeded at the anchor and walked in both directions: knowing the total on the
+     * 20th and every movement since the 5th also tells you the total on the 5th, the way a bank
+     * statement does. Days with no rows sit flat, which is already what the card draws for a
+     * month that never moved.
+     */
     fun points(
-        startingBalanceMinor: Long,
         txs: List<Transaction>,
+        fallbackMinor: Long,
         from: LocalDate,
         to: LocalDate,
     ): List<BalancePoint> {
-        val active = txs.filter { it.deletedAt == null }.sortedWith(
-            compareBy({ it.occurredOn }, { it.createdAt }),
-        )
-        var balance = startingBalanceMinor
+        val active = txs.filter { it.deletedAt == null }.sortedWith(ORDER)
+        val anchor = anchor(active)
         val fromStr = from.toString()
+        var balance = anchor?.amountBaseMinor ?: fallbackMinor
         for (tx in active) {
-            if (tx.occurredOn < fromStr) balance += signedBase(tx.kind, tx.amountBaseMinor)
+            val afterAnchor = anchor == null || ORDER.compare(tx, anchor) > 0
+            val beforeWindow = tx.occurredOn < fromStr
+            when {
+                // Moved after the anchor and before the window opened: apply it to the seed.
+                afterAnchor && beforeWindow -> balance += signedBase(tx.kind, tx.amountBaseMinor)
+                // Already inside the anchor's number but dated on or after the window opened:
+                // wind it back out so the walk below can apply it again on its own day.
+                !afterAnchor && !beforeWindow -> balance -= signedBase(tx.kind, tx.amountBaseMinor)
+            }
         }
         val byDate = active.groupBy { it.occurredOn }
         val out = ArrayList<BalancePoint>()

@@ -8,6 +8,8 @@ import com.flla.wherego.core.database.TransactionDao
 import com.flla.wherego.core.database.TransactionEntity
 import com.flla.wherego.core.database.UserProfileDao
 import com.flla.wherego.core.database.UserProfileEntity
+import com.flla.wherego.core.datastore.ThemePreferences
+import com.flla.wherego.core.model.BalanceSeries
 import com.flla.wherego.core.sync.CloudDataSource.Companion.NO_CURSOR
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,6 +22,7 @@ class SyncEngine @Inject constructor(
     private val categories: CategoryDao,
     private val profiles: UserProfileDao,
     private val syncState: SyncStateDao,
+    private val preferences: ThemePreferences,
 ) {
     /**
      * @return whether the local profile is onboarded after this pass — true if we
@@ -58,6 +61,8 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun pullTransactions(uid: String) {
+        val fallback = profiles.get()?.startingBalanceMinor ?: 0L
+        val before = balance(fallback)
         val page = cloud.pullTransactions(uid, cursor(TRANSACTIONS))
         page.rows.forEach { incoming ->
             val local = transactions.get(incoming.id)
@@ -74,6 +79,24 @@ class SyncEngine @Inject constructor(
             }
         }
         advance(TRANSACTIONS, page.cursor)
+        flagConflict(before, balance(fallback))
+    }
+
+    private suspend fun balance(fallbackMinor: Long): Pair<String?, Long> {
+        val rows = transactions.listActive().map { it.toModel() }
+        return BalanceSeries.anchor(rows)?.id to BalanceSeries.total(rows, fallbackMinor)
+    }
+
+    /**
+     * Another device's assertion took over the balance and the number moved. The arithmetic is
+     * right — the later claim anchors — but the user was shown a different figure and the peer's
+     * claim could be the typo, so Home asks once. Equal totals settle nothing worth asking about.
+     */
+    private suspend fun flagConflict(before: Pair<String?, Long>, after: Pair<String?, Long>) {
+        val mine = before.first ?: return
+        val theirs = after.first ?: return
+        if (mine == theirs || before.second == after.second) return
+        preferences.setBalanceConflict(mineId = mine, theirsId = theirs)
     }
 
     private suspend fun pushCategories(uid: String) {

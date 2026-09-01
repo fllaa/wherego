@@ -555,3 +555,93 @@
   one of the two balances. That is a product decision (sum? keep the larger? ask on the first
   multi-device sign-in?), not a merge bug, and it is untouched here. Pulls are still unpaginated
 - Blocked: none
+
+## 2026-09-01  T1230  balance-anchor
+- Goal: close the item the cursor slice deferred — two devices that each onboarded with an opening
+  balance kept the union of transactions but only one of the two balances. Interrogated the product
+  decisions first; the answers are now `docs/dev-plan.md` §5.2 Money rules
+- Root cause, and it was two bugs not one:
+  - `startingBalanceOn` was written, synced and documented but **read by no computation**.
+    `LedgerStore.currentBalance` and `BalanceSeries.points` applied every row whatever its date, so
+    a spend backdated with the `Pick` chip was debited against a figure that already accounted for
+    it. Single device, no sync involved
+  - the opening balance was a scalar on the profile (last-write-wins) while transactions merge by
+    union, so the losing device's spending was double-counted against the winning device's figure
+  - `setBalanceTo` wrote `targetMinor - currentBalance()`, a **delta** derived from device-local
+    state. Two phones both tapping `Set balance → 4.8jt` wrote `-200rb` and `+1.8jt` and merged to
+    6.6jt — a shipped bug in `Adjust balance`, same family as the sync watermark: a value computed
+    from one device's view, replicated as though it were a fact
+- Files changed:
+  - `:core:model` — `TransactionKind.RECONCILE`, an assertion ("as of `occurredOn`, everything
+    totalled `amountMinor`"), plus `isActivity` so bookkeeping stays out of the streak.
+    `BalanceSeries` gains `ORDER` (`occurredOn`, `createdAt`, `id` — `id` is a ULID, so two devices
+    pick the same anchor with no coordination), `anchor`, `total`, and a `points` that seeds at the
+    anchor and walks **both** directions: knowing the total on the 20th and every movement since
+    the 5th also gives the 5th, the way a statement does. `signedBase` no longer treats "not an
+    expense" as money in — reconcile and any unknown future kind move nothing
+  - `:core:database` — Room **v11**: `MIGRATION_10_11` turns a non-zero `startingBalanceMinor` into
+    a dirty `reconcile-<profileId>` row dated `startingBalanceOn`, then zeroes the scalar. Id is
+    derived, not minted, so re-running cannot duplicate. `setBalanceTo` asserts the total and drops
+    its `startingBalanceMinor` parameter; it also stops mis-scaling a non-IDR base
+    (`baseCurrency` was defaulting to IDR while `currency` was the profile's). `importRows` keeps a
+    `reconcile` CSV row instead of silently turning it into an expense on export/import round-trip.
+    `assembleHome` excludes assertions from `weekLoggedCount` and `streakDays`
+  - `:core:sync` — after a pull, if the anchor changed identity **and** the total moved, the pair is
+    recorded for Home to ask about. Not "the anchor changed" (normal: every reconcile adds one) and
+    not "two same-day claims" (that collapses into the total moving)
+  - `:core:datastore` — `balanceConflict` holds `mine|theirs` device-locally; the phone that made
+    the winning claim has nothing to ask
+  - `:feature:home` — `BalanceClashDialog`; answering soft-deletes the rejected claim so the
+    decision syncs. Reconcile rows render as `Balance set` and are **not** clickable or
+    long-clickable: the capture sheet has no tab that can represent an assertion, and duplicating
+    one would manufacture a second same-day anchor out of nothing. Swipe-delete still works
+  - `:feature:settings` — onboarding writes the anchor instead of the scalar;
+    `UserProfileStore.completeOnboarding` is down to currency + name + the tour flag
+  - `:feature:stories` — `StoryBalance` carries `anchorFraction`/`anchorOn`; the sparkline draws a
+    quiet `muted` rule at the reconciliation point under a caption, so a balance that ignores
+    everything before that day reads as a reconciliation rather than arithmetic going wrong.
+    `logCount` excludes assertions
+  - `:core:i18n` — `kind_reconcile`, `stories_balance_anchor`, `home_clash_*`, en + in
+- Commands:
+  - `./gradlew :app:assembleDebug testDebugUnitTest` → SUCCESS, 103 passed
+  - new: `BalanceSeriesTest` ×11 (anchor determinism on shuffled input, same-day tie-break,
+    deleted anchor, pre-anchor exclusion, both-directions series, two devices asserting the same
+    target landing on it, legacy delta still summed, unknown kind moves nothing),
+    `OpeningBalanceMigrationTest` ×4 (real SQL on real Room tables, idempotence, zero-balance
+    no-op, date fallback), `SyncEngineTest` +2 (a peer assertion that moves the balance asks; one
+    that agrees does not)
+  - on `emulator-5554` (Pixel_10_Pro, API 36), against the existing seeded database:
+    `PRAGMA user_version` went 9 → **11**, so 9→10→11 ran and Room's post-migration schema check
+    passed on real data. The profile's Rp 5.000.000 became `reconcile-<profileId>` dated
+    `2026-08-01` and the scalar zeroed. `Adjust balance → 5.000.000` wrote a ULID `reconcile` row
+    asserting the total (not a `-22.568.494` delta) and `Me` read back `Now Rp 5.000.000` with 15
+    pre-anchor rows on file. Then the decisive one: a Rp 25.000 expense backdated to `2026-08-31`
+    left the balance at **Rp 5.000.000** — old arithmetic would have shown 4.975.000. Home rendered
+    the row as `Balance set` with `clickable="false" long-clickable="false"`; swipe-delete worked.
+    Stories/August with the anchor in view drew the tick and
+    `Counting from Sat 1 Aug — the day you set it.` (screenshotted); with the anchor outside the
+    window the caption is absent and the line back-projects. Both test rows soft-deleted afterwards
+- Decisions:
+  - `RECONCILE` is a new kind rather than a rewrite of `ADJUSTMENT`. Converting existing deltas
+    would need each device to compute a total from rows that may not have synced yet — a migration
+    that bakes in a number ignoring the peer. Old deltas keep their meaning and keep being summed
+  - assertion, not delta, is the whole point: deltas cannot compose across devices, assertions
+    cannot stack
+  - the anchor tie-break ends in `id` on purpose. ULIDs make it deterministic, so two devices reach
+    the same anchor without a round trip
+  - pre-anchor rows stay in Stories and every spend total. A habit tracker that deletes spending
+    history the moment you reconcile has thrown away its reason to exist; the tick explains the gap
+  - the prompt fires on "a peer's anchor took over **and** the total moved", not on every anchor
+    change. With the anchor rule most collisions are unambiguous arithmetic, and a dialog the user
+    learns to dismiss is worse than none
+  - the profile scalar is zeroed, not dropped. Dropping needs a `user_profile` table recreate for no
+    functional gain, and the cloud profile document still carries the field for a device with no
+    anchor row yet
+  - safe only because nothing has shipped (`versionCode = 1`): an older client would hit
+    `signedBase`'s old `else -> +amount` and read an assertion as income. After release this would
+    need a transitional zero-amount field
+- Not done / deferred: the migration changes an existing user's balance on upgrade — that is the
+  double-count fix landing, explained by the Stories tick but not announced. No reconcile tab in the
+  capture sheet, so an assertion can only be created from `Adjust balance` or onboarding. Pulls are
+  still unpaginated
+- Blocked: none

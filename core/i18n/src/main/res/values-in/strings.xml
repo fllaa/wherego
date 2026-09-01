@@ -27,6 +27,7 @@
     <string name="kind_expense">Keluar</string>
     <string name="kind_income">Masuk</string>
     <string name="kind_adjustment">Penyesuaian</string>
+    <string name="kind_reconcile">Saldo disetel</string>
     <string name="kind_both">Dua-duanya</string>
 
     <!-- Languages: endonyms, identical in every translation -->
@@ -117,6 +118,9 @@
     <string name="home_greeting_fallback">kamu</string>
     <string name="home_section_due">Jatuh tempo</string>
     <string name="home_cta_log_it">Catet</string>
+    <string name="home_clash_title">Ada dua saldo</string>
+    <string name="home_clash_body">HP ini bilang %1$s tanggal %2$s. HP kamu yang lain bilang %3$s tanggal %4$s, dan yang lebih baru menang. Pakai itu?</string>
+    <string name="home_clash_keep">Pakai %1$s</string>
     <string name="home_section_today">Hari ini</string>
     <string name="home_empty_today">Yang pertama paling berat. Tap +</string>
     <string name="home_section_yesterday">Kemarin</string>
@@ -224,6 +228,7 @@
     <string name="stories_balance_low">Terendah %1$s</string>
     <string name="stories_balance_high">Tertinggi %1$s</string>
     <string name="stories_balance_flat">Bulan ini belum ada perubahan.</string>
+    <string name="stories_balance_anchor">Ngitung dari %1$s — pas kamu setel saldo.</string>
     <string name="stories_cd_filter">Filter catatan</string>
     <string name="filter_all">Semua</string>
     <string name="filter_expense">Keluar</string>

@@ -76,6 +76,14 @@ data class StoryBalance(
     val lowLabel: String,
     val highLabel: String,
     val isFlat: Boolean,
+    /**
+     * Where the reconciliation point sits along the x axis, or `null` when it falls outside the
+     * plotted month. The line restarts its count there, so the balance is allowed to disagree
+     * with the month's spend without reading as a bug.
+     */
+    val anchorFraction: Float?,
+    /** The anchor's `occurredOn`, for the caption under the line. */
+    val anchorOn: String?,
 )
 
 data class StoriesUiState(
@@ -140,7 +148,7 @@ class StoriesViewModel @Inject constructor(
                 totalLabel = totalLabel,
                 deltaMinor = if (prevSpends.isEmpty()) null else delta,
                 deltaIsLess = delta >= 0L,
-                logCount = inMonth.size,
+                logCount = inMonth.count { TransactionKind.isActivity(it.kind) },
                 bars = top.map { spend ->
                     StoryBar(
                         categoryId = spend.categoryId,
@@ -183,9 +191,13 @@ class StoriesViewModel @Inject constructor(
         to: LocalDate,
         currency: String,
     ): StoryBalance? {
-        val points = BalanceSeries.points(startingMinor, txs, from, to)
+        val points = BalanceSeries.points(txs, startingMinor, from, to)
         val spark = BalanceSeries.spark(points) ?: return null
         if (spark.isFlat && spark.lastMinor == 0L) return null
+        val anchorOn = BalanceSeries.anchor(txs)?.occurredOn
+        val anchorIndex = anchorOn
+            ?.let { on -> points.indexOfFirst { it.occurredOn == on } }
+            ?.takeIf { it >= 0 }
         return StoryBalance(
             fractions = spark.fractions,
             zeroFraction = spark.zeroFraction,
@@ -193,6 +205,8 @@ class StoriesViewModel @Inject constructor(
             lowLabel = MoneyFormatter.format(spark.lowMinor, currency),
             highLabel = MoneyFormatter.format(spark.highMinor, currency),
             isFlat = spark.isFlat,
+            anchorFraction = anchorIndex?.let { it.toFloat() / (points.size - 1).toFloat() },
+            anchorOn = anchorIndex?.let { anchorOn },
         )
     }
 

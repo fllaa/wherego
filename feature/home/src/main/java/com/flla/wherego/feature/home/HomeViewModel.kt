@@ -9,6 +9,7 @@ import com.flla.wherego.core.database.LedgerStore
 import com.flla.wherego.core.database.PlanStore
 import com.flla.wherego.core.database.UserProfileStore
 import com.flla.wherego.core.database.zoneOf
+import com.flla.wherego.core.datastore.ThemePreferences
 import com.flla.wherego.core.model.BudgetBar
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.PresetCategories
@@ -35,7 +36,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -50,6 +53,19 @@ data class TxRowUi(
     val badgeSoftHex: String,
     val transaction: Transaction,
     val hasReceipt: Boolean = false,
+)
+
+/**
+ * Two independent claims on the same pot, waiting for the user to say which is right. The newer
+ * one is already anchoring the balance; this is the chance to overrule it.
+ */
+data class BalanceClash(
+    val mineId: String,
+    val mineLabel: String,
+    val mineOn: String,
+    val theirsId: String,
+    val theirsLabel: String,
+    val theirsOn: String,
 )
 
 data class HomeUiState(
@@ -80,6 +96,7 @@ class HomeViewModel @Inject constructor(
     cloudStatus: CloudStatus,
     private val syncScheduler: SyncScheduler,
     private val reminder: DueReminder,
+    private val preferences: ThemePreferences,
 ) : ViewModel() {
     private val undoId = MutableStateFlow<String?>(null)
     private var undoJob: Job? = null
@@ -121,6 +138,37 @@ class HomeViewModel @Inject constructor(
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+
+    val balanceClash: StateFlow<BalanceClash?> = preferences.balanceConflict
+        .map { pair -> pair?.let { clash(mineId = it.first, theirsId = it.second) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** `null` once either claim is gone — a conflict the user already settled elsewhere. */
+    private suspend fun clash(mineId: String, theirsId: String): BalanceClash? {
+        val mine = ledger.getTransaction(mineId) ?: return null
+        val theirs = ledger.getTransaction(theirsId) ?: return null
+        val currency = profiles.profile.first()?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
+        return BalanceClash(
+            mineId = mine.id,
+            mineLabel = MoneyFormatter.format(mine.amountMinor, currency),
+            mineOn = mine.occurredOn,
+            theirsId = theirs.id,
+            theirsLabel = MoneyFormatter.format(theirs.amountMinor, currency),
+            theirsOn = theirs.occurredOn,
+        )
+    }
+
+    /**
+     * Settling the clash soft-deletes the claim the user rejected, so the decision travels: every
+     * other device drops the same row and lands on the same anchor.
+     */
+    fun resolveBalanceClash(dropId: String) {
+        viewModelScope.launch {
+            ledger.softDelete(dropId)
+            preferences.clearBalanceConflict()
+            syncScheduler.enqueueNow()
+        }
+    }
 
     fun delete(id: String) {
         viewModelScope.launch {

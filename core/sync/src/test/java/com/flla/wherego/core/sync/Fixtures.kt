@@ -66,3 +66,11 @@ internal fun transaction(
     deletedAt = null,
     dirty = dirty,
 )
+
+internal fun reconcile(id: String, on: String, total: Long): Transaction =
+    transaction(id = id, updatedAt = 1L, dirty = false).copy(
+        kind = TransactionKind.RECONCILE,
+        amountMinor = total,
+        amountBaseMinor = total,
+        occurredOn = on,
+    )

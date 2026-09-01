@@ -26,7 +26,7 @@ class S6Test {
             tx("2026-08-12", TransactionKind.INCOME, 20_000L),
             tx("2026-08-12", TransactionKind.EXPENSE, 3_000L),
         )
-        val points = BalanceSeries.points(10_000L, txs, LocalDate.parse("2026-08-12"), LocalDate.parse("2026-08-12"))
+        val points = BalanceSeries.points(txs, 10_000L, LocalDate.parse("2026-08-12"), LocalDate.parse("2026-08-12"))
         assertEquals(1, points.size)
         assertEquals(22_000L, points[0].balanceMinor)
     }
