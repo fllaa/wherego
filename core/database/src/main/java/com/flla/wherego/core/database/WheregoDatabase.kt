@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GoalEntity::class,
         FxRateEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class WheregoDatabase : RoomDatabase() {
@@ -216,6 +216,28 @@ abstract class WheregoDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "UPDATE `categories` SET `colorHex` = '#2157C7', `updatedAt` = ${System.currentTimeMillis()}",
+                )
+            }
+        }
+
+        /**
+         * `sync_state.lastPullEpoch` held a local wall-clock reading, compared against
+         * `updatedAt` values authored on other devices — so a peer's backlog, stamped before
+         * this device's first pull, was never delivered. The column is replaced by a cursor in
+         * the cloud's own clock domain. Dropping the table resets every watermark, which is
+         * deliberate: the next sync does one full pull and recovers whatever was skipped.
+         */
+        val MIGRATION_9_10: Migration = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `sync_state`")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `sync_state` (
+                        `collection` TEXT NOT NULL,
+                        `lastPullCursor` INTEGER NOT NULL,
+                        PRIMARY KEY(`collection`)
+                    )
+                    """.trimIndent(),
                 )
             }
         }

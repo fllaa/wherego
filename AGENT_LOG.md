@@ -496,3 +496,62 @@
 - Not done / deferred: the sparkline has no touch readout — no per-day value on drag. `Balance` is
   still a demoted card the design frame does not have, so it stays a shape with three numbers
 - Blocked: none
+
+## 2026-09-01  T0940  sync-server-cursor
+- Goal: two devices, each holding transactions parked while signed out, then Google sign-in on
+  both. The answer is the union — ULID ids never collide (`LedgerStore.kt:112`) and every guest row
+  is `dirty` — but only the device that signed in *second* got it
+- Root cause: the pull watermark and the field it filtered lived in different clock domains.
+  `pullTransactions` asked for `updatedAt > lastPullEpoch` (`FirestoreCloudDataSource` +
+  `SyncEngine`), where `updatedAt` is stamped by the *authoring* device at park time and copied
+  verbatim on push (`CloudCodec.kt:24`), while `lastPullEpoch` was `clock.millis()` on the
+  *reading* device at pull time. A peer's backlog is by definition stamped in the past: device A
+  signs in at 10:00 and pulls (watermark 10:00), device B pushes at 11:00 rows stamped 09:00, and
+  A's next pull asks for `> 10:00` — B's rows are never delivered, not even late. Same root cause
+  gave two more leaks: `markPulled` took its timestamp *after* the query returned, so writes during
+  the round trip were skipped permanently, and any clock skew between devices dropped that much
+  peer data on every pass
+- Files changed:
+  - `:core:sync` — every document now carries `syncedAt`, a `FieldValue.serverTimestamp()`, and the
+    cursor is epoch nanos read off the last row a device actually received. `CloudPage<T>(rows,
+    cursor)` replaces the bare list, so the watermark can never advance past an unseen row; it
+    carries the caller's own cursor back on an empty page. Pulls read `Source.SERVER` — a cached
+    snapshot reports a pending server stamp as null and *orders* it as null, which would corrupt
+    the cursor. `pullProfile` lost its watermark entirely: one document, and
+    `SyncMerge.decideProfile` was always the real gate
+  - `:core:sync` — `SyncMerge.shouldClearDirty(row.updatedAt, row.updatedAt)` was a tautology, so
+    an edit landing mid-push had its `dirty` flag cleared and never pushed again. `pushTransactions`
+    now re-reads each row and only drops the flag when `updatedAt` has not moved
+  - `:core:sync` — `FakeCloudDataSource` stamps and ranges the same way (its own monotonic clock),
+    so debug and release builds agree on which rows a device has seen. `SyncWorker` gained a
+    `NetworkType.CONNECTED` constraint now that pulls insist on the server
+  - `:core:database` — Room **v10**: `sync_state.lastPullEpoch`/`lastPushEpoch` → `lastPullCursor`.
+    `lastPushEpoch` was written every pass and read by nothing. `MIGRATION_9_10` drops the table,
+    which resets every watermark on purpose: one full pull heals installs that already lost rows
+  - `:core:sync` — `SyncEngine` no longer takes a `Clock`; nothing in it reads local time now
+- Commands:
+  - `./gradlew :app:assembleDebug testDebugUnitTest` → SUCCESS
+  - `./gradlew :core:database:testDebugUnitTest :core:sync:testDebugUnitTest --rerun-tasks` →
+    33 passed. New: `SyncEngineTest.aPeerBacklogArrivesEvenThoughItPredatesOurFirstPull`,
+    `aSettledRowIsNotPulledTwice`, `anEditDuringThePushKeepsTheRowDirty`;
+    `FakeCloudDataSourceTest` ×6; `SyncStateMigrationTest`
+  - mutation-checked both new guards: swapping `page.cursor` back for a local-clock value fails
+    `peer backlog must survive the cursor`; renaming the migration's column back to `lastPullEpoch`
+    fails `migrationNineToTenBuildsTheTableRoomExpects`
+- Decisions:
+  - `updatedAt` stays exactly as it was — it is the last-write-wins input and it is fine at that
+    job. It just cannot also be the transport's ordering key, because two devices author it
+  - Cursor is nanos, not millis: Firestore `Timestamp` carries nanos, and truncating would
+    re-deliver rows inside the same millisecond. `seconds * 1e9 + nanos` round-trips exactly and
+    fits a `Long` until 2262
+  - `sinceCursor == 0` reads the collection whole rather than ranging. Documents written before
+    `syncedAt` existed match no range filter, so the first pull after upgrade delivers them and
+    stamps them on the way out — deterministic, instead of hoping a future push covers them
+  - `SyncStateMigrationTest` compares the migration's DDL against the table Room builds from the
+    entity via `PRAGMA table_info`. `exportSchema` is off, so nothing else would catch a typo that
+    only detonates on a user's device at launch
+- Not done / deferred: `startingBalanceMinor` still merges last-write-wins on the profile, so two
+  devices that each onboarded with a real opening balance keep the union of transactions but only
+  one of the two balances. That is a product decision (sum? keep the larger? ask on the first
+  multi-device sign-in?), not a merge bug, and it is untouched here. Pulls are still unpaginated
+- Blocked: none

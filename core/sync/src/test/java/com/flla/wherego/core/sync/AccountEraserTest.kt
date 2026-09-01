@@ -146,11 +146,11 @@ private class RecordingCloud(
 ) : CloudDataSource {
     override val available: Boolean = true
     override suspend fun pushTransactions(uid: String, rows: List<Transaction>) = Unit
-    override suspend fun pullTransactions(uid: String, sinceEpoch: Long): List<Transaction> = emptyList()
+    override suspend fun pullTransactions(uid: String, sinceCursor: Long) = CloudPage<Transaction>(emptyList(), 0L)
     override suspend fun pushCategories(uid: String, rows: List<Category>) = Unit
-    override suspend fun pullCategories(uid: String, sinceEpoch: Long): List<Category> = emptyList()
+    override suspend fun pullCategories(uid: String, sinceCursor: Long) = CloudPage<Category>(emptyList(), 0L)
     override suspend fun pushProfile(uid: String, profile: UserProfile) = Unit
-    override suspend fun pullProfile(uid: String, sinceEpoch: Long): UserProfile? = null
+    override suspend fun pullProfile(uid: String): UserProfile? = null
     override suspend fun deleteAll(uid: String) {
         if (failDelete) throw RuntimeException("Cloud delete failed")
         log.add("cloud")

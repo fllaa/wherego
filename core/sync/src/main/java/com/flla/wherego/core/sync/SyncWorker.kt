@@ -1,9 +1,11 @@
 package com.flla.wherego.core.sync
 
 import android.content.Context
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -43,7 +45,7 @@ class SyncScheduler @Inject constructor(
 ) {
     fun enqueueNow() {
         try {
-            val request = OneTimeWorkRequestBuilder<SyncWorker>().build()
+            val request = OneTimeWorkRequestBuilder<SyncWorker>().setConstraints(ONLINE).build()
             WorkManager.getInstance(context)
                 .enqueueUniqueWork(UNIQUE_NOW, ExistingWorkPolicy.REPLACE, request)
         } catch (_: Exception) {
@@ -52,7 +54,9 @@ class SyncScheduler @Inject constructor(
 
     fun enqueuePeriodic() {
         try {
-            val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES).build()
+            val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
+                .setConstraints(ONLINE)
+                .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 UNIQUE_PERIODIC,
                 ExistingPeriodicWorkPolicy.KEEP,
@@ -73,5 +77,10 @@ class SyncScheduler @Inject constructor(
     private companion object {
         const val UNIQUE_NOW = "wherego-sync-now"
         const val UNIQUE_PERIODIC = "wherego-sync-periodic"
+
+        /** Pulls read from the server so `syncedAt` is resolved; offline runs are deferred. */
+        val ONLINE: Constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
     }
 }

@@ -263,8 +263,7 @@ UserProfileEntity
 
 SyncStateEntity
   collection: String PK
-  lastPullEpoch: Long
-  lastPushEpoch: Long
+  lastPullCursor: Long   # epoch nanos from the cloud's `syncedAt`, never a local clock
 ```
 
 Indexes: `transactions(occurredOn)`, `transactions(dirty)`, `transactions(deletedAt)`, `categories(archived)`.

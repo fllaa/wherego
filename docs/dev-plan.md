@@ -264,7 +264,7 @@ Room is the source of truth. Cloud is a replica. IDs are ULIDs generated on devi
 
 **sync_state**
 
-`collection`, `lastPullEpoch`, `lastPushEpoch`
+`collection`, `lastPullCursor`
 
 ### 5.2 Money rules
 

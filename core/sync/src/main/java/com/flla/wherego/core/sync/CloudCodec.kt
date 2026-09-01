@@ -106,7 +106,8 @@ object CloudCodec {
         firebaseUid = json.optionalString("firebaseUid"),
     )
 
-    fun toMap(json: JSONObject): Map<String, Any> {
+    /** Mutable so a data source can attach its own transport keys without a second map. */
+    fun toMap(json: JSONObject): MutableMap<String, Any> {
         val out = LinkedHashMap<String, Any>()
         val keys = json.keys()
         while (keys.hasNext()) {

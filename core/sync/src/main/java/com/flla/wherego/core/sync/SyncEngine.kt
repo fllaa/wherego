@@ -8,7 +8,7 @@ import com.flla.wherego.core.database.TransactionDao
 import com.flla.wherego.core.database.TransactionEntity
 import com.flla.wherego.core.database.UserProfileDao
 import com.flla.wherego.core.database.UserProfileEntity
-import java.time.Clock
+import com.flla.wherego.core.sync.CloudDataSource.Companion.NO_CURSOR
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +20,6 @@ class SyncEngine @Inject constructor(
     private val categories: CategoryDao,
     private val profiles: UserProfileDao,
     private val syncState: SyncStateDao,
-    private val clock: Clock,
 ) {
     /**
      * @return whether the local profile is onboarded after this pass — true if we
@@ -41,23 +40,26 @@ class SyncEngine @Inject constructor(
         return profiles.get()?.onboardingDone == true
     }
 
+    /**
+     * Clearing `dirty` is only safe for the row that was actually pushed. Re-reading catches an
+     * edit landed while the batch was in flight: its `updatedAt` has moved, so the flag stays up
+     * and the next pass carries the newer copy.
+     */
     private suspend fun pushTransactions(uid: String) {
         val dirty = transactions.listDirty()
-        if (dirty.isNotEmpty()) {
-            cloud.pushTransactions(uid, dirty.map { it.toModel() })
-            dirty.forEach { row ->
-                if (SyncMerge.shouldClearDirty(row.updatedAt, row.updatedAt)) {
-                    transactions.update(row.copy(dirty = false))
-                }
+        if (dirty.isEmpty()) return
+        cloud.pushTransactions(uid, dirty.map { it.toModel() })
+        dirty.forEach { pushed ->
+            val current = transactions.get(pushed.id) ?: return@forEach
+            if (SyncMerge.shouldClearDirty(pushed.updatedAt, current.updatedAt)) {
+                transactions.update(current.copy(dirty = false))
             }
         }
-        markPushed("transactions")
     }
 
     private suspend fun pullTransactions(uid: String) {
-        val since = syncState.get("transactions")?.lastPullEpoch ?: 0L
-        val remote = cloud.pullTransactions(uid, since)
-        remote.forEach { incoming ->
+        val page = cloud.pullTransactions(uid, cursor(TRANSACTIONS))
+        page.rows.forEach { incoming ->
             val local = transactions.get(incoming.id)
             when (
                 SyncMerge.decide(
@@ -71,20 +73,18 @@ class SyncEngine @Inject constructor(
                 MergeDecision.PushLocal, MergeDecision.KeepLocal -> Unit
             }
         }
-        markPulled("transactions")
+        advance(TRANSACTIONS, page.cursor)
     }
 
     private suspend fun pushCategories(uid: String) {
         val rows = categories.listAll()
-        if (rows.isNotEmpty()) {
-            cloud.pushCategories(uid, rows.map { it.toModel() })
-        }
-        markPushed("categories")
+        if (rows.isEmpty()) return
+        cloud.pushCategories(uid, rows.map { it.toModel() })
     }
 
     private suspend fun pullCategories(uid: String, preferRemote: Boolean = false) {
-        val since = syncState.get("categories")?.lastPullEpoch ?: 0L
-        cloud.pullCategories(uid, since).forEach { incoming ->
+        val page = cloud.pullCategories(uid, cursor(CATEGORIES))
+        page.rows.forEach { incoming ->
             val local = categories.get(incoming.id)
             val decision = if (preferRemote) {
                 MergeDecision.ApplyRemote
@@ -100,18 +100,16 @@ class SyncEngine @Inject constructor(
                 MergeDecision.PushLocal, MergeDecision.KeepLocal -> Unit
             }
         }
-        markPulled("categories")
+        advance(CATEGORIES, page.cursor)
     }
 
     private suspend fun pushProfile(uid: String) {
         val profile = profiles.get()?.toModel() ?: return
         cloud.pushProfile(uid, profile)
-        markPushed("profile")
     }
 
     private suspend fun pullProfile(uid: String) {
-        val since = syncState.get("profile")?.lastPullEpoch ?: 0L
-        val remote = cloud.pullProfile(uid, since) ?: return
+        val remote = cloud.pullProfile(uid) ?: return
         val local = profiles.get()
         when (
             SyncMerge.decideProfile(
@@ -136,30 +134,17 @@ class SyncEngine @Inject constructor(
             }
             MergeDecision.PushLocal, MergeDecision.KeepLocal -> Unit
         }
-        markPulled("profile")
     }
 
-    private suspend fun markPushed(collection: String) {
-        val now = clock.millis()
-        val prev = syncState.get(collection)
-        syncState.upsert(
-            SyncStateEntity(
-                collection = collection,
-                lastPullEpoch = prev?.lastPullEpoch ?: 0L,
-                lastPushEpoch = now,
-            ),
-        )
+    private suspend fun cursor(collection: String): Long =
+        syncState.get(collection)?.lastPullCursor ?: NO_CURSOR
+
+    private suspend fun advance(collection: String, cursor: Long) {
+        syncState.upsert(SyncStateEntity(collection = collection, lastPullCursor = cursor))
     }
 
-    private suspend fun markPulled(collection: String) {
-        val now = clock.millis()
-        val prev = syncState.get(collection)
-        syncState.upsert(
-            SyncStateEntity(
-                collection = collection,
-                lastPullEpoch = now,
-                lastPushEpoch = prev?.lastPushEpoch ?: 0L,
-            ),
-        )
+    private companion object {
+        const val TRANSACTIONS = "transactions"
+        const val CATEGORIES = "categories"
     }
 }

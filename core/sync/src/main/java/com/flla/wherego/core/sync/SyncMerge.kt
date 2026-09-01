@@ -47,8 +47,13 @@ object SyncMerge {
         )
     }
 
-    fun shouldClearDirty(updatedAtBeforePush: Long, updatedAtAfterPush: Long): Boolean =
-        updatedAtBeforePush == updatedAtAfterPush
+    /**
+     * A push only speaks for the row it carried. Compare the `updatedAt` that went to the cloud
+     * against the row as it stands now: unchanged means the flag can drop, moved means someone
+     * edited it mid-flight and it still owes the cloud a copy.
+     */
+    fun shouldClearDirty(pushedUpdatedAt: Long, currentUpdatedAt: Long): Boolean =
+        pushedUpdatedAt == currentUpdatedAt
 }
 
 enum class CloudDot {
