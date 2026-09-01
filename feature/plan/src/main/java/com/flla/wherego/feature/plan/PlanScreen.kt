@@ -77,10 +77,13 @@ fun PlanRoute(
         state = state,
         onSelectMonth = viewModel::selectMonth,
         onAddBudget = viewModel::addBudget,
+        onEditBudget = viewModel::editBudget,
         onDeleteBudget = viewModel::deleteBudget,
         onAddRule = viewModel::addRule,
+        onEditRule = viewModel::editRule,
         onDeleteRule = viewModel::deleteRule,
         onAddGoal = viewModel::addGoal,
+        onEditGoal = viewModel::editGoal,
         onDeleteGoal = viewModel::deleteGoal,
     )
 }
@@ -89,17 +92,18 @@ fun PlanRoute(
 fun PlanScreen(
     state: PlanUiState,
     onSelectMonth: (String) -> Unit,
-    onAddBudget: (String?, Long) -> Unit,
+    onAddBudget: (categoryId: String?, amountMinor: Long) -> Unit,
+    onEditBudget: (id: String, categoryId: String?, amountMinor: Long) -> Unit,
     onDeleteBudget: (String) -> Unit,
     onAddRule: (amountMinor: Long, categoryId: String, note: String, freq: String, firstOn: LocalDate) -> Unit,
+    onEditRule: (id: String, amountMinor: Long, categoryId: String, note: String, nextOn: LocalDate) -> Unit,
     onDeleteRule: (String) -> Unit,
-    onAddGoal: (String, Long, Long) -> Unit,
+    onAddGoal: (name: String, allocatedMinor: Long, targetMinor: Long) -> Unit,
+    onEditGoal: (id: String, name: String, allocatedMinor: Long, targetMinor: Long) -> Unit,
     onDeleteGoal: (String) -> Unit,
 ) {
     val colors = WheregoTheme.colors
-    var budgetSheet by remember { mutableStateOf(false) }
-    var ruleSheet by remember { mutableStateOf(false) }
-    var goalSheet by remember { mutableStateOf(false) }
+    var editor by remember { mutableStateOf<PlanEditor?>(null) }
     var monthSheet by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
     val monthText = monthLabel(state.month, state.currentMonth)
@@ -166,6 +170,7 @@ fun PlanScreen(
                     detail = detail,
                     fraction = budget.fraction,
                     fillColor = if (budget.over) colors.coral else strong,
+                    modifier = Modifier.clickable { editor = PlanEditor.EditBudget(budget) },
                 ) {
                     if (editing) {
                         RemoveLink { onDeleteBudget(budget.id) }
@@ -179,7 +184,7 @@ fun PlanScreen(
                 }
             }
         }
-        AddRow(stringResource(R.string.plan_cta_add_budget)) { budgetSheet = true }
+        AddRow(stringResource(R.string.plan_cta_add_budget)) { editor = PlanEditor.NewBudget }
 
         WheregoSectionHeader(
             title = stringResource(R.string.plan_section_set_aside),
@@ -215,6 +220,7 @@ fun PlanScreen(
                     detail = detail,
                     fraction = goal.fraction,
                     fillColor = colors.teal,
+                    modifier = Modifier.clickable { editor = PlanEditor.EditGoal(goal) },
                     badgeSize = 36.dp,
                     padding = 13.dp,
                 ) {
@@ -234,7 +240,7 @@ fun PlanScreen(
                 }
             }
         }
-        AddRow(stringResource(R.string.plan_cta_add_goal)) { goalSheet = true }
+        AddRow(stringResource(R.string.plan_cta_add_goal)) { editor = PlanEditor.NewGoal }
 
         // The design frame moved the recurring entry point to Me; the editing UI still lives here,
         // demoted below Set aside until it has another home.
@@ -253,52 +259,105 @@ fun PlanScreen(
                 RuleCard(
                     rule = rule,
                     emoji = category?.emoji ?: "🔁",
-                    softHex = category?.softColorHex,
                     name = rule.note.ifBlank {
                         category?.let { categoryDisplayName(it.id, it.name) }
                             ?: stringResource(R.string.recurring_fallback_label)
                     },
                     editing = editing,
+                    onClick = { editor = PlanEditor.EditBill(rule) },
                     onDelete = { onDeleteRule(rule.id) },
                 )
             }
         }
-        AddRow(stringResource(R.string.plan_cta_add_recurring)) { ruleSheet = true }
+        AddRow(stringResource(R.string.plan_cta_add_recurring)) { editor = PlanEditor.NewBill }
     }
 
-    if (budgetSheet) {
-        AmountCategorySheet(
+    when (val open = editor) {
+        null -> Unit
+        PlanEditor.NewBudget -> AmountCategorySheet(
             title = stringResource(R.string.plan_sheet_set_budget),
-            categories = listOf(null to stringResource(R.string.plan_choice_overall)) +
-                state.categories.map { it.id to "${it.emoji} ${categoryDisplayName(it.id, it.name)}" },
-            currency = state.currency,
             confirmLabel = stringResource(R.string.plan_cta_set_it),
-            onDismiss = { budgetSheet = false },
+            categories = budgetCategories(state),
+            currency = state.currency,
+            initialCategoryId = null,
+            initialAmountMinor = 0L,
+            onDismiss = { editor = null },
             onConfirm = { catId, amount ->
                 onAddBudget(catId, amount)
-                budgetSheet = false
+                editor = null
             },
         )
-    }
-    if (ruleSheet) {
-        BillSheet(
-            categories = state.categories.map { it.id to "${it.emoji} ${categoryDisplayName(it.id, it.name)}" },
+        is PlanEditor.EditBudget -> AmountCategorySheet(
+            title = stringResource(R.string.plan_sheet_edit_budget),
+            confirmLabel = stringResource(R.string.plan_cta_save_it),
+            categories = budgetCategories(state),
             currency = state.currency,
-            today = state.today,
-            onDismiss = { ruleSheet = false },
-            onConfirm = { catId, amount, note, firstOn ->
-                onAddRule(amount, catId, note, Recurrence.MONTHLY, firstOn)
-                ruleSheet = false
+            initialCategoryId = open.row.categoryId,
+            initialAmountMinor = open.row.capMinor,
+            onDismiss = { editor = null },
+            onConfirm = { catId, amount ->
+                onEditBudget(open.row.id, catId, amount)
+                editor = null
             },
         )
-    }
-    if (goalSheet) {
-        GoalSheet(
+        PlanEditor.NewGoal -> GoalSheet(
+            title = stringResource(R.string.plan_sheet_set_aside),
+            confirmLabel = stringResource(R.string.plan_cta_set_it),
             currency = state.currency,
-            onDismiss = { goalSheet = false },
+            initialName = "",
+            initialAllocatedMinor = 0L,
+            initialTargetMinor = 0L,
+            onDismiss = { editor = null },
             onConfirm = { name, amount, target ->
                 onAddGoal(name, amount, target)
-                goalSheet = false
+                editor = null
+            },
+        )
+        is PlanEditor.EditGoal -> GoalSheet(
+            title = stringResource(R.string.plan_sheet_edit_set_aside),
+            confirmLabel = stringResource(R.string.plan_cta_save_it),
+            currency = state.currency,
+            initialName = open.row.name,
+            initialAllocatedMinor = open.row.allocatedMinor,
+            initialTargetMinor = open.row.targetMinor,
+            onDismiss = { editor = null },
+            onConfirm = { name, amount, target ->
+                onEditGoal(open.row.id, name, amount, target)
+                editor = null
+            },
+        )
+        PlanEditor.NewBill -> BillSheet(
+            title = stringResource(R.string.plan_sheet_add_bill),
+            confirmLabel = stringResource(R.string.plan_cta_add_it),
+            dueLabel = stringResource(R.string.plan_field_first_due),
+            categories = billCategories(state),
+            currency = state.currency,
+            today = state.today,
+            initialCategoryId = state.categories.firstOrNull()?.id,
+            initialAmountMinor = 0L,
+            initialNote = "",
+            initialDue = state.today,
+            onDismiss = { editor = null },
+            onConfirm = { catId, amount, note, firstOn ->
+                onAddRule(amount, catId, note, Recurrence.MONTHLY, firstOn)
+                editor = null
+            },
+        )
+        is PlanEditor.EditBill -> BillSheet(
+            title = stringResource(R.string.plan_sheet_edit_bill),
+            confirmLabel = stringResource(R.string.plan_cta_save_it),
+            dueLabel = stringResource(R.string.plan_field_next_due),
+            categories = billCategories(state),
+            currency = open.rule.currency,
+            today = state.today,
+            initialCategoryId = open.rule.categoryId,
+            initialAmountMinor = open.rule.amountMinor,
+            initialNote = open.rule.note,
+            initialDue = LocalDate.parse(open.rule.nextOn),
+            onDismiss = { editor = null },
+            onConfirm = { catId, amount, note, nextOn ->
+                onEditRule(open.rule.id, amount, catId, note, nextOn)
+                editor = null
             },
         )
     }
@@ -317,6 +376,28 @@ fun PlanScreen(
         }
     }
 }
+
+/**
+ * Which editor is open, and on what. The tapped row travels with the intent so the sheet opens on
+ * the values the user pointed at, not on whatever the list holds by the time it composes.
+ */
+private sealed interface PlanEditor {
+    data object NewBudget : PlanEditor
+    data class EditBudget(val row: PlanBudgetRow) : PlanEditor
+    data object NewGoal : PlanEditor
+    data class EditGoal(val row: PlanGoalRow) : PlanEditor
+    data object NewBill : PlanEditor
+    data class EditBill(val rule: RecurringRule) : PlanEditor
+}
+
+/** Budgets can cap one category or the whole month, so `null` leads the list as `Overall`. */
+@Composable
+private fun budgetCategories(state: PlanUiState): List<Pair<String?, String>> =
+    listOf(null to stringResource(R.string.plan_choice_overall)) + billCategories(state)
+
+@Composable
+private fun billCategories(state: PlanUiState): List<Pair<String?, String>> =
+    state.categories.map { it.id to "${it.emoji} ${categoryDisplayName(it.id, it.name)}" }
 
 /**
  * The cap card leads with what is left, not what is gone — that is what a plan is for. Home
@@ -422,9 +503,9 @@ private fun RemoveLink(onClick: () -> Unit) {
 private fun RuleCard(
     rule: RecurringRule,
     emoji: String,
-    softHex: String?,
     name: String,
     editing: Boolean,
+    onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
@@ -435,6 +516,7 @@ private fun RuleCard(
             .clip(shape)
             .background(colors.sheet)
             .border(BorderStroke(2.5.dp, colors.ink), shape)
+            .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -470,17 +552,25 @@ private fun RuleCard(
     }
 }
 
+/**
+ * `Plan / Set a budget` — also the budget editor: [initialCategoryId] and [initialAmountMinor]
+ * seed the sheet so an existing cap opens on its own values.
+ */
 @Composable
 private fun AmountCategorySheet(
     title: String,
+    confirmLabel: String,
     categories: List<Pair<String?, String>>,
     currency: String,
-    confirmLabel: String,
+    initialCategoryId: String?,
+    initialAmountMinor: Long,
     onDismiss: () -> Unit,
     onConfirm: (categoryId: String?, amountMinor: Long) -> Unit,
 ) {
-    var digits by remember { mutableStateOf("") }
-    var selected by remember { mutableStateOf(categories.firstOrNull()?.first) }
+    var digits by remember(initialAmountMinor) {
+        mutableStateOf(DigitBuffer.replace(initialAmountMinor))
+    }
+    var selected by remember(initialCategoryId) { mutableStateOf(initialCategoryId) }
     val amount = DigitBuffer.amountMinor(digits)
     WheregoBottomSheet(title = title, onDismiss = onDismiss) {
         AmountReadout(amountMinor = amount, currency = currency)
@@ -503,25 +593,34 @@ private fun AmountCategorySheet(
 }
 
 /**
- * `Plan / Add a bill`. The first due date belongs to the user, not the clock: it seeds
- * `startOn`/`nextOn` and, for a monthly rule, the day of month every later hit lands on.
+ * `Plan / Add a bill`, and the bill editor. The due date belongs to the user, not the clock: it
+ * seeds `nextOn` and, for a monthly rule, the day of month every later hit lands on.
  */
 @Composable
 private fun BillSheet(
+    title: String,
+    confirmLabel: String,
+    dueLabel: String,
     categories: List<Pair<String?, String>>,
     currency: String,
     today: LocalDate,
+    initialCategoryId: String?,
+    initialAmountMinor: Long,
+    initialNote: String,
+    initialDue: LocalDate,
     onDismiss: () -> Unit,
-    onConfirm: (categoryId: String, amountMinor: Long, note: String, firstOn: LocalDate) -> Unit,
+    onConfirm: (categoryId: String, amountMinor: Long, note: String, due: LocalDate) -> Unit,
 ) {
     val colors = WheregoTheme.colors
-    var digits by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var selected by remember { mutableStateOf(categories.firstOrNull()?.first) }
-    var firstOn by remember { mutableStateOf(today) }
+    var digits by remember(initialAmountMinor) {
+        mutableStateOf(DigitBuffer.replace(initialAmountMinor))
+    }
+    var note by remember(initialNote) { mutableStateOf(initialNote) }
+    var selected by remember(initialCategoryId) { mutableStateOf(initialCategoryId) }
+    var due by remember(initialDue) { mutableStateOf(initialDue) }
     var picking by remember { mutableStateOf(false) }
     val amount = DigitBuffer.amountMinor(digits)
-    WheregoBottomSheet(title = stringResource(R.string.plan_sheet_add_bill), onDismiss = onDismiss) {
+    WheregoBottomSheet(title = title, onDismiss = onDismiss) {
         AmountReadout(amountMinor = amount, currency = currency)
         SheetField(
             label = stringResource(R.string.plan_field_note),
@@ -529,23 +628,19 @@ private fun BillSheet(
             onValueChange = { note = it.take(40) },
         )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                stringResource(R.string.plan_field_first_due),
-                style = WheregoType.settingLabel,
-                color = colors.ink,
-            )
+            Text(dueLabel, style = WheregoType.settingLabel, color = colors.ink)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val isToday = firstOn == today
+                val isToday = due == today
                 ChipPill(
                     label = stringResource(R.string.plan_chip_today),
                     selected = isToday,
-                    onClick = { firstOn = today },
+                    onClick = { due = today },
                 )
                 ChipPill(
-                    label = if (isToday) stringResource(R.string.plan_chip_pick_date) else dayTitle(firstOn),
+                    label = if (isToday) stringResource(R.string.plan_chip_pick_date) else dayTitle(due),
                     selected = !isToday,
                     onClick = { picking = true },
                 )
@@ -561,19 +656,20 @@ private fun BillSheet(
             onBackspace = { digits = DigitBuffer.backspace(digits) },
         )
         WheregoPrimaryButton(
-            label = stringResource(R.string.plan_cta_add_it),
-            onClick = { selected?.let { onConfirm(it, amount, note, firstOn) } },
+            label = confirmLabel,
+            onClick = { selected?.let { onConfirm(it, amount, note, due) } },
             enabled = amount > 0L && selected != null,
             icon = Icons.Outlined.Check,
         )
     }
     if (picking) {
-        FirstDuePicker(
-            selected = firstOn,
-            earliest = today,
+        DuePicker(
+            selected = due,
+            // A bill already overdue keeps the date it sits on; a new one can never start behind.
+            earliest = if (initialDue < today) initialDue else today,
             onDismiss = { picking = false },
             onPicked = {
-                firstOn = it
+                due = it
                 picking = false
             },
         )
@@ -586,7 +682,7 @@ private fun BillSheet(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FirstDuePicker(
+private fun DuePicker(
     selected: LocalDate,
     earliest: LocalDate,
     onDismiss: () -> Unit,
@@ -624,17 +720,26 @@ private fun LocalDate.utcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant
 
 @Composable
 private fun GoalSheet(
+    title: String,
+    confirmLabel: String,
     currency: String,
+    initialName: String,
+    initialAllocatedMinor: Long,
+    initialTargetMinor: Long,
     onDismiss: () -> Unit,
     onConfirm: (String, Long, Long) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
-    var nowDigits by remember { mutableStateOf("") }
-    var targetDigits by remember { mutableStateOf("") }
+    var name by remember(initialName) { mutableStateOf(initialName) }
+    var nowDigits by remember(initialAllocatedMinor) {
+        mutableStateOf(DigitBuffer.replace(initialAllocatedMinor))
+    }
+    var targetDigits by remember(initialTargetMinor) {
+        mutableStateOf(DigitBuffer.replace(initialTargetMinor))
+    }
     var field by remember { mutableStateOf(GoalAmount.NOW) }
     val now = DigitBuffer.amountMinor(nowDigits)
     val target = DigitBuffer.amountMinor(targetDigits)
-    WheregoBottomSheet(title = stringResource(R.string.plan_sheet_set_aside), onDismiss = onDismiss) {
+    WheregoBottomSheet(title = title, onDismiss = onDismiss) {
         SheetField(label = stringResource(R.string.plan_field_name), value = name, onValueChange = { name = it.take(40) })
         GoalAmountToggle(selected = field, onSelect = { field = it })
         AmountReadout(
@@ -658,7 +763,7 @@ private fun GoalSheet(
             },
         )
         WheregoPrimaryButton(
-            label = stringResource(R.string.plan_cta_set_it),
+            label = confirmLabel,
             onClick = { onConfirm(name.trim(), now, target) },
             enabled = name.isNotBlank(),
             icon = Icons.Outlined.Check,

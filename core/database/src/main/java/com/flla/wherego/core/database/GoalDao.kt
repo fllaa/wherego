@@ -11,6 +11,9 @@ interface GoalDao {
     @Query("SELECT * FROM goals ORDER BY updatedAt DESC")
     fun observeAll(): Flow<List<GoalEntity>>
 
+    @Query("SELECT * FROM goals WHERE id = :id LIMIT 1")
+    suspend fun get(id: String): GoalEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(row: GoalEntity)
 

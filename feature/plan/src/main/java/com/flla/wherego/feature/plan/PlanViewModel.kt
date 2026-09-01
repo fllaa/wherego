@@ -177,10 +177,15 @@ class PlanViewModel @Inject constructor(
         month.value = YearMonth.parse(id)
     }
 
-    fun addBudget(categoryId: String?, amountMinor: Long) {
+    fun addBudget(categoryId: String?, amountMinor: Long) = setBudget(null, categoryId, amountMinor)
+
+    fun editBudget(id: String, categoryId: String?, amountMinor: Long) =
+        setBudget(id, categoryId, amountMinor)
+
+    private fun setBudget(replacedId: String?, categoryId: String?, amountMinor: Long) {
         viewModelScope.launch {
             val ym = (month.value ?: YearMonth.from(LocalDate.now(zone))).toString()
-            plan.upsertBudget(categoryId, amountMinor, currency, ym)
+            plan.setBudget(categoryId, amountMinor, currency, ym, replacedId)
         }
     }
 
@@ -211,12 +216,29 @@ class PlanViewModel @Inject constructor(
         }
     }
 
+    fun editRule(
+        id: String,
+        amountMinor: Long,
+        categoryId: String,
+        note: String,
+        nextOn: LocalDate,
+    ) {
+        viewModelScope.launch {
+            val rule = plan.updateRule(id, amountMinor, categoryId, note, nextOn) ?: return@launch
+            reminder.schedule(rule, zone)
+        }
+    }
+
     fun deleteRule(id: String) {
         viewModelScope.launch { plan.deleteRule(id) }
     }
 
     fun addGoal(name: String, allocatedMinor: Long, targetMinor: Long) {
         viewModelScope.launch { plan.addGoal(name, allocatedMinor, currency, targetMinor) }
+    }
+
+    fun editGoal(id: String, name: String, allocatedMinor: Long, targetMinor: Long) {
+        viewModelScope.launch { plan.updateGoal(id, name, allocatedMinor, targetMinor) }
     }
 
     fun deleteGoal(id: String) {

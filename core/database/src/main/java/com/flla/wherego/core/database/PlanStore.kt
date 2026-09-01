@@ -84,29 +84,33 @@ class PlanStore @Inject constructor(
         }
     }
 
-    suspend fun upsertBudget(
+    /**
+     * One cap per category per month. [replacedId] is the row an editor started from: when the
+     * user moves that cap to another category the old row stops matching and has to go, or the
+     * month would carry two caps for one category and the hero would count both.
+     */
+    suspend fun setBudget(
         categoryId: String?,
         amountMinor: Long,
         currency: String,
         yearMonth: String,
+        replacedId: String? = null,
     ) {
+        val existing = budgetDao.listMonth(yearMonth).firstOrNull { it.categoryId == categoryId }
+        if (replacedId != null && replacedId != existing?.id) budgetDao.delete(replacedId)
         val row = Budget(
-            id = ulid.next(),
+            id = existing?.id ?: ulid.next(),
             categoryId = categoryId,
             amountMinor = amountMinor,
             currency = currency,
             yearMonth = yearMonth,
-            rollover = false,
+            rollover = existing?.rollover ?: false,
             updatedAt = clock.millis(),
         )
         budgetDao.upsert(BudgetEntity.from(row))
     }
 
     suspend fun deleteBudget(id: String) = budgetDao.delete(id)
-
-    suspend fun upsertRule(rule: RecurringRule) {
-        recurringDao.upsert(RecurringEntity.from(rule.copy(updatedAt = clock.millis(), autoPost = false)))
-    }
 
     suspend fun deleteRule(id: String) = recurringDao.delete(id)
 
@@ -161,6 +165,32 @@ class PlanStore @Inject constructor(
         return rule
     }
 
+    /**
+     * Edits a bill in place. [nextOn] moves the next hit and, for a monthly rule, the day of
+     * month every later hit lands on; `startOn` stays as first written so the row keeps its
+     * history. Returns the saved rule so the caller can reschedule the reminder.
+     */
+    suspend fun updateRule(
+        id: String,
+        amountMinor: Long,
+        categoryId: String,
+        note: String,
+        nextOn: LocalDate,
+    ): RecurringRule? {
+        val existing = recurringDao.get(id)?.toModel() ?: return null
+        val updated = existing.copy(
+            amountMinor = amountMinor,
+            categoryId = categoryId,
+            note = note,
+            nextOn = nextOn.toString(),
+            dayOfMonth = if (existing.freq == Recurrence.MONTHLY) nextOn.dayOfMonth else existing.dayOfMonth,
+            weekday = if (existing.freq == Recurrence.WEEKLY) nextOn.dayOfWeek.value else existing.weekday,
+            updatedAt = clock.millis(),
+        )
+        recurringDao.update(RecurringEntity.from(updated))
+        return updated
+    }
+
     suspend fun exportCsv(): String {
         val cats = categoryDao.listAll().associate { it.id to it.name }
         val rows = transactionDao.listActive().map { it.toModel() }.map { tx ->
@@ -192,6 +222,19 @@ class PlanStore @Inject constructor(
         )
         goalDao.upsert(GoalEntity.from(goal))
         return goal
+    }
+
+    /** The name is never blanked: an unnamed earmark is unreadable, so a blank one keeps the old. */
+    suspend fun updateGoal(id: String, name: String, allocatedMinor: Long, targetMinor: Long) {
+        val existing = goalDao.get(id) ?: return
+        goalDao.upsert(
+            existing.copy(
+                name = name.trim().ifBlank { existing.name },
+                allocatedMinor = allocatedMinor,
+                targetMinor = targetMinor,
+                updatedAt = clock.millis(),
+            ),
+        )
     }
 
     suspend fun deleteGoal(id: String) {

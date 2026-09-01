@@ -202,6 +202,11 @@
     <string name="plan_tab_target">Target</string>
     <string name="plan_budget_detail">%1$s of %2$s</string>
     <string name="plan_goal_set_aside">%1$s set aside</string>
+    <string name="plan_sheet_edit_budget">Edit budget</string>
+    <string name="plan_sheet_edit_bill">Edit bill</string>
+    <string name="plan_sheet_edit_set_aside">Edit set aside</string>
+    <string name="plan_cta_save_it">Save it</string>
+    <string name="plan_field_next_due">Next due</string>
 
     <!-- Stories -->
     <string name="stories_title">Stories</string>

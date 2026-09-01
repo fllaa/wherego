@@ -202,6 +202,11 @@
     <string name="plan_tab_target">Target</string>
     <string name="plan_budget_detail">%1$s dari %2$s</string>
     <string name="plan_goal_set_aside">%1$s disisihin</string>
+    <string name="plan_sheet_edit_budget">Ubah budget</string>
+    <string name="plan_sheet_edit_bill">Ubah tagihan</string>
+    <string name="plan_sheet_edit_set_aside">Ubah sisihan</string>
+    <string name="plan_cta_save_it">Simpan</string>
+    <string name="plan_field_next_due">Jatuh tempo berikutnya</string>
 
     <!-- Stories -->
     <string name="stories_title">Cerita</string>

@@ -394,3 +394,54 @@
     the one place the month's spend still appears outside Home
   - A delta of exactly 0 still reads `Rp 0 · less`, as it did before this change
 - Blocked: none
+
+## 2026-09-01  T0900  ux-plan-editing
+- Goal: nothing on Plan was editable. Budgets, `Set aside` goals and recurring bills could only be
+  added or removed — the `Edit` link swaps a row's trailing note for a `Remove` link and nothing
+  more, so changing a cap meant deleting the row and retyping it. Chasing that turned up a data
+  bug behind it: `PlanStore.upsertBudget` minted a fresh ULID on every call and `BudgetEntity`'s
+  primary key is `id`, so `REPLACE` never matched. A second cap on a category it already had
+  **inserted a duplicate**: two cards for one category, and both counted in `capTotalMinor`, so
+  the hero silently doubled the month's cap.
+- Files changed:
+  - `:core:database` — `upsertBudget` → `setBudget(..., replacedId)`, keyed on
+    (`categoryId`, `yearMonth`) via `listMonth`, reusing the matching row's id; new `updateRule`
+    (moves `nextOn` + `dayOfMonth`, keeps `startOn`) and `updateGoal` (keeps the row's currency,
+    never blanks the name); `GoalDao.get(id)`; deleted `upsertRule`, which had no callers
+  - `:feature:plan` — `PlanViewModel.editBudget`/`editRule`/`editGoal`; `PlanScreen`'s three sheet
+    booleans collapsed into one `PlanEditor` sealed interface carrying the tapped row, every
+    budget/goal/bill row now opens its sheet pre-filled, `AmountCategorySheet`/`GoalSheet`/
+    `BillSheet` take `initial*` + `title` + `confirmLabel`, `FirstDuePicker` → `DuePicker`, dead
+    `softHex` param dropped from `RuleCard`
+  - `:core:i18n` — `plan_sheet_edit_budget`, `plan_sheet_edit_bill`, `plan_sheet_edit_set_aside`,
+    `plan_cta_save_it`, `plan_field_next_due` (en + in)
+  - tests — new `PlanStoreTest`: one cap per category per month, `Overall` included; a cap moved to
+    another category leaves one row; moved onto an occupied category it merges; `updateRule` keeps
+    `startOn`; `updateGoal` keeps currency and name
+- Commands:
+  - `./gradlew :app:assembleDebug testDebugUnitTest` → SUCCESS, `PlanStoreTest` 6/6
+  - on `emulator-5554` (Pixel_10_Pro, `pm clear`, Sep 2026, one Rp 25.000 Food out spend): set a
+    Food out cap 500rb → tapped the card → `Edit budget` opened on `Rp 500.000` with Food out
+    picked → saved 300rb → card `Rp 25.000 of 300.000`, hero `Rp 275.000`. Re-adding Food out at
+    400rb through `Set a budget for another category` left **one** card at 400.000 (pre-fix: two
+    cards, 700.000 cap). Moved that cap to Groceries → still one row. Goal `Umrah` 1jt/5jt edited
+    to 2jt (Target survived the Now/Target toggle) → `40%`. Bill `Wifi` 250rb edited to 300rb with
+    the due date moved to Sat 26 Sep under a `Next due` label. Pulled `wherego.db`: one budget row,
+    goal still `IDR`, rule `dayOfMonth=26 nextOn=2026-09-26 startOn=2026-09-01`. In `Edit` mode a
+    `Remove` tap still deletes and does not open the editor
+- Decisions:
+  - Row tap opens the editor; `Edit`/`Done` stays a delete-reveal toggle. The design has no edit
+    frame, and tap-to-edit is what the capture sheet already does for a transaction
+  - `setBudget` owns the one-cap-per-category-per-month invariant instead of a unique index: it is
+    the only writer of `budgets` (nothing syncs them), so the fix needs no Room migration
+  - `replacedId` rather than delete-then-insert at the call site: moving a cap onto a category that
+    already has one has to merge, and that decision belongs next to the lookup
+  - An edited bill keeps `startOn`. Moving the next hit is not rewriting when the bill began
+  - The due-date calendar floor is `min(today, initialDue)`, so an already-overdue bill can open on
+    its own date; a new bill still cannot start behind today
+  - Sheet seeds use `remember(seed)`, so re-opening on a different row re-seeds instead of showing
+    the previous row's numbers
+  - `DigitBuffer.replace` is the prefill, same as `CaptureViewModel` uses for editing a transaction
+- Not done / deferred: goals and recurring still have no `Edit` affordance of their own — the one
+  toggle on the `Budgets` header drives all three sections, as the design frame has it
+- Blocked: none
