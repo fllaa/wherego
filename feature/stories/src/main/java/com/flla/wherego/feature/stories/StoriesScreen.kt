@@ -56,6 +56,7 @@ import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.i18n.dayTitle
+import com.flla.wherego.core.i18n.displayAmount
 import com.flla.wherego.core.i18n.monthLabel
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.StoryHeadline
@@ -144,7 +145,7 @@ fun StoriesScreen(
                     color = colors.muted,
                 )
                 Text(
-                    state.totalLabel,
+                    displayAmount(state.totalLabel),
                     style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 48.sp),
                     color = colors.ink,
                 )
@@ -158,7 +159,7 @@ fun StoriesScreen(
                     color = colors.muted,
                 )
                 Text(
-                    MoneyFormatter.format(abs(deltaMinor), state.currency),
+                    displayAmount(MoneyFormatter.format(abs(deltaMinor), state.currency)),
                     style = WheregoType.heroAmount.copy(fontSize = 40.sp, lineHeight = 48.sp),
                     color = colors.ink,
                 )
@@ -198,7 +199,7 @@ fun StoriesScreen(
                     Text(
                         stringResource(
                             R.string.stories_total_spent_in,
-                            state.totalLabel,
+                            displayAmount(state.totalLabel),
                             shownMonth,
                         ),
                         style = WheregoType.meta,
@@ -304,7 +305,9 @@ fun StoriesScreen(
                                 color = colors.ink,
                             )
                             Text(
-                                if (filter == TxFilter.Income) day.dayIncomeLabel else day.dayTotalLabel,
+                                displayAmount(
+                                    if (filter == TxFilter.Income) day.dayIncomeLabel else day.dayTotalLabel,
+                                ),
                                 style = WheregoType.link,
                                 color = colors.muted,
                             )
@@ -323,7 +326,7 @@ fun StoriesScreen(
                                 tx.note.ifBlank { name }
                             },
                             subtitle = tx.time?.let { "$it · $name" } ?: name,
-                            amountLabel = tx.amountLabel,
+                            amountLabel = displayAmount(tx.amountLabel),
                             tone = TxAmountTone.ofPolarity(TransactionKind.polarity(tx.kind)),
                             badgeSoftHex = tx.badgeSoftHex,
                             hasReceipt = tx.hasReceipt,
@@ -346,7 +349,7 @@ fun StoriesScreen(
                         style = WheregoType.cardTitle,
                         color = colors.ink,
                     )
-                    Text(balance.nowLabel, style = WheregoType.statValue, color = colors.ink)
+                    Text(displayAmount(balance.nowLabel), style = WheregoType.statValue, color = colors.ink)
                 }
                 BalanceSparkline(balance)
                 if (balance.isFlat) {
@@ -361,12 +364,12 @@ fun StoriesScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
-                            stringResource(R.string.stories_balance_low, balance.lowLabel),
+                            stringResource(R.string.stories_balance_low, displayAmount(balance.lowLabel)),
                             style = WheregoType.helper,
                             color = colors.muted,
                         )
                         Text(
-                            stringResource(R.string.stories_balance_high, balance.highLabel),
+                            stringResource(R.string.stories_balance_high, displayAmount(balance.highLabel)),
                             style = WheregoType.helper,
                             color = colors.muted,
                         )
@@ -444,7 +447,7 @@ private fun BreakdownRow(bar: StoryBar) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(bar.amountLabel, style = WheregoType.barAmount, color = colors.ink)
+            Text(displayAmount(bar.amountLabel), style = WheregoType.barAmount, color = colors.ink)
             Text(bar.percentLabel, style = WheregoType.leftPill, color = colors.muted)
         }
         WheregoMeter(fraction = bar.fraction, fillColor = colors.teal)

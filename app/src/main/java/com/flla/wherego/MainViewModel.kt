@@ -36,6 +36,9 @@ class MainViewModel @Inject constructor(
         ThemeMode.SYSTEM,
     )
 
+    val amountsHidden: StateFlow<Boolean> = themePreferences.amountsHidden
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     /**
      * `null` until the first read lands, so the first-run Sign In screen
      * (`pencil-new.pen` → `Sign In`) never flashes for a returning user.

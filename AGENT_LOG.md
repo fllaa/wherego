@@ -738,3 +738,67 @@
   `dayIncomeLabel`, swapped only when the filter is on `Income`). The rows now say which is which;
   the headers above them still do not
 - Blocked: none
+
+## 2026-09-01  T1425  hide-amounts
+- Goal: a privacy guard for reading the app in public. Every figure Wherego renders while browsing
+  — heroes, day totals, category rows, budget and goal progress, transaction amounts — collapses to
+  `••••••` behind one device-local switch, reachable both from `Me → APP → Hide amounts` and from an
+  eye on the Home hero
+- Files changed:
+  - `:core:model` — `MoneyFormatter.HIDDEN`, the mask string. A fixed six bullets, **not** a
+    digit-for-digit mask: `Rp •.•••.•••` still hands a shoulder-surfer the magnitude, which is the
+    one thing the setting exists to withhold
+  - `:core:datastore` — `ThemePreferences.amountsHidden` + `toggleAmountsHidden()`. The flip reads
+    and writes inside the store's own transaction, so the hero eye and the `Me` row cannot clobber
+    one another's basis. No setter exists, because nothing needs to assert an absolute value
+  - `:core:i18n` — new `AmountVisibility.kt`: `LocalAmountsHidden` and
+    `displayAmount(label): String`. This module already owns display formatting and already has
+    `api(project(":core:model"))`, so it is visible to `:core:designsystem` and to all five feature
+    modules with **no new module dependency anywhere**
+  - `:core:designsystem` — `WheregoTheme` gained `amountsHidden` and provides the local beside the
+    palette. `WheregoHero` gained `onToggleAmounts: (() -> Unit)?`; when non-null it draws the
+    `Visibility`/`VisibilityOff` eye on the eyebrow row, with the content description flipping too
+  - `:app` — `MainViewModel.amountsHidden`, fed into `WheregoTheme` at the root
+  - `:feature:home` `:feature:plan` `:feature:stories` `:feature:settings` — every displayed amount
+    wrapped in `displayAmount(...)`; the two new toggles; `SettingsUiState.amountsHidden` folded
+    into the existing outer `combine`
+  - tests — `ThemePreferencesTest` (4): visible by default, toggle is symmetric, N toggles net out
+    correctly, `clear()` returns to visible
+- Commands:
+  - `./gradlew :app:assembleDebug` → SUCCESS
+  - `./gradlew testDebugUnitTest` → SUCCESS, all modules green (`ThemePreferencesTest` 4/4)
+  - on `emulator-5554` in **dark** mode: hero eye masked the hero, the income/left pill, the Today
+    total and all seven rows in one frame; `Me` then read `Hide amounts  On` without being touched,
+    proving one source of truth across surfaces. Stories masked the delta hero, `•••••• spent in
+    September`, all four category rows and the day header while **keeping** `84% / 12% / 1%`; Plan
+    masked the cap hero, the set-aside total and `•••••• of ••••••` while keeping `40%`.
+    `Adjust balance` showed the split the design turns on: `Now ••••••` above a live `Rp 12.000`
+    being typed. Capture drew `Rp 1` as typed. Toggling off from the `Me` row restored every figure;
+    force-stop and relaunch came back still masked
+- Decisions:
+  - masking is a property of a **display**, not of a number, so it is applied at the render site and
+    deliberately **not** inside `MoneyFormatter`. The same formatter writes the CSV and PDF exports
+    and drives the digits the user is currently typing, and a flag on the formatter would have
+    silently masked all three. `displayAmount` is `@Composable`, so a view model or store *cannot*
+    reach it — the export payloads are structurally safe rather than safe by review. Verified: the
+    symbol appears only in the four `*Screen.kt` files
+  - a composition local, not a field on five ui states. A flag threaded through five view models is
+    a flag one of them forgets; this follows `LocalWheregoColors` and `ProvideAppLanguage`
+  - the local lives in `:core:i18n` and is *provided* by `:core:designsystem`'s theme. It cannot
+    live in the design system: `:core:i18n` does not depend on it, so `displayAmount` could not
+    read it from there
+  - view models keep formatting their labels; the screens wrap them. Pre-masking in a view model
+    would have put the mask on the wrong side of the export boundary
+  - only the money argument is wrapped, never the finished sentence, so `Rp 190rb left` becomes
+    `•••••• left` rather than losing the word
+  - three surfaces stay legible on purpose, all of them "act on this specific number" moments, not
+    browsing: the numpads (capture, adjust balance, budget/goal entry), the balance-conflict dialog
+    on Home — masking the two competing claims removes the only basis for choosing — and the CSV
+    import column preview, whose whole job is confirming the mapping is right
+  - device-local, outside the synced profile: it describes who can see this screen right now, which
+    is a fact about the room the phone is in, not about the account
+- Not done / deferred: the Stories balance sparkline still draws its true shape — the figures around
+  it are masked but the trend is not, since the plot is normalised geometry rather than a rendered
+  number. Kind is also still legible while hidden (`+••••••` on income), which is deliberate. No
+  auto-hide on backgrounding, and no biometric reveal
+- Blocked: none

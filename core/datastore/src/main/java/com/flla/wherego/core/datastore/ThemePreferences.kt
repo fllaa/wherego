@@ -22,6 +22,7 @@ class ThemePreferences @Inject constructor(
     private val key = stringPreferencesKey("theme_mode")
     private val welcomeKey = booleanPreferencesKey("welcome_seen")
     private val conflictKey = stringPreferencesKey("balance_conflict")
+    private val hideAmountsKey = booleanPreferencesKey("amounts_hidden")
 
     val mode: Flow<String> = store.data.map { ThemeMode.parse(it[key]) }
 
@@ -46,6 +47,15 @@ class ThemePreferences @Inject constructor(
             ?.let { it[0] to it[1] }
     }
 
+    /**
+     * Whether every amount on the browsing surfaces renders as bullets — the
+     * shoulder-surfing guard behind `Me → Hide amounts`.
+     *
+     * Device-local, deliberately outside the synced profile: it describes who can see this screen
+     * right now, which is a fact about the room the phone is in and not about the account.
+     */
+    val amountsHidden: Flow<Boolean> = store.data.map { it[hideAmountsKey] == true }
+
     suspend fun setMode(mode: String) {
         store.edit { it[key] = ThemeMode.parse(mode) }
     }
@@ -58,11 +68,19 @@ class ThemePreferences @Inject constructor(
         store.edit { it[conflictKey] = "$mineId|$theirsId" }
     }
 
+    /**
+     * Flips the guard inside the store's own transaction. Both the hero eye and the `Me` row drive
+     * this, and reading the flow to negate it outside the edit would race the other one.
+     */
+    suspend fun toggleAmountsHidden() {
+        store.edit { it[hideAmountsKey] = it[hideAmountsKey] != true }
+    }
+
     suspend fun clearBalanceConflict() {
         store.edit { it.remove(conflictKey) }
     }
 
-    /** Wipes every device preference — theme and `welcome_seen` — for a full reset. */
+    /** Wipes every device preference — theme, `welcome_seen` and `amounts_hidden` — for a reset. */
     suspend fun clear() {
         store.edit { it.clear() }
     }

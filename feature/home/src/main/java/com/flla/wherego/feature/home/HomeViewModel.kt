@@ -170,6 +170,14 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * The hero's eye flips the device-wide `Hide amounts` preference, so a glance stays a glance:
+     * the number is revealed from where it is read rather than through settings and back.
+     */
+    fun toggleAmountsHidden() {
+        viewModelScope.launch { preferences.toggleAmountsHidden() }
+    }
+
     fun delete(id: String) {
         viewModelScope.launch {
             ledger.softDelete(id)

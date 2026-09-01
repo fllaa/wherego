@@ -10,6 +10,8 @@
     <string name="ds_cd_go">Go</string>
     <string name="ds_cd_backspace">Hapus</string>
     <string name="ds_cd_add">Tambah</string>
+    <string name="ds_cd_hide_amounts">Sembunyikan nominal</string>
+    <string name="ds_cd_show_amounts">Tampilkan nominal</string>
     <string name="ds_tab_home">Home</string>
     <string name="ds_tab_stories">Cerita</string>
     <string name="ds_tab_plan">Rencana</string>
@@ -252,6 +254,7 @@
     <string name="me_section_app">APLIKASI</string>
     <string name="me_row_appearance">Tampilan</string>
     <string name="me_row_reminders">Pengingat</string>
+    <string name="me_row_hide_amounts">Sembunyikan nominal</string>
     <string name="me_value_on">Nyala</string>
     <string name="me_value_off">Mati</string>
     <string name="me_section_data">DATA</string>

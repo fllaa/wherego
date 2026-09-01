@@ -53,7 +53,8 @@ class MainActivity : ComponentActivity() {
                     ThemeMode.DARK -> true
                     else -> isSystemInDarkTheme()
                 }
-                WheregoTheme(darkTheme = dark) {
+                val amountsHidden by viewModel.amountsHidden.collectAsStateWithLifecycle()
+                WheregoTheme(darkTheme = dark, amountsHidden = amountsHidden) {
                     val ready by viewModel.ready.collectAsStateWithLifecycle()
                     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
                     val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()

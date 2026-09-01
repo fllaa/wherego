@@ -223,6 +223,10 @@ Scrim behind sheet: black ~40% (`#000000` alpha 0.4). Home stays visible and sli
 - Amount 44/53 Fredoka, one line. Shrink to 36 if overflow.
 - Meta row: `of Rp X in` + tealSoft pill `Rp Y left`
 - If no income logged this month: hide `of … in` and the left pill.
+- Trailing the label row, an 18 `muted` eye (`Visibility` / `VisibilityOff`) when the caller passes
+  `onToggleAmounts`. Flips the device-local `Hide amounts` guard, which renders every amount on the
+  browsing surfaces as `••••••`. Amounts arrive already masked — the caller wraps them in
+  `displayAmount(...)`; the hero only picks the icon. Live numpad entry is never masked.
 
 ### 8.4 Budget card
 

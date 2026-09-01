@@ -60,6 +60,7 @@ import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.i18n.dayTitle
+import com.flla.wherego.core.i18n.displayAmount
 import com.flla.wherego.core.i18n.weekdayFull
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.Transaction
@@ -87,6 +88,7 @@ fun HomeRoute(
         onOpenPlan = onOpenPlan,
         onOpenStories = onOpenStories,
         onOpenCapture = onOpenCapture,
+        onToggleAmounts = viewModel::toggleAmountsHidden,
     )
     clash?.let { BalanceClashDialog(it, viewModel::resolveBalanceClash) }
 }
@@ -138,6 +140,7 @@ fun HomeScreen(
     onOpenPlan: () -> Unit,
     onOpenStories: () -> Unit,
     onOpenCapture: (Transaction?) -> Unit,
+    onToggleAmounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = WheregoTheme.colors
@@ -221,13 +224,20 @@ fun HomeScreen(
             }
             item {
                 WheregoHero(
-                    amountLabel = state.monthSpentLabel,
+                    amountLabel = displayAmount(state.monthSpentLabel),
                     incomeLabel = state.monthIncomeMinor?.let {
-                        stringResource(R.string.home_hero_income, MoneyFormatter.format(it, state.currency))
+                        stringResource(
+                            R.string.home_hero_income,
+                            displayAmount(MoneyFormatter.format(it, state.currency)),
+                        )
                     },
                     leftLabel = state.monthLeftMinor?.let {
-                        stringResource(R.string.money_left, MoneyFormatter.format(it, state.currency))
+                        stringResource(
+                            R.string.money_left,
+                            displayAmount(MoneyFormatter.format(it, state.currency)),
+                        )
                     },
+                    onToggleAmounts = onToggleAmounts,
                 )
             }
             item {
@@ -268,7 +278,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     Text(stringResource(R.string.home_section_today), style = WheregoType.cardTitle, color = colors.ink)
-                    Text(state.todayTotalLabel, style = WheregoType.streakNum, color = colors.muted)
+                    Text(displayAmount(state.todayTotalLabel), style = WheregoType.streakNum, color = colors.muted)
                 }
             }
             if (state.today.isEmpty()) {
@@ -380,7 +390,7 @@ private fun TxItem(
                 emoji = row.emoji,
                 title = title,
                 subtitle = subtitle,
-                amountLabel = row.amountLabel,
+                amountLabel = displayAmount(row.amountLabel),
                 tone = TxAmountTone.ofPolarity(TransactionKind.polarity(row.transaction.kind)),
                 badgeSoftHex = row.badgeSoftHex,
                 hasReceipt = row.hasReceipt,
@@ -438,12 +448,12 @@ private fun BudgetCard(
                 val label = if (bar.over) {
                     stringResource(
                         R.string.money_over,
-                        MoneyFormatter.compact(-bar.remainingMinor, currency),
+                        displayAmount(MoneyFormatter.compact(-bar.remainingMinor, currency)),
                     )
                 } else {
                     stringResource(
                         R.string.money_left,
-                        MoneyFormatter.compact(bar.remainingMinor, currency),
+                        displayAmount(MoneyFormatter.compact(bar.remainingMinor, currency)),
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -6,6 +6,14 @@ import java.util.Locale
 import kotlin.math.abs
 
 object MoneyFormatter {
+    /**
+     * What every displayed amount reads as while `Me → Hide amounts` is on.
+     *
+     * A fixed run of bullets rather than a digit-for-digit mask on purpose: `Rp •.•••.•••` still
+     * hands a shoulder-surfer the magnitude, which is the one thing the setting exists to withhold.
+     */
+    const val HIDDEN: String = "••••••"
+
     fun format(money: Money): String = format(money.amountMinor, money.currency)
 
     fun format(amountMinor: Long, currency: String): String = when (currency) {

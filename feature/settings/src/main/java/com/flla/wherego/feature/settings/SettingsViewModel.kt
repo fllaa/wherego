@@ -72,6 +72,8 @@ data class SettingsUiState(
     val categoryCount: Int = 0,
     val recurringActiveCount: Int = 0,
     val recurringRules: List<RecurringSummary> = emptyList(),
+    /** `Me → APP → Hide amounts`; masks every figure Wherego renders while browsing. */
+    val amountsHidden: Boolean = false,
     /**
      * `DueReminder` is enqueued unconditionally for every recurring rule the user
      * creates or confirms, and nothing persists an opt-out, so the row always reads On.
@@ -120,7 +122,8 @@ class SettingsViewModel @Inject constructor(
         account,
         ledger.observeActive(),
         plan.observeRules(),
-    ) { acc, txs, rules ->
+        themePreferences.amountsHidden,
+    ) { acc, txs, rules, hidden ->
         val profile = acc.profile
         val currency = profile?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
         val accountLine = if (acc.auth.signedIn) {
@@ -163,6 +166,7 @@ class SettingsViewModel @Inject constructor(
             categoryCount = acc.categories.count { !it.archived },
             recurringActiveCount = activeRules.size,
             recurringRules = activeRules.map { rule -> summarise(rule, acc.categories) },
+            amountsHidden = hidden,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
@@ -231,6 +235,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onTheme(mode: String) {
         viewModelScope.launch { themePreferences.setMode(mode) }
+    }
+
+    fun toggleAmountsHidden() {
+        viewModelScope.launch { themePreferences.toggleAmountsHidden() }
     }
 
     /**

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -81,6 +82,7 @@ import com.flla.wherego.core.designsystem.theme.parseHexColor
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.i18n.dayTitle
+import com.flla.wherego.core.i18n.displayAmount
 import com.flla.wherego.core.i18n.monthShort
 import com.flla.wherego.core.i18n.monthYear
 import com.flla.wherego.core.model.Category
@@ -213,6 +215,7 @@ fun MeScreen(
                         context.startActivity(Intent.createChooser(send, shareMonthTitle))
                     }
                 },
+                onToggleAmounts = viewModel::toggleAmountsHidden,
             )
         }
     }
@@ -239,6 +242,7 @@ fun SettingsScreen(
     onExport: () -> Unit,
     onImport: () -> Unit,
     onMonthPdf: () -> Unit,
+    onToggleAmounts: () -> Unit,
 ) {
     val colors = WheregoTheme.colors
     var sheet by remember { mutableStateOf(MeSheet.NONE) }
@@ -314,6 +318,18 @@ fun SettingsScreen(
                 label = stringResource(R.string.me_row_reminders),
                 onClick = { sheet = MeSheet.REMINDERS },
                 value = if (state.remindersOn) {
+                    stringResource(R.string.me_value_on)
+                } else {
+                    stringResource(R.string.me_value_off)
+                },
+            )
+            WheregoSettingDivider()
+            WheregoSettingRow(
+                icon = Icons.Outlined.VisibilityOff,
+                badgeFill = colors.blueSoft,
+                label = stringResource(R.string.me_row_hide_amounts),
+                onClick = onToggleAmounts,
+                value = if (state.amountsHidden) {
                     stringResource(R.string.me_value_on)
                 } else {
                     stringResource(R.string.me_value_off)
@@ -466,7 +482,7 @@ private fun recurringLabel(rule: RecurringSummary): String {
 
 @Composable
 private fun recurringDetail(rule: RecurringSummary): String {
-    val amount = MoneyFormatter.format(rule.amountMinor, rule.currency)
+    val amount = displayAmount(MoneyFormatter.format(rule.amountMinor, rule.currency))
     val freq = if (rule.freq == Recurrence.WEEKLY) {
         stringResource(R.string.freq_weekly)
     } else {
@@ -656,7 +672,7 @@ private fun BalanceSheetBody(
     Text(
         stringResource(
             R.string.me_balance_now,
-            MoneyFormatter.format(balanceMinor, state.currency),
+            displayAmount(MoneyFormatter.format(balanceMinor, state.currency)),
         ),
         style = WheregoType.helper,
         color = colors.muted,

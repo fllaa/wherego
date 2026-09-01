@@ -59,6 +59,7 @@ import com.flla.wherego.core.designsystem.theme.WheregoType
 import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.i18n.dayTitle
+import com.flla.wherego.core.i18n.displayAmount
 import com.flla.wherego.core.i18n.monthLabel
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
@@ -124,7 +125,7 @@ fun PlanScreen(
 
         WheregoCapCard(
             label = capLabel(state),
-            amount = MoneyFormatter.format(capAmountMinor(state), state.currency),
+            amount = displayAmount(MoneyFormatter.format(capAmountMinor(state), state.currency)),
             fraction = state.capFraction,
             footLabel = capFootLabel(state),
             pillLabel = if (state.daysLeft < 0) null else daysLeftLabel(state.daysLeft),
@@ -149,18 +150,18 @@ fun PlanScreen(
                     ?: stringResource(R.string.plan_choice_overall)
                 val detail = stringResource(
                     R.string.plan_budget_detail,
-                    MoneyFormatter.format(budget.spentMinor, state.currency),
-                    MoneyFormatter.number(budget.capMinor, state.currency),
+                    displayAmount(MoneyFormatter.format(budget.spentMinor, state.currency)),
+                    displayAmount(MoneyFormatter.number(budget.capMinor, state.currency)),
                 )
                 val note = if (budget.over) {
                     stringResource(
                         R.string.money_over,
-                        MoneyFormatter.compact(budget.spentMinor - budget.capMinor, state.currency),
+                        displayAmount(MoneyFormatter.compact(budget.spentMinor - budget.capMinor, state.currency)),
                     )
                 } else {
                     stringResource(
                         R.string.money_left,
-                        MoneyFormatter.compact(budget.capMinor - budget.spentMinor, state.currency),
+                        displayAmount(MoneyFormatter.compact(budget.capMinor - budget.spentMinor, state.currency)),
                     )
                 }
                 WheregoMeterCard(
@@ -189,7 +190,7 @@ fun PlanScreen(
         WheregoSectionHeader(
             title = stringResource(R.string.plan_section_set_aside),
             hint = stringResource(R.string.plan_hint_same_pot),
-            trailing = state.goalsTotalLabel,
+            trailing = displayAmount(state.goalsTotalLabel),
         )
         if (state.goals.isEmpty()) {
             WheregoCard(cornerRadius = 22.dp, padding = 14.dp) {
@@ -204,13 +205,13 @@ fun PlanScreen(
                 val detail = if (goal.targetMinor > 0L) {
                     stringResource(
                         R.string.plan_budget_detail,
-                        MoneyFormatter.format(goal.allocatedMinor, state.currency),
-                        MoneyFormatter.format(goal.targetMinor, state.currency),
+                        displayAmount(MoneyFormatter.format(goal.allocatedMinor, state.currency)),
+                        displayAmount(MoneyFormatter.format(goal.targetMinor, state.currency)),
                     )
                 } else {
                     stringResource(
                         R.string.plan_goal_set_aside,
-                        MoneyFormatter.format(goal.allocatedMinor, state.currency),
+                        displayAmount(MoneyFormatter.format(goal.allocatedMinor, state.currency)),
                     )
                 }
                 WheregoMeterCard(
@@ -425,8 +426,8 @@ private fun capFootLabel(state: PlanUiState): String = if (state.capTotalMinor <
 } else {
     stringResource(
         R.string.plan_cap_spent_of,
-        MoneyFormatter.format(state.monthSpentMinor, state.currency),
-        MoneyFormatter.format(state.capTotalMinor, state.currency),
+        displayAmount(MoneyFormatter.format(state.monthSpentMinor, state.currency)),
+        displayAmount(MoneyFormatter.format(state.capTotalMinor, state.currency)),
     )
 }
 
@@ -544,7 +545,7 @@ private fun RuleCard(
             RemoveLink(onDelete)
         } else {
             Text(
-                MoneyFormatter.format(rule.amountMinor, rule.currency),
+                displayAmount(MoneyFormatter.format(rule.amountMinor, rule.currency)),
                 style = WheregoType.txAmount,
                 color = colors.ink,
             )

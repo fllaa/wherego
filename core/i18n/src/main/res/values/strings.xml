@@ -10,6 +10,8 @@
     <string name="ds_cd_go">Go</string>
     <string name="ds_cd_backspace">Backspace</string>
     <string name="ds_cd_add">Add</string>
+    <string name="ds_cd_hide_amounts">Hide amounts</string>
+    <string name="ds_cd_show_amounts">Show amounts</string>
     <string name="ds_tab_home">Home</string>
     <string name="ds_tab_stories">Stories</string>
     <string name="ds_tab_plan">Plan</string>
@@ -252,6 +254,7 @@
     <string name="me_section_app">APP</string>
     <string name="me_row_appearance">Appearance</string>
     <string name="me_row_reminders">Reminders</string>
+    <string name="me_row_hide_amounts">Hide amounts</string>
     <string name="me_value_on">On</string>
     <string name="me_value_off">Off</string>
     <string name="me_section_data">DATA</string>

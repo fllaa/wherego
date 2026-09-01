@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import com.flla.wherego.core.i18n.LocalAmountsHidden
 
 /**
  * The Material scheme exists for the framework components the app does not draw itself: text-field
@@ -103,10 +104,14 @@ object WheregoTheme {
 @Composable
 fun WheregoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    amountsHidden: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val palette = if (darkTheme) WheregoColors.Dark else WheregoColors.Light
-    CompositionLocalProvider(LocalWheregoColors provides palette) {
+    CompositionLocalProvider(
+        LocalWheregoColors provides palette,
+        LocalAmountsHidden provides amountsHidden,
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkScheme else LightScheme,
             typography = WheregoType.typography(),
