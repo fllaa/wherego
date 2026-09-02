@@ -13,11 +13,28 @@ object ReceiptFiles {
 
     fun dest(context: Context, id: String): File = File(dir(context), "$id.jpg")
 
-    fun compressTo(context: Context, source: Uri, dest: File): Boolean {
+    /**
+     * `false` when the source cannot be read or decoded.
+     *
+     * That includes the provider throwing: `openInputStream` raises `FileNotFoundException` for a
+     * path that has gone away rather than returning null, and a shared image lives in `cacheDir`,
+     * which the system may evict between the share arriving and the sheet reading it. Callers map
+     * `false` to "no receipt"; letting the exception out instead kills the capture coroutine.
+     */
+    fun compressTo(context: Context, source: Uri, dest: File): Boolean = try {
+        compressOrThrow(context, source, dest)
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun compressOrThrow(context: Context, source: Uri, dest: File): Boolean {
         dest.parentFile?.mkdirs()
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-            ?: return false
+        // `decodeStream` returns null by contract when `inJustDecodeBounds` is set — the size comes
+        // back through `bounds`, not through a bitmap. Only the stream can be null-checked here;
+        // testing the decode result rejects every image ever handed in.
+        val probe = context.contentResolver.openInputStream(source) ?: return false
+        probe.use { BitmapFactory.decodeStream(it, null, bounds) }
         val srcW = bounds.outWidth
         val srcH = bounds.outHeight
         if (srcW <= 0 || srcH <= 0) return false
