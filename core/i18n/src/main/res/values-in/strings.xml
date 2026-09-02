@@ -208,6 +208,13 @@
     <string name="receipt_err_save_photo">Nggak bisa simpan fotonya</string>
     <string name="receipt_err_no_amount">Fotonya kesimpan. Nominalnya nggak kebaca.</string>
 
+    <!-- Quick entry: share sheet target + Quick Settings tile -->
+    <string name="share_target_label">Catat di Wherego</string>
+    <string name="qs_tile_label">Catat pengeluaran</string>
+    <string name="qs_tile_added">Tombolnya udah ditambahin.</string>
+    <string name="qs_tile_already">Udah ada di Quick Settings.</string>
+    <string name="receipt_shared_local">Tangkapan layarnya tetap di HP ini.</string>
+
     <!-- Plan -->
     <string name="plan_title">Rencana</string>
     <string name="plan_spent_in_month">Keluar di %1$s</string>
@@ -292,8 +299,10 @@
     <string name="me_row_reminders">Pengingat</string>
     <string name="me_row_hide_amounts">Sembunyikan nominal</string>
     <string name="me_row_app_lock">Kunci aplikasi</string>
+    <string name="me_row_quick_tile">Tombol cepat</string>
     <string name="me_value_on">Nyala</string>
     <string name="me_value_off">Mati</string>
+    <string name="me_value_add">Tambah</string>
     <string name="me_section_data">DATA</string>
     <string name="me_row_export_csv">Ekspor CSV</string>
     <string name="me_row_import_csv">Impor CSV</string>

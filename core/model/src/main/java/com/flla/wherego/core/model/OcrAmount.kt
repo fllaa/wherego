@@ -31,11 +31,44 @@ object OcrAmountParser {
     private val plain = Regex("""\d{3,12}""")
 
     /**
-     * Lines that name money. Bare currency codes count: BCA's QRIS slip prints `IDR 10,000.00`
-     * with no `Total` anywhere on it.
+     * Lines that name the amount the transaction is *for*.
+     *
+     * `total` outranks the rest deliberately: on a transfer slip the total is the nominal plus the
+     * admin fee, and the total is what actually left the account.
      */
-    private val amountHint = Regex(
-        """\b(total|subtotal|jumlah|nominal|amount|tagihan|bayar|harga|price|idr|rp|usd|eur|sgd|myr)\b|[${'$'}]""",
+    private val transactionHint = Regex(
+        """\b(total|subtotal|jumlah|nominal|amount|tagihan|bayar|harga|price)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /**
+     * Lines carrying a currency token but nothing saying *which* amount they are. Bare codes count:
+     * BCA's QRIS slip prints `IDR 10,000.00` with no `Total` anywhere on it.
+     */
+    private val moneyHint = Regex(
+        """\b(idr|rp|usd|eur|sgd|myr)\b|[${'$'}]""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /**
+     * A pot, not a movement. This is the line that made a Rp 125.000 transfer read as Rp 1.847.300:
+     * a bank slip prints the remaining balance in the same column, same `Rp`, an order of magnitude
+     * larger, so "largest anchored number wins" picked it every time.
+     */
+    private val balanceHint = Regex(
+        """\b(saldo|sisa|balance|limit|tersedia|available)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** Charged on top of the spend rather than being it. */
+    private val feeHint = Regex(
+        """\b(biaya|admin|fee|pajak|ppn|ongkir|charge)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** Handed over and handed back at a till: neither is the spend. */
+    private val tenderHint = Regex(
+        """\b(tunai|cash|kembali|kembalian|change)\b""",
         RegexOption.IGNORE_CASE,
     )
 
@@ -49,18 +82,38 @@ object OcrAmountParser {
         RegexOption.IGNORE_CASE,
     )
 
-    private enum class Role { AMOUNT, REF, NEUTRAL }
+    private enum class Role {
+        TRANSACTION,
+        MONEY,
+        BALANCE,
+        FEE,
+        TENDER,
+        REF,
+        NEUTRAL,
+        ;
 
-    /** An explicit amount word outranks an identifier word when one line carries both. */
+        /**
+         * Whether the word on the line settles the matter. A bare currency token does not — it says
+         * "this is money", not which money — so a strong label on the line above may still claim it.
+         */
+        val decisive: Boolean get() = this != MONEY && this != NEUTRAL
+    }
+
+    /** First match wins, so an explicit label outranks a bare currency token on the same line. */
     private fun roleOf(line: String): Role = when {
-        amountHint.containsMatchIn(line) -> Role.AMOUNT
+        transactionHint.containsMatchIn(line) -> Role.TRANSACTION
+        balanceHint.containsMatchIn(line) -> Role.BALANCE
+        feeHint.containsMatchIn(line) -> Role.FEE
+        tenderHint.containsMatchIn(line) -> Role.TENDER
         refHint.containsMatchIn(line) -> Role.REF
+        moneyHint.containsMatchIn(line) -> Role.MONEY
         else -> Role.NEUTRAL
     }
 
     fun parse(text: String, currency: String): OcrAmount? {
         val scale = CurrencyScale.scale(currency)
-        val anchored = mutableListOf<Long>()
+        val labelled = mutableListOf<Long>()
+        val money = mutableListOf<Long>()
         val loose = mutableListOf<Long>()
 
         // A label alone on its line owns the value beneath it — receipts stack `RRN` over its
@@ -74,17 +127,37 @@ object OcrAmountParser {
             if (line.isEmpty()) continue
             val own = roleOf(line)
             val hasDigits = line.any(Char::isDigit)
-            val role = if (own == Role.NEUTRAL) inherited else own
+            // A bare `Rp 10.000` under a `Total` is that total, so a decisive label above beats a
+            // mere currency token here.
+            val role = when {
+                own.decisive -> own
+                inherited.decisive -> inherited
+                else -> own
+            }
             inherited = if (hasDigits) Role.NEUTRAL else own
 
-            if (!hasDigits || role == Role.REF) continue
-            collect(line, scale, if (role == Role.AMOUNT) anchored else loose)
+            if (!hasDigits) continue
+            when (role) {
+                Role.TRANSACTION -> collect(line, scale, labelled)
+                Role.MONEY -> collect(line, scale, money)
+                Role.NEUTRAL -> collect(line, scale, loose)
+                // A balance, a fee, change owed, an invoice number: none of them is ever the spend,
+                // so they are dropped outright rather than merely outranked.
+                Role.BALANCE, Role.FEE, Role.TENDER, Role.REF -> Unit
+            }
         }
 
-        val pool = anchored.ifEmpty { loose }
+        // Tiers, not one big pile: a number the slip actually labelled as the transaction amount
+        // beats an unlabelled one however large, which is the difference between reading the
+        // transfer and reading the balance printed beneath it.
+        val pool = when {
+            labelled.isNotEmpty() -> labelled
+            money.isNotEmpty() -> money
+            else -> loose
+        }
         val nonYears = pool.filterNot { isCalendarYear(it, scale) }
         val best = nonYears.ifEmpty { pool }.maxOrNull() ?: return null
-        return OcrAmount(minor = best, anchored = anchored.isNotEmpty())
+        return OcrAmount(minor = best, anchored = labelled.isNotEmpty() || money.isNotEmpty())
     }
 
     private fun collect(line: String, scale: Int, into: MutableList<Long>) {

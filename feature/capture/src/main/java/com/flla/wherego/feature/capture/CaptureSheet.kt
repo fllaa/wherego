@@ -80,6 +80,7 @@ import com.flla.wherego.core.i18n.R
 import com.flla.wherego.core.i18n.categoryDisplayName
 import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.MoneyFormatter
+import com.flla.wherego.core.model.ReceiptSource
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
 import java.time.Instant
@@ -92,6 +93,11 @@ fun CaptureSheet(
     editing: Transaction?,
     onDismiss: () -> Unit,
     initialReceiptUri: Uri? = null,
+    /**
+     * How far [initialReceiptUri] is trusted: an image shared in from another app is offered, never
+     * filled in, and never queued for backup.
+     */
+    initialReceiptSource: ReceiptSource = ReceiptSource.OWN,
     onParked: (Transaction) -> Unit = {},
     viewModel: CaptureViewModel = hiltViewModel(),
 ) {
@@ -137,7 +143,11 @@ fun CaptureSheet(
     }
 
     LaunchedEffect(editing?.id, initialReceiptUri) {
-        if (editing == null) viewModel.beginCreate(initialReceiptUri) else viewModel.beginEdit(editing)
+        if (editing == null) {
+            viewModel.beginCreate(initialReceiptUri, initialReceiptSource)
+        } else {
+            viewModel.beginEdit(editing)
+        }
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val colors = WheregoTheme.colors
@@ -336,6 +346,15 @@ private fun CaptureSheetBody(
                     )
                 }
             }
+        }
+        if (state.receiptSource == ReceiptSource.SHARED) {
+            // Said out loud, because the image is a bank screen: it carries an account number and a
+            // balance, and the guarantee that none of it leaves the phone is worth one line.
+            Text(
+                stringResource(R.string.receipt_shared_local),
+                style = WheregoType.helper,
+                color = colors.muted,
+            )
         }
         Row(
             Modifier

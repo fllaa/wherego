@@ -208,6 +208,13 @@
     <string name="receipt_err_save_photo">Couldn\'t save the photo</string>
     <string name="receipt_err_no_amount">Saved the photo. Couldn\'t read an amount.</string>
 
+    <!-- Quick entry: share sheet target + Quick Settings tile -->
+    <string name="share_target_label">Log in Wherego</string>
+    <string name="qs_tile_label">Log a spend</string>
+    <string name="qs_tile_added">Tile added.</string>
+    <string name="qs_tile_already">Already in Quick Settings.</string>
+    <string name="receipt_shared_local">Screenshot stays on this phone.</string>
+
     <!-- Plan -->
     <string name="plan_title">Plan</string>
     <string name="plan_spent_in_month">Spent in %1$s</string>
@@ -292,8 +299,10 @@
     <string name="me_row_reminders">Reminders</string>
     <string name="me_row_hide_amounts">Hide amounts</string>
     <string name="me_row_app_lock">App lock</string>
+    <string name="me_row_quick_tile">Quick tile</string>
     <string name="me_value_on">On</string>
     <string name="me_value_off">Off</string>
+    <string name="me_value_add">Add</string>
     <string name="me_section_data">DATA</string>
     <string name="me_row_export_csv">Export CSV</string>
     <string name="me_row_import_csv">Import CSV</string>

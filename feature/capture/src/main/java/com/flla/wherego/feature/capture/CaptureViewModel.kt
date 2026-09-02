@@ -14,8 +14,9 @@ import com.flla.wherego.core.model.Category
 import com.flla.wherego.core.model.DigitBuffer
 import com.flla.wherego.core.model.MoneyFormatter
 import com.flla.wherego.core.model.OcrAmount
-import com.flla.wherego.core.model.OcrAmountParser
 import com.flla.wherego.core.model.PresetCategories
+import com.flla.wherego.core.model.ReceiptSource
+import com.flla.wherego.core.model.SlipParser
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.core.model.TransactionKind
 import com.flla.wherego.core.model.UserProfile
@@ -23,6 +24,7 @@ import com.flla.wherego.core.sync.ReceiptUploadScheduler
 import com.flla.wherego.core.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
+import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +37,8 @@ data class CaptureUiState(
     val draftId: String = "",
     val editingId: String? = null,
     val receiptId: String? = null,
+    /** Where the attached image came from, or null when none is attached. */
+    val receiptSource: ReceiptSource? = null,
     val isReadingOcr: Boolean = false,
     val ocrSuggestion: OcrAmount? = null,
     val kind: String = TransactionKind.EXPENSE,
@@ -98,7 +102,10 @@ class CaptureViewModel @Inject constructor(
         }
     }
 
-    fun beginCreate(initialReceiptUri: Uri? = null) {
+    fun beginCreate(
+        initialReceiptUri: Uri? = null,
+        source: ReceiptSource = ReceiptSource.OWN,
+    ) {
         viewModelScope.launch {
             val profile = profiles.get()
             val zone = zoneOf(profile)
@@ -127,7 +134,7 @@ class CaptureViewModel @Inject constructor(
                 )
             }
             if (initialReceiptUri != null) {
-                attachReceipt(initialReceiptUri, autoApplyAmount = true)
+                attachReceipt(initialReceiptUri, autoApplyAmount = true, source = source)
             }
         }
     }
@@ -161,7 +168,11 @@ class CaptureViewModel @Inject constructor(
         }
     }
 
-    fun attachReceipt(uri: Uri, autoApplyAmount: Boolean = false) {
+    fun attachReceipt(
+        uri: Uri,
+        autoApplyAmount: Boolean = false,
+        source: ReceiptSource = ReceiptSource.OWN,
+    ) {
         val currentDraftId = _state.value.draftId.ifBlank { ulid.next() }
         _state.update { it.copy(draftId = currentDraftId, isReadingOcr = true) }
         viewModelScope.launch {
@@ -170,13 +181,26 @@ class CaptureViewModel @Inject constructor(
                 _state.update { it.copy(isReadingOcr = false) }
                 return@launch
             }
-            upload.enqueue(row.id)
-            val raw = ocr.read(File(row.localPath))
-            val currency = _state.value.currency
-            val parsed = OcrAmountParser.parse(raw, currency)
-            receipts.recordOcr(row.id, raw, parsed?.minor)
+            // A screen shared in from another app stays on this phone: it carries the account
+            // number and the remaining balance beside the amount, and backup was never asked
+            // about those.
+            if (source == ReceiptSource.OWN) upload.enqueue(row.id)
+            val read = ocr.read(File(row.localPath))
+            val before = _state.value
+            val todayOn = ledger.todayOn(before.zoneId)
+            val slip = SlipParser.parse(read, before.currency, LocalDate.parse(todayOn))
+            receipts.recordOcr(row.id, read.raw, slip.amount?.minor)
+            // Reading the recents for a new kind suspends, so it happens before the atomic update
+            // rather than inside it.
+            val slipKind = slip.kind?.takeIf { it != before.kind }
+            val recentForKind = slipKind?.let { ledger.recentCategoryIds(it) }
             _state.update { s ->
-                val wantsFill = autoApplyAmount || s.digits.isBlank() || s.amountMinor == 0L
+                val parsed = slip.amount
+                // A foreign screen is never filled in, however empty the buffer is. Its largest
+                // money number is usually the balance, not the spend, so the read is offered and
+                // the user says yes — an anchored read only earns the amount on a real receipt.
+                val wantsFill = source == ReceiptSource.OWN &&
+                    (autoApplyAmount || s.digits.isBlank() || s.amountMinor == 0L)
                 // An unanchored read is only the largest number left once the reference numbers
                 // were thrown out — a guess. It may be offered, never written into the amount,
                 // no matter how empty the buffer is or how the sheet was opened.
@@ -186,11 +210,38 @@ class CaptureViewModel @Inject constructor(
                 } else {
                     null
                 }
+
+                // Kind, date and counterparty are prefills rather than writes to money: each lands
+                // only where the user has not already said otherwise, and all three sit visible in
+                // the sheet, so a bad read costs a glance instead of a wrong row.
+                val kind = slipKind ?: s.kind
+                val categoryId = when {
+                    // Untouched kind, untouched category — including before the categories have
+                    // loaded, when no choice can be validated yet.
+                    slipKind == null -> s.categoryId
+                    s.categoryId != null && s.categories.any { it.id == s.categoryId && it.matches(kind) } ->
+                        s.categoryId
+                    else -> null
+                }
+                // Only while the draft still shows today: any other date is one the user picked, or
+                // the date of the row being edited.
+                val slipDate = slip.occurredOn
+                    ?.toString()
+                    ?.takeIf { s.occurredOn == todayOn && it != s.occurredOn }
+                val note = slip.counterparty?.takeIf { s.note.isBlank() }
+
                 s.copy(
                     receiptId = row.id,
+                    receiptSource = source,
                     isReadingOcr = false,
                     digits = if (fill != null) DigitBuffer.replace(fill) else s.digits,
                     ocrSuggestion = offer,
+                    kind = kind,
+                    categoryId = categoryId,
+                    recentIds = recentForKind ?: s.recentIds,
+                    occurredOn = slipDate ?: s.occurredOn,
+                    note = note ?: s.note,
+                    noteOpen = s.noteOpen || note != null,
                 )
             }
         }
@@ -211,7 +262,7 @@ class CaptureViewModel @Inject constructor(
     }
 
     fun removeReceipt() {
-        _state.update { it.copy(receiptId = null, ocrSuggestion = null) }
+        _state.update { it.copy(receiptId = null, receiptSource = null, ocrSuggestion = null) }
     }
 
     fun onKind(kind: String) {

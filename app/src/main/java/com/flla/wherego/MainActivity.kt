@@ -1,6 +1,7 @@
 package com.flla.wherego
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -34,12 +35,27 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     private val viewModel: MainViewModel by viewModels()
+
+    /**
+     * What the tile, the share sheet or the end of onboarding asked for. Held on the activity
+     * rather than remembered in the composition so it survives the lock and onboarding gates —
+     * a share that arrives while the app is locked still opens the sheet once the PIN clears.
+     */
+    private var request by mutableStateOf(CaptureRequest.None)
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocale.context(newBase, AppLocale.load(newBase)))
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        request = CaptureRequest.from(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        request = CaptureRequest.from(intent)
         enableEdgeToEdge()
         setContent {
             val language by viewModel.language.collectAsStateWithLifecycle()
@@ -60,7 +76,6 @@ class MainActivity : FragmentActivity() {
                     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
                     val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
                     val locked by viewModel.locked.collectAsStateWithLifecycle()
-                    var openCaptureOnStart by remember { mutableStateOf(false) }
                     var skipOnboarding by remember { mutableStateOf(false) }
                     LaunchedEffect(welcomeSeen) {
                         if (welcomeSeen == false) skipOnboarding = false
@@ -76,9 +91,14 @@ class MainActivity : FragmentActivity() {
                         )
                         !onboardingDone && !skipOnboarding -> OnboardingRoute(
                             onBackToWelcome = { viewModel.setWelcomeSeen(false) },
-                            onFinish = { openCapture -> openCaptureOnStart = openCapture },
+                            onFinish = { openCapture ->
+                                if (openCapture) request = CaptureRequest(openSheet = true)
+                            },
                         )
-                        else -> WheregoNavHost(openCaptureOnStart = openCaptureOnStart)
+                        else -> WheregoNavHost(
+                            request = request,
+                            onRequestHandled = { request = CaptureRequest.None },
+                        )
                     }
                 }
             }

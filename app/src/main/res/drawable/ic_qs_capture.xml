@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Quick Settings tile glyph: the waypoint mark reduced to a silhouette.
+
+  The brand asset (ic_wherego_waypoint) is a ten-path colour coin at 100dp. Quick Settings tints a
+  tile icon flat and draws it small, which would render that coin as a solid disc, so the mark is
+  redrawn here as the two opposing facets plus the pivot — the part that still reads at tile size.
+
+  The mark is scaled to fill ~22 of the 24dp canvas, matching Material's system icons; drawn at the
+  brand asset's own proportions it occupied under half the box and read as a thin squiggle.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- North-east facet -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,12 L12.72,6.24 L19.56,4.44 L17.76,11.28 Z" />
+
+    <!-- South-west facet -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,12 L11.28,17.76 L4.44,19.56 L6.24,12.72 Z" />
+
+    <!-- Centre pivot -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,9.66a2.34,2.34 0,1 1,0 4.68a2.34,2.34 0,1 1,0 -4.68z" />
+</vector>

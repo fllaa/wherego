@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Description
@@ -113,6 +114,11 @@ private val Currencies = listOf(
 
 @Composable
 fun MeScreen(
+    /**
+     * Asks the system to offer adding the Quick Settings tile, or `null` where the platform has no
+     * such prompt — the row is then hidden rather than shown doing nothing.
+     */
+    onAddQuickTile: (() -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -222,6 +228,7 @@ fun MeScreen(
                 },
                 onToggleAmounts = viewModel::toggleAmountsHidden,
                 onAppLock = { showLock = true },
+                onAddQuickTile = onAddQuickTile,
             )
         }
     }
@@ -250,6 +257,7 @@ fun SettingsScreen(
     onMonthPdf: () -> Unit,
     onToggleAmounts: () -> Unit,
     onAppLock: () -> Unit,
+    onAddQuickTile: (() -> Unit)? = null,
 ) {
     val colors = WheregoTheme.colors
     var sheet by remember { mutableStateOf(MeSheet.NONE) }
@@ -354,6 +362,16 @@ fun SettingsScreen(
                     stringResource(R.string.me_value_off)
                 },
             )
+            if (onAddQuickTile != null) {
+                WheregoSettingDivider()
+                WheregoSettingRow(
+                    icon = Icons.Outlined.Bolt,
+                    badgeFill = colors.tealSoft,
+                    label = stringResource(R.string.me_row_quick_tile),
+                    onClick = onAddQuickTile,
+                    value = stringResource(R.string.me_value_add),
+                )
+            }
         }
         SettingsGroup(stringResource(R.string.me_section_data)) {
             WheregoSettingRow(

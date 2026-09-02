@@ -55,12 +55,15 @@ class ReceiptViewModel @Inject constructor(
                 return@launch
             }
             upload.enqueue(row.id)
-            val raw = ocr.read(File(row.localPath))
+            val read = ocr.read(File(row.localPath))
             val currency = profiles.profile.first()?.baseCurrency ?: UserProfile.DEFAULT_CURRENCY
             // This dialog confirms every read before it touches the ledger, so an unanchored
             // parse needs no extra gate here — unlike the capture sheet, which can self-fill.
-            val amount = OcrAmountParser.parse(raw, currency)?.minor
-            receipts.recordOcr(row.id, raw, amount)
+            //
+            // Only the amount is wanted: this path attaches a photo to a row that already exists,
+            // so its kind, date and note are the user's and are not up for revision.
+            val amount = OcrAmountParser.parse(read.rows(), currency)?.minor
+            receipts.recordOcr(row.id, read.raw, amount)
             _state.update {
                 it.copy(
                     busy = false,

@@ -25,10 +25,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.flla.wherego.CaptureRequest
 import com.flla.wherego.core.designsystem.component.GoMood
 import com.flla.wherego.core.designsystem.component.WheregoTab
 import com.flla.wherego.core.designsystem.component.WheregoTabBar
 import com.flla.wherego.core.designsystem.theme.WheregoTheme
+import com.flla.wherego.core.model.ReceiptSource
 import com.flla.wherego.core.model.Transaction
 import com.flla.wherego.feature.capture.CaptureSheet
 import com.flla.wherego.feature.capture.cameraCaptureUri
@@ -36,6 +38,8 @@ import com.flla.wherego.feature.home.HomeRoute
 import com.flla.wherego.feature.plan.PlanRoute
 import com.flla.wherego.feature.settings.MeScreen
 import com.flla.wherego.feature.stories.StoriesRoute
+import com.flla.wherego.quicksettings.addCaptureTilePrompt
+import java.io.File
 import kotlinx.coroutines.delay
 
 private object Routes {
@@ -63,22 +67,30 @@ private val WheregoTab.route: String
 @Composable
 fun WheregoNavHost(
     modifier: Modifier = Modifier,
-    openCaptureOnStart: Boolean = false,
+    request: CaptureRequest = CaptureRequest.None,
+    onRequestHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val selected = (entry?.destination?.route ?: Routes.Home).toTab()
     val colors = WheregoTheme.colors
     val context = LocalContext.current
-    var captureOpen by remember { mutableStateOf(openCaptureOnStart) }
+    val quickTilePrompt = remember(context) { addCaptureTilePrompt(context) }
+    var captureOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Transaction?>(null) }
     var fastScanUri by remember { mutableStateOf<Uri?>(null) }
+    var fastScanSource by remember { mutableStateOf(ReceiptSource.OWN) }
     var cameraFastUri by remember { mutableStateOf<Uri?>(null) }
     var goMood by remember { mutableStateOf(GoMood.Idle) }
 
-    fun openCapture(tx: Transaction?, initialReceipt: Uri? = null) {
+    fun openCapture(
+        tx: Transaction?,
+        initialReceipt: Uri? = null,
+        source: ReceiptSource = ReceiptSource.OWN,
+    ) {
         editing = tx
         fastScanUri = initialReceipt
+        fastScanSource = source
         captureOpen = true
     }
 
@@ -123,6 +135,23 @@ fun WheregoNavHost(
         }
     }
 
+    /**
+     * The Quick Settings tile and the share sheet both arrive here as a [CaptureRequest].
+     *
+     * [ReceiptSource.SHARED] because the image came from another app: its read is offered rather
+     * than filled in, and the image is never queued for backup. It is moot when the tile sent us
+     * here with no image at all.
+     */
+    LaunchedEffect(request) {
+        if (request.isEmpty) return@LaunchedEffect
+        openCapture(
+            tx = null,
+            initialReceipt = request.receiptPath?.let { Uri.fromFile(File(it)) },
+            source = ReceiptSource.SHARED,
+        )
+        onRequestHandled()
+    }
+
     Box(modifier.fillMaxSize()) {
         Column(
             Modifier
@@ -148,7 +177,7 @@ fun WheregoNavHost(
                 }
                 composable(Routes.Stories) { StoriesRoute() }
                 composable(Routes.Plan) { PlanRoute() }
-                composable(Routes.Me) { MeScreen() }
+                composable(Routes.Me) { MeScreen(onAddQuickTile = quickTilePrompt) }
             }
             WheregoTabBar(
                 selected = selected,
@@ -161,10 +190,12 @@ fun WheregoNavHost(
             CaptureSheet(
                 editing = editing,
                 initialReceiptUri = fastScanUri,
+                initialReceiptSource = fastScanSource,
                 onDismiss = {
                     captureOpen = false
                     editing = null
                     fastScanUri = null
+                    fastScanSource = ReceiptSource.OWN
                 },
                 onParked = {
                     goMood = GoMood.Happy
