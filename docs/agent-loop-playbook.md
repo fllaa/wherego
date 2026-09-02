@@ -439,7 +439,7 @@ Tasks:
 - [ ] CSV export from Me: `date,kind,amount,currency,category,note`. Share sheet.
 - [ ] Plan tab becomes real (budgets + recurring).
 
-No OCR yet. No goals yet.
+**Out of scope for S4:** OCR (S5), goals (S6).
 
 ---
 
